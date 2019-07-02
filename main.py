@@ -1,14 +1,14 @@
-import math, random, argparse, sys, time, itertools
-import numpy as np
+import math, random, argparse
 from collections import deque
-from tqdm import tqdm, trange
+import numpy as np
+import matplotlib.pyplot as plt
+import gym
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
-import gym
+from tqdm import tqdm, trange
 
 from q_learning import *
 from reward_model import *
