@@ -3,3 +3,4 @@ matplotlib
 gym
 torch
 tqdm
+tb-nightly
