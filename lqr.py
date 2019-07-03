@@ -8,13 +8,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class LQR(nn.Module):
-    def __init__(self, obs_shape, act_shape):
+    def __init__(self, obs_shape, act_shape, args):
         super().__init__()
         self.obs_shape = obs_shape
         self.act_shape = act_shape
-        self.Q = nn.Parameter(torch.randn(obs_shape, obs_shape))
-        self.R = nn.Parameter(torch.randn(act_shape, act_shape))
-        self.c = nn.Parameter(torch.randn(1)) # shape: torch.Size([1])
+        self.Q = nn.Parameter(args.init_var * torch.randn(obs_shape, obs_shape))
+        self.R = nn.Parameter(args.init_var * torch.randn(act_shape, act_shape))
+        self.c = nn.Parameter(args.init_var * torch.randn(1)) # shape: torch.Size([1])
 
     def forward(self, obs, act):
         # TODO possibly I shouldn't torchify and reshape the tensors inside forward(.)

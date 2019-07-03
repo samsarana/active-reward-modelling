@@ -16,8 +16,11 @@ from lqr import *
 def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('--info', type=str, default='', help='Tensorboard log is saved in ./logs/*info*')
-    parser.add_argument('--n_agent_steps', type=int, default=10000, help='No. of steps that agent takes in environment, in main training loop')
-    parser.add_argument('--agent_gdt_step_period', type=int, default=10)   
+    parser.add_argument('--n_agent_steps', type=int, default=10000, help='No. of steps that agent takes in environment')
+    parser.add_argument('--agent_gdt_step_period', type=int, default=10)
+    parser.add_argument('--lr_agent', type=float, default=1e-2)
+    parser.add_argument('--batch_size_agent', type=int, default=32)
+    parser.add_argument('--init_var', type=float, default=1, help='Variance of 0-mean Gaussian from which initial values for Q,R,c are drawn')
     return parser.parse_args()
 
 
@@ -25,68 +28,54 @@ def main():
     args = parse_arguments()
     # logging
     logdir = './logs/'
-    # writer1 = SummaryWriter(log_dir=logdir+'{}_pred'.format(args.info))
-    # writer2 = SummaryWriter(log_dir=logdir+'{}_true'.format(args.info))
-    writer2 = SummaryWriter(log_dir=logdir+'{}'.format(args.info))
-
+    writer = SummaryWriter(log_dir=logdir+'{}'.format(args.info))
     # make environment
-    env = gym.make('CartPoleContinuous-v0', ep_end_penalty=-10.0)
-    obs_shape = env.observation_space.shape[0] # env.observation_space is Box(4,) and calling .shape returns (4,) [gym can be ugly]
+    env = gym.make('CartPole-v0')
+    obs_shape = env.observation_space.shape[0]
     assert isinstance(env.action_space, gym.spaces.Discrete)
     act_shape = 1
     action_space = [act for act in range(env.action_space.n)]
-
     # make agent
-    lqr_reward = LQR(obs_shape, act_shape)
-    optimizer_agent = optim.Adam(lqr_reward.parameters())
+    lqr_reward = LQR(obs_shape, act_shape, args)
+    optimizer_agent = optim.Adam(lqr_reward.parameters(), lr=args.lr_agent)
     replay_buffer = ReplayBufferLQR(capacity=10000)
+    epsilon = 0.05
     # loss function
     mse_loss = nn.MSELoss()
-    epsilon = 0.05
-
     # bookkeeping
-    dummy_ep_length = env.spec.max_episode_steps
-    dummy_returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
-                    'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
+    ep_return = 0
 
     # train agent
     obs = env.reset()
     for step in trange(1, args.n_agent_steps+1, desc='Train agent for {} steps'.format(args.n_agent_steps)):
-        # TODO need some epsilon exploration?
         if random.random() > epsilon:
-            act = np.argmax([lqr_reward(obs, act) for act in action_space]) # type: numpy.int64
+            act = np.argmax([lqr_reward(obs, act) for act in action_space])
         else:
             act = env.action_space.sample()
-        next_obs, r_true, _, _ = env.step(act)
+        next_obs, r_true, done, _ = env.step(act)
         replay_buffer.push(obs, act, r_true)
-        dummy_returns['ep']['true'] += r_true
+        ep_return += r_true
         obs = next_obs
 
-        # log performance after a "dummy" episode has elapsed
-        if step % dummy_ep_length == 0 or step == args.n_agent_steps - 1:
-            writer2.add_scalar('dummy ep return against step', dummy_returns['ep']['true'], step)
-            for key, value in dummy_returns['ep'].items():
-                    dummy_returns['all'][key].append(value)
-                    dummy_returns['ep'][key] = 0
+        if done:
+            obs = env.reset()
+            writer.add_scalar('ep return against step', ep_return, step)
+            ep_return = 0
 
         # lqr gradient step
         if step % args.agent_gdt_step_period == 0:
-            batch_size = min(32, len(replay_buffer))
+            batch_size = min(args.batch_size_agent, len(replay_buffer))
             obs_batch, act_batch, rew_batch = replay_buffer.sample(batch_size)
-            # assert obs_batch.shape == (batch_size, obs_shape)
-            # assert act_batch.shape == (batch_size,) # act.shape is 1 so squeezed
-            # assert rew_batch.shape == (batch_size,) # again, squeezed
             r_lqr_batch = lqr_reward(obs_batch, act_batch).squeeze()
             rew_batch = torch.tensor(rew_batch).float()
-            # assert r_lqr_batch.shape == rew_batch.shape
-            loss_agent = mse_loss(r_lqr_batch, rew_batch) # training with GT reward, for now
+            loss_agent = mse_loss(r_lqr_batch, rew_batch)
             optimizer_agent.zero_grad()
             loss_agent.backward()
             optimizer_agent.step()
-            writer2.add_scalar('loss agent per step', loss_agent, step)
+            writer.add_scalar('loss agent per step', loss_agent, step)
 
     env.close()
-    writer2.close()
+    writer.close()
 
 if __name__ == '__main__':
     main()
