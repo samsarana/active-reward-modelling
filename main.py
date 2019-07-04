@@ -30,7 +30,7 @@ def parse_arguments():
     parser.add_argument('--lr_agent', type=float, default=1e-3)
     parser.add_argument('--lambda_agent', type=float, default=1e-4, help='coefficient for L2 regularization for agent optimization')
     parser.add_argument('--replay_buffer_size', type=int, default=int(1e5))
-    parser.add_argument('--target_update_period', type=int, default=8000) # Ibarz: 8000, but hard updates
+    parser.add_argument('--target_update_period', type=int, default=1) # Ibarz: 8000, but hard updates
     parser.add_argument('--target_update_tau', type=float, default=8e-2) # Ibarz: 1 (hard update)
     parser.add_argument('--agent_gdt_step_period', type=int, default=1) # Ibarz: 4
     parser.add_argument('--gamma', type=float, default=0.9)
