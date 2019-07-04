@@ -24,7 +24,8 @@ def parse_arguments():
     parser.add_argument('--random_seed', type=int, default=0)
     parser.add_argument('--test', type=bool, default=False, help='Flag to make training procedure very short (to check for errors)')
     # agent hyperparams
-    parser.add_argument('--hid_units_agent', type=int, default=128)
+    parser.add_argument('--h1_agent', type=int, default=32)
+    parser.add_argument('--h2_agent', type=int, default=64)
     parser.add_argument('--batch_size_agent', type=int, default=32)
     parser.add_argument('--lr_agent', type=float, default=5e-4)
     parser.add_argument('--lambda_agent', type=float, default=1e-4, help='coefficient for L2 regularization for agent optimization')

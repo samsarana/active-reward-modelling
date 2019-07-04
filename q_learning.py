@@ -13,11 +13,11 @@ class DQN(nn.Module):
     def __init__(self, num_inputs, num_actions, args):
         super().__init__()
         self.layers = nn.Sequential(
-            nn.Linear(num_inputs, args.hid_units_agent),
+            nn.Linear(num_inputs, args.h1_agent),
             nn.ReLU(),
-            nn.Linear(args.hid_units_agent, args.hid_units_agent),
+            nn.Linear(args.h1_agent, args.h2_agent),
             nn.ReLU(),
-            nn.Linear(args.hid_units_agent, num_actions)
+            nn.Linear(args.h2_agent, num_actions)
         )
         self.num_actions = num_actions
         self.batch_size = args.batch_size_agent
