@@ -217,7 +217,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
                     'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
     # train!
     if args.active_learning:
-        print('Active Learning so will take {} further steps *without training*'.format(n_agent_steps - n_train_steps))
+        print('Active Learning so will take {} further steps *without training*; this goes into agent_experience, so algo can sample extra *possible* clip pairs, and keep the best 1/{}'.format(n_agent_steps - n_train_steps, args.selection_factor))
     state = env.reset()
     with trange(n_agent_steps) as t:
         t.set_description('Stage 1.1: RL using reward model for {} agent steps'.format(n_train_steps))
@@ -226,10 +226,10 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
             action = q_net.act(state, q_net.epsilon)
             assert env.action_space.contains(action)
             next_state, r_true, _, _ = env.step(action) # one continuous episode
+            # record step info
+            sa_pair = torch.tensor(np.append(state, action)).float()
+            agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
             if step < n_train_steps:
-                # record step infomration
-                sa_pair = torch.tensor(np.append(state, action)).float()
-                agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
                 replay_buffer.push(state, action, r_true, next_state, False) # reward used to check against RL baseline; done=False since agent is in one continuous episode
                 dummy_returns['ep']['true'] += r_true
                 dummy_returns['ep']['true_norm'] += (r_true - rt_mean) / np.sqrt(rt_var + 1e-8) # TODO make a custom class for this, np array with size fixed in advance, given 2 means and vars, have it do the normalisation automatically and per batch (before logging)
