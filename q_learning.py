@@ -25,6 +25,7 @@ class DQN(nn.Module):
         self.epsilon = args.epsilon_start
         self.epsilon_decay = args.epsilon_decay # exponential decay of epsilon after learning step
         self.epsilon_stop = args.epsilon_stop
+        self.tau = args.target_update_tau
 
     def forward(self, x):
         return self.layers(x)
@@ -156,9 +157,7 @@ def q_learning_loss(q_net, q_target, replay_buffer,
                        each transition, rather than action taken by agent
        expected_q_value : batch_dim. implements y_i.
     """
-    batch_size = min(len(replay_buffer), q_net.batch_size) # TODO is this line time-consuming?
-    state, action, reward, next_state, done = replay_buffer.sample(batch_size)
-
+    state, action, reward, next_state, done = replay_buffer.sample(q_net.batch_size)
     # compute r_hats according to current reward_model and/or normalise rewards
     normalise_rewards = True if mean_rew and var_rew else False
     if normalise_rewards:
@@ -246,11 +245,13 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, num_clips, rewar
                     dummy_returns['ep'][key] = 0
 
             # update q_target
-            if step % args.target_update_period == 0:
-                q_target.load_state_dict(q_net.state_dict())
+            if step % args.target_update_period == 0: # soft update target parameters
+                for target_param, local_param in zip(q_target.parameters(), q_net.parameters()):
+                    target_param.data.copy_(q_net.tau*local_param.data + (1.0-q_net.tau)*target_param.data)
+                # q_target.load_state_dict(q_net.state_dict()) # old hard update code
 
             # q_net gradient step
-            if step % args.agent_gdt_step_period == 0:
+            if step % args.agent_gdt_step_period == 0 and len(replay_buffer) >= 3*q_net.batch_size:
                 if args.RL_baseline:
                     loss_agent = q_learning_loss(q_net, q_target, replay_buffer, rt_mean, rt_var)
                 else:
@@ -259,8 +260,8 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, num_clips, rewar
                 loss_agent.backward()
                 optimizer_agent.step()
                 # decay epsilon every learning step
-                if agent.epsilon > agent.epsilon_stop:
-                    agent.epsilon *= agent.epsilon_decay
+                if q_net.epsilon > q_net.epsilon_stop:
+                    q_net.epsilon *= q_net.epsilon_decay
                 # t.set_postfix(loss=loss_agent) # log with tqdm
                 writer1.add_scalar('agent loss/round {}'.format(i_train_round), loss_agent, step)
                 # scheduler.step() # Ibarz doesn't mention lr annealing...

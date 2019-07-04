@@ -27,12 +27,13 @@ def parse_arguments():
     parser.add_argument('--h1_agent', type=int, default=32)
     parser.add_argument('--h2_agent', type=int, default=64)
     parser.add_argument('--batch_size_agent', type=int, default=32)
-    parser.add_argument('--lr_agent', type=float, default=5e-4)
+    parser.add_argument('--lr_agent', type=float, default=1e-3)
     parser.add_argument('--lambda_agent', type=float, default=1e-4, help='coefficient for L2 regularization for agent optimization')
-    parser.add_argument('--replay_buffer_size', type=int, default=int(1e6)) # as per Ibarz
-    parser.add_argument('--target_update_period', type=int, default=8000) # as per Ibarz
-    parser.add_argument('--agent_gdt_step_period', type=int, default=4) # as per Ibarz
-    parser.add_argument('--gamma', type=float, default=0.99)
+    parser.add_argument('--replay_buffer_size', type=int, default=int(1e5))
+    parser.add_argument('--target_update_period', type=int, default=8000) # Ibarz: 8000, but hard updates
+    parser.add_argument('--target_update_tau', type=float, default=8e-2) # Ibarz: 1 (hard update)
+    parser.add_argument('--agent_gdt_step_period', type=int, default=1) # Ibarz: 4
+    parser.add_argument('--gamma', type=float, default=0.9)
     parser.add_argument('--epsilon_start', type=float, default=1.0, help='exploration probability for agent at start')
     parser.add_argument('--epsilon_decay', type=float, default=0.999, help='`epsilon *= epsilon * epsilon_decay` every learning step, until `epsilon_stop`') 
     parser.add_argument('--epsilon_stop', type=float, default=0.01)
