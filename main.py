@@ -49,7 +49,7 @@ def parse_arguments():
     parser.add_argument('--lambda_rm', type=float, default=1e-4, help='coefficient for L2 regularization for reward_model optimization')
     parser.add_argument('--n_epochs_pretrain_rm', type=int, default=1000) # Ibarz uses 50e3 ... but this gave me NaNs so I'm scared...
     parser.add_argument('--n_epochs_train_rm', type=int, default=1000, help='No. epochs to train reward model per round in main training loop') # Ibarz: 6250
-    parser.add_argument('--prefs_buffer_size', type=int, default=5000) # Ibarz: 6800. not sure why i changed this. the relevant thing is: how many labels do we collect per round? therefore, does the buffer fill up?
+    parser.add_argument('--prefs_buffer_size', type=int, default=1000) # Ibarz: 6800. since currently we collect strictly lt 100 + 50*5 = 350 labels this doesn't matter
     parser.add_argument('--clip_length', type=int, default=25) # as per Ibarz/Christiano; i'm interested in changing this
     parser.add_argument('--use_indiff_labels', type=bool, default=True, help='Does synthetic annotator label clips about which it is indifferent as 0.5? If `False`, label equally good clips randomly')
     parser.add_argument('--corr_rollout_steps', type=int, default=1000, help='When collecting rollouts to compute correlation of true and predicted reward, how many steps per rollout?')
