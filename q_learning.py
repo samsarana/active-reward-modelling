@@ -22,20 +22,12 @@ class DQN(nn.Module):
         self.num_actions = num_actions
         self.batch_size = args.batch_size_agent
         self.gamma = args.gamma
-        self.eps_start = args.eps_start
-        self.eps_gradient = (args.eps_start - args.eps_final) / args.eps_decay_steps # linear annealing
-        
+        self.epsilon = args.epsilon_start
+        self.epsilon_decay = args.epsilon_decay # exponential decay of epsilon after learning step
+        self.epsilon_stop = args.epsilon_stop
+
     def forward(self, x):
         return self.layers(x)
-
-    def epsilon_by_step(self, step):
-        """The agent policy is epsilon-greedy with epsilon annealed
-           linearly from 0.1 to 0.01 during the first 105 actor steps.
-           (Ibarz, p.14)
-        """
-        epsilon = self.eps_start - step * self.eps_gradient
-        assert 0.01 <= epsilon <= 0.1
-        return epsilon
     
     def act(self, state, epsilon=0):
         """For Q-networks, computing action and forward pass are NOT
@@ -223,8 +215,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, num_clips, rewar
         t.set_description('Stage 1.1: RL using reward model for {} agent steps'.format(args.n_agent_steps))
         for step in t:
             # agent interact with env
-            epsilon = q_net.epsilon_by_step(step)
-            action = q_net.act(state, epsilon)
+            action = q_net.act(state, q_net.epsilon)
             assert env.action_space.contains(action)
             next_state, r_true, _, _ = env.step(action) # one continuous episode
             # record step infomration
@@ -267,6 +258,9 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, num_clips, rewar
                 optimizer_agent.zero_grad()
                 loss_agent.backward()
                 optimizer_agent.step()
+                # decay epsilon every learning step
+                if agent.epsilon > agent.epsilon_stop:
+                    agent.epsilon *= agent.epsilon_decay
                 # t.set_postfix(loss=loss_agent) # log with tqdm
                 writer1.add_scalar('agent loss/round {}'.format(i_train_round), loss_agent, step)
                 # scheduler.step() # Ibarz doesn't mention lr annealing...

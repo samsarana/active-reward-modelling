@@ -33,9 +33,9 @@ def parse_arguments():
     parser.add_argument('--target_update_period', type=int, default=8000) # as per Ibarz
     parser.add_argument('--agent_gdt_step_period', type=int, default=4) # as per Ibarz
     parser.add_argument('--gamma', type=float, default=0.99)
-    parser.add_argument('--eps_start', type=float, default=0.1, help='epsilon for agent policy at start') # epsilon-annealing for agent
-    parser.add_argument('--eps_final', type=float, default=0.01, help='epsilon for agent policy after eps_decay_steps')
-    parser.add_argument('--eps_decay_steps', type=float, default=10**5)
+    parser.add_argument('--epsilon_start', type=float, default=1.0, help='exploration probability for agent at start')
+    parser.add_argument('--epsilon_decay', type=float, default=0.999, help='`epsilon *= epsilon * epsilon_decay` every learning step, until `epsilon_stop`') 
+    parser.add_argument('--epsilon_stop', type=float, default=0.01)
     parser.add_argument('--n_initial_agent_steps', type=int, default=int(25e3), help='No. of steps that agent takes in environment during pretraining') # same as Ibarz
     parser.add_argument('--n_agent_steps', type=int, default=10**5, help='No. of steps that agent takes in environment, in main training loop')
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
