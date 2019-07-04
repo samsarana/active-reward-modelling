@@ -18,7 +18,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     # experiment settings
     parser.add_argument('--env_class', type=str, default='CartPoleContinuous-v0')
-    parser.add_argument('--n_rounds', type=int, default=5, help='number of rounds to repeat main training loop')
+    parser.add_argument('--n_rounds', type=int, default=10, help='number of rounds to repeat main training loop')
     parser.add_argument('--RL_baseline', type=bool, default=False, help='do RL baseline instead of reward learning?')
     parser.add_argument('--info', type=str, default='', help='Tensorboard log is saved in ./logs/*info*_pred/true')
     parser.add_argument('--random_seed', type=int, default=0)
