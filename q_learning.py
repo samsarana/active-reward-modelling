@@ -260,6 +260,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, num_clips, rewar
                 loss_agent.backward()
                 optimizer_agent.step()
                 # decay epsilon every learning step
+                writer1.add_scalar('agent epsilon/round {}'.format(i_train_round), q_net.epsilon, step)
                 if q_net.epsilon > q_net.epsilon_stop:
                     q_net.epsilon *= q_net.epsilon_decay
                 # t.set_postfix(loss=loss_agent) # log with tqdm

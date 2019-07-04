@@ -37,8 +37,8 @@ def parse_arguments():
     parser.add_argument('--epsilon_start', type=float, default=1.0, help='exploration probability for agent at start')
     parser.add_argument('--epsilon_decay', type=float, default=0.999, help='`epsilon *= epsilon * epsilon_decay` every learning step, until `epsilon_stop`') 
     parser.add_argument('--epsilon_stop', type=float, default=0.01)
-    parser.add_argument('--n_initial_agent_steps', type=int, default=int(25e3), help='No. of steps that agent takes in environment during pretraining') # same as Ibarz
-    parser.add_argument('--n_agent_steps', type=int, default=10**5, help='No. of steps that agent takes in environment, in main training loop')
+    parser.add_argument('--n_initial_agent_steps', type=int, default=5000, help='No. of steps that agent takes in environment during pretraining') # Ibarz: 25k
+    parser.add_argument('--n_agent_steps', type=int, default=5000, help='No. of steps that agent takes in environment, in main training loop') # Ibarz: 100k
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
 
     # reward model hyperparamas
@@ -47,9 +47,9 @@ def parse_arguments():
     parser.add_argument('--lr_rm', type=float, default=1e-4)
     parser.add_argument('--p_dropout_rm', type=float, default=0.2)
     parser.add_argument('--lambda_rm', type=float, default=1e-4, help='coefficient for L2 regularization for reward_model optimization')
-    parser.add_argument('--n_epochs_pretrain_rm', type=int, default=int(50e2)) # Ibarz uses 50e3 ... but this gave me NaNs so I'm scared...
-    parser.add_argument('--n_epochs_train_rm', type=int, default=6250, help='No. epochs to train reward model per round in main training loop') # as per Ibarz
-    parser.add_argument('--prefs_buffer_size', type=int, default=6800) # as per Ibarz    
+    parser.add_argument('--n_epochs_pretrain_rm', type=int, default=1000) # Ibarz uses 50e3 ... but this gave me NaNs so I'm scared...
+    parser.add_argument('--n_epochs_train_rm', type=int, default=1000, help='No. epochs to train reward model per round in main training loop') # Ibarz: 6250
+    parser.add_argument('--prefs_buffer_size', type=int, default=5000) # Ibarz: 6800. not sure why i changed this. the relevant thing is: how many labels do we collect per round? therefore, does the buffer fill up?
     parser.add_argument('--clip_length', type=int, default=25) # as per Ibarz/Christiano; i'm interested in changing this
     parser.add_argument('--use_indiff_labels', type=bool, default=True, help='Does synthetic annotator label clips about which it is indifferent as 0.5? If `False`, label equally good clips randomly')
     parser.add_argument('--corr_rollout_steps', type=int, default=1000, help='When collecting rollouts to compute correlation of true and predicted reward, how many steps per rollout?')
@@ -96,8 +96,10 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
 
     # Stage 0.2 Sample without replacement from those rollouts and label them (synthetically)
     # TODO abstract this and use the same function in training. will require some modification.
-    print('Stage 0.2: Sample without replacement from those rollouts to collect {} / (2*{}) preference tuples'.format(n_initial_steps, args.clip_length))
-    rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample(n_initial_steps // (2*args.clip_length)) # 2 bc there are 2 clips per pair
+    num_pretraining_labels = n_initial_steps // (2*args.clip_length)
+    print('Stage 0.2: Sample without replacement from those rollouts to collect {} = {} / (2*{}) preference tuples'.format(num_pretraining_labels, n_initial_steps, args.clip_length))
+    writer1.add_scalar('labels requested per round', num_pretraining_labels, -1)
+    rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample(num_pretraining_labels) # 2 bc there are 2 clips per pair
     if args.active_learning:
         if args.active_learning == 'MC_variance':
             info_per_clip_pair = compute_MC_variance(rand_clip_pairs, reward_model, args.num_MC_samples)
@@ -147,7 +149,7 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
     optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm) # reinitialise optimizer so we don't need to pass it between funcs
     num_clips = int(args.n_agent_steps//args.clip_length)
     assert args.n_agent_steps % args.clip_length == 0
-    dummy_ep_length = env.spec.max_episode_steps
+    dummy_ep_length = 200
 
     for i_train_round in range(args.n_rounds):
         print('[Start Round {}]'.format(i_train_round))
@@ -157,8 +159,9 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
                                                         obs_shape, act_shape, writer1, writer2)
         
         # Stage 1.2: Sample clip pairs without replacement from recent rollouts and label them (synthetically)
-        num_labels_requested = int(58.56 * (5e6 / (i_train_round * args.n_agent_steps + 5e6) )) # compute_label_annealing_const.py
+        num_labels_requested = int(50*5 / (i_train_round + 5)) #int(58.56 * (5e6 / (i_train_round * args.n_agent_steps + 5e6) )) # compute_label_annealing_const.py
         print('Stage 1.2: Sample without replacement from those rollouts to collect {} preference tuples'.format(num_labels_requested))
+        writer1.add_scalar('labels requested per round', num_labels_requested, i_train_round)
         if args.active_learning:
             print('Doing Active Learning, so actually collect {} preference tuples and select the best 1/{} using {} method'.format(
                 args.selection_factor * num_labels_requested, args.selection_factor, args.active_learning))
@@ -213,7 +216,7 @@ def main():
     writer2 = SummaryWriter(log_dir=logdir+'{}_true'.format(args.info))
 
     # make environment
-    env = gym.make(args.env_class, ep_end_penalty=-10.0)
+    env = gym.make(args.env_class, ep_end_penalty=-4.0)
     obs_shape = env.observation_space.shape[0] # env.observation_space is Box(4,) and calling .shape returns (4,) [gym can be ugly]
     assert isinstance(env.action_space, gym.spaces.Discrete), 'DQN requires discrete action space.'
     act_shape = 1 # [gym doesn't have a nice way to get shape of Discrete space... env.action_space.shape -> () ]
