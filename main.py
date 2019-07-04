@@ -81,12 +81,16 @@ def parse_arguments():
 def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_shape, writer1, writer2):
     # Stage 0.1 Initialise policy and do some rollouts
     epsilon_pretrain = 0.1 # for now I'll use a constant epilson during pretraining
-    n_initial_steps = args.selection_factor * args.n_initial_agent_steps if args.active_learning else args.n_initial_agent_steps
+    n_initial_steps = args.n_initial_agent_steps
+    if args.active_learning:
+        n_initial_steps *= args.selection_factor
+        print('Doing Active Learning ({} method), so collect {}x more rollouts than usual'.format(
+                args.active_learning, args.selection_factor))
     num_clips = int(n_initial_steps//args.clip_length)
-    assert n_initial_steps % args.clip_length == 0
-    agent_experience = AgentExperience((num_clips, args.clip_length, obs_shape+act_shape), args.use_indiff_labels) # since episodes do not end we will collect one long trajectory then sample clips from it
+    assert n_initial_steps % args.clip_length == 0, "Agent should take a number of steps that's divisible by the desired clip_length"
+    agent_experience = AgentExperience((num_clips, args.clip_length, obs_shape+act_shape), args.use_indiff_labels)
     state = env.reset()
-    for _ in tqdm(range(n_initial_steps), desc='Stage 0.1: Collecting rollouts from untrained policy, {}*{} agent steps'.format(args.selection_factor, args.n_initial_agent_steps)):
+    for _ in tqdm(range(n_initial_steps), desc='Stage 0.1: Collecting rollouts from untrained policy, {} agent steps'.format(n_initial_steps)):
         action = q_net.act(state, epsilon_pretrain)
         assert env.action_space.contains(action)
         next_state, r_true, _, _ = env.step(action)    
@@ -97,8 +101,8 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
 
     # Stage 0.2 Sample without replacement from those rollouts and label them (synthetically)
     # TODO abstract this and use the same function in training
-    num_pretraining_labels = args.n_initial_steps // (2*args.clip_length)
-    print('Stage 0.2: Sample without replacement from those rollouts to collect {} == {} / (2*{}) preference tuples'.format(num_pretraining_labels, args.n_initial_steps, args.clip_length))
+    num_pretraining_labels = args.n_initial_agent_steps // (2*args.clip_length)
+    print('Stage 0.2: Sample without replacement from those rollouts to collect {} == {} / (2*{}) preference tuples'.format(num_pretraining_labels, args.n_initial_agent_steps, args.clip_length))
     writer1.add_scalar('labels requested per round', num_pretraining_labels, -1)
     if args.active_learning:
         print('Doing Active Learning, so actually collect {} preference tuples and select the best 1/{} using {} method'.format(
