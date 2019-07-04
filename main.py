@@ -38,7 +38,7 @@ def parse_arguments():
     parser.add_argument('--epsilon_decay', type=float, default=0.999, help='`epsilon *= epsilon * epsilon_decay` every learning step, until `epsilon_stop`') 
     parser.add_argument('--epsilon_stop', type=float, default=0.01)
     parser.add_argument('--n_initial_agent_steps', type=int, default=5000, help='No. of steps that agent takes in environment during pretraining') # Ibarz: 25k
-    parser.add_argument('--n_agent_steps', type=int, default=5000, help='No. of steps that agent takes in environment, in main training loop') # Ibarz: 100k
+    parser.add_argument('--n_agent_steps', type=int, default=3000, help='No. of steps that agent takes in environment, in main training loop') # Ibarz: 100k
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
 
     # reward model hyperparamas
@@ -52,8 +52,9 @@ def parse_arguments():
     parser.add_argument('--prefs_buffer_size', type=int, default=1000) # Ibarz: 6800. since currently we collect strictly lt 100 + 50*5 = 350 labels this doesn't matter
     parser.add_argument('--clip_length', type=int, default=25) # as per Ibarz/Christiano; i'm interested in changing this
     parser.add_argument('--use_indiff_labels', type=bool, default=True, help='Does synthetic annotator label clips about which it is indifferent as 0.5? If `False`, label equally good clips randomly')
-    parser.add_argument('--corr_rollout_steps', type=int, default=1000, help='When collecting rollouts to compute correlation of true and predicted reward, how many steps per rollout?')
-    parser.add_argument('--corr_num_rollouts', type=int, default=5, help='When collecting rollouts to compute correlation of true and predicted reward, how many rollouts in total?')
+    parser.add_argument('--no_eval_rm_correlation', action='store_true', help='Evaluate reward model correlation after training it?')
+    parser.add_argument('--corr_rollout_steps', type=int, default=1000, help='When collecting rollouts to evaluate correlation of true and predicted reward, how many steps per rollout?')
+    parser.add_argument('--corr_num_rollouts', type=int, default=5, help='When collecting rollouts to evaluate correlation of true and predicted reward, how many rollouts in total?')
 
     # active learning
     parser.add_argument('--active_learning', type=str, default=None, help='Choice of: MC_variance, info_gain, ensemble_variance')
@@ -99,7 +100,7 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
     num_pretraining_labels = n_initial_steps // (2*args.clip_length)
     print('Stage 0.2: Sample without replacement from those rollouts to collect {} = {} / (2*{}) preference tuples'.format(num_pretraining_labels, n_initial_steps, args.clip_length))
     writer1.add_scalar('labels requested per round', num_pretraining_labels, -1)
-    rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample(num_pretraining_labels) # 2 bc there are 2 clips per pair
+    rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample(num_pretraining_labels)
     if args.active_learning:
         if args.active_learning == 'MC_variance':
             info_per_clip_pair = compute_MC_variance(rand_clip_pairs, reward_model, args.num_MC_samples)
@@ -135,9 +136,11 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
             writer1.add_scalar('reward model loss pretraining', loss_rm, epoch)
 
     # evaluate reward model correlation after pretraining
-    print('Reward model training complete. Evaluating reward model correlation...')
-    r_xy, plots = eval_rm_correlation(reward_model, env, q_net, args, obs_shape, act_shape, rollout_steps=args.corr_rollout_steps, num_rollouts=args.corr_num_rollouts)
-    log_correlation(r_xy, plots, writer1, round_num=-1)
+    if not args.no_eval_rm_correlation:
+        print('Reward model training complete... Evaluating reward model correlation on {} state-action pairs, accumulated on {} rollouts of length {}'.format(
+                args.corr_rollout_steps * args.corr_num_rollouts, args.corr_num_rollouts, args.corr_rollout_steps))
+        r_xy, plots = eval_rm_correlation(reward_model, env, q_net, args, obs_shape, act_shape, rollout_steps=args.corr_rollout_steps, num_rollouts=args.corr_num_rollouts)
+        log_correlation(r_xy, plots, writer1, round_num=-1)
 
     return reward_model, prefs_buffer
 
@@ -147,14 +150,12 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
     optimizer_agent = optim.Adam(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent) # q_net initialised above
     replay_buffer = ReplayBuffer(args.replay_buffer_size)
     optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm) # reinitialise optimizer so we don't need to pass it between funcs
-    num_clips = int(args.n_agent_steps//args.clip_length)
-    assert args.n_agent_steps % args.clip_length == 0
     dummy_ep_length = 200
 
     for i_train_round in range(args.n_rounds):
         print('[Start Round {}]'.format(i_train_round))
         # Stage 1.1: Reinforcement learning with (normalised) rewards from current reward model
-        q_net, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, num_clips,
+        q_net, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
                                                         reward_model, prefs_buffer, args, i_train_round, dummy_ep_length,
                                                         obs_shape, act_shape, writer1, writer2)
         
@@ -196,14 +197,17 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
                 writer1.add_scalar('reward model loss/round {}'.format(i_train_round), loss_rm, epoch)
 
         # evaluate reward model correlation
-        print('Reward model training complete. Evaluating reward model correlation...')
-        r_xy, plots = eval_rm_correlation(reward_model, env, q_net, args, obs_shape, act_shape, rollout_steps=args.corr_rollout_steps, num_rollouts=args.corr_num_rollouts)
-        log_correlation(r_xy, plots, writer1, round_num=i_train_round)
+        if not args.no_eval_rm_correlation:
+            print('Reward model training complete... Evaluating reward model correlation on {} state-action pairs, accumulated on {} rollouts of length {}'.format(
+                args.corr_rollout_steps * args.corr_num_rollouts, args.corr_num_rollouts, args.corr_rollout_steps))
+            r_xy, plots = eval_rm_correlation(reward_model, env, q_net, args, obs_shape, act_shape, rollout_steps=args.corr_rollout_steps, num_rollouts=args.corr_num_rollouts)
+            log_correlation(r_xy, plots, writer1, round_num=i_train_round)
 
 
 def main(): 
     # experiment settings
     args = parse_arguments()
+    print('Running experiment with the following settings:\n{}\n'.format(args))
 
     # for reproducibility
     torch.manual_seed(args.random_seed) # TODO check that setting random seed here also applies to random calls in modules
