@@ -216,31 +216,34 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
     dummy_returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
                     'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
     # train!
+    if args.active_learning:
+        print('Active Learning so will take {} further steps *without training*'.format(n_agent_steps - n_train_steps))
     state = env.reset()
     with trange(n_agent_steps) as t:
-        t.set_description('Stage 1.1: RL using reward model for {} agent steps'.format(args.n_agent_steps))
+        t.set_description('Stage 1.1: RL using reward model for {} agent steps'.format(n_train_steps))
         for step in t:
             # agent interact with env
             action = q_net.act(state, q_net.epsilon)
             assert env.action_space.contains(action)
             next_state, r_true, _, _ = env.step(action) # one continuous episode
-            # record step infomration
-            sa_pair = torch.tensor(np.append(state, action)).float()
-            agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
-            replay_buffer.push(state, action, r_true, next_state, False) # reward used to check against RL baseline; done=False since agent is in one continuous episode
-            dummy_returns['ep']['true'] += r_true
-            dummy_returns['ep']['true_norm'] += (r_true - rt_mean) / np.sqrt(rt_var + 1e-8) # TODO make a custom class for this, np array with size fixed in advance, given 2 means and vars, have it do the normalisation automatically and per batch (before logging)
-            # also log reward the agent thinks it's getting according to current reward_model
-            if not args.RL_baseline:
-                reward_model.eval() # dropout off at 'test' time i.e. when logging performance
-                r_pred = reward_model(sa_pair).item() # TODO ensure that this does not effect gradient computation for reward_model in stage 1.3
-                dummy_returns['ep']['pred'] += r_pred
-                dummy_returns['ep']['pred_norm'] += (r_pred - rp_mean) / np.sqrt(rp_var + 1e-8)
+            if step < n_train_steps:
+                # record step infomration
+                sa_pair = torch.tensor(np.append(state, action)).float()
+                agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
+                replay_buffer.push(state, action, r_true, next_state, False) # reward used to check against RL baseline; done=False since agent is in one continuous episode
+                dummy_returns['ep']['true'] += r_true
+                dummy_returns['ep']['true_norm'] += (r_true - rt_mean) / np.sqrt(rt_var + 1e-8) # TODO make a custom class for this, np array with size fixed in advance, given 2 means and vars, have it do the normalisation automatically and per batch (before logging)
+                # also log reward the agent thinks it's getting according to current reward_model
+                if not args.RL_baseline:
+                    reward_model.eval() # dropout off at 'test' time i.e. when logging performance
+                    r_pred = reward_model(sa_pair).item() # TODO ensure that this does not effect gradient computation for reward_model in stage 1.3
+                    dummy_returns['ep']['pred'] += r_pred
+                    dummy_returns['ep']['pred_norm'] += (r_pred - rp_mean) / np.sqrt(rp_var + 1e-8)
             # prepare for next step
             state = next_state
 
             # log performance after a "dummy" episode has elapsed
-            if step % dummy_ep_length == 0 or step == args.n_agent_steps - 1:
+            if (step % dummy_ep_length == 0 or step == args.n_agent_steps - 1) and step < n_train_steps:
                 if not args.RL_baseline:
                     writer1.add_scalar('dummy ep return against step/round {}'.format(i_train_round), dummy_returns['ep']['pred'], step)
                     writer1.add_scalar('dummy ep return against step normalised/round {}'.format(i_train_round), dummy_returns['ep']['pred_norm'], step)
@@ -275,10 +278,10 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
                     # q_target.load_state_dict(q_net.state_dict()) # old hard update code
 
     # log mean recent return this training round
-    mean_dummy_true_returns = np.sum(np.array(dummy_returns['all']['true'][-100:])) / 100. # 100 dummy eps is the final 100*200/10^5 == 1/5 eps in the round
+    mean_dummy_true_returns = np.sum(np.array(dummy_returns['all']['true'][-3:])) / 3. # 3 dummy eps is the final 3*200/3000 == 1/5 eps in the round
     writer2.add_scalar('mean dummy ep returns per training round', mean_dummy_true_returns, i_train_round)
     if not args.RL_baseline:
-        mean_dummy_pred_returns = np.sum(np.array(dummy_returns['all']['pred'][-100:])) / 100.
+        mean_dummy_pred_returns = np.sum(np.array(dummy_returns['all']['pred'][-3:])) / 3.
         writer1.add_scalar('mean dummy ep returns per training round', mean_dummy_pred_returns, i_train_round)
     
     return q_net, replay_buffer, agent_experience

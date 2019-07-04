@@ -86,7 +86,7 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
     assert n_initial_steps % args.clip_length == 0
     agent_experience = AgentExperience((num_clips, args.clip_length, obs_shape+act_shape), args.use_indiff_labels) # since episodes do not end we will collect one long trajectory then sample clips from it
     state = env.reset()
-    for _ in tqdm(range(n_initial_steps), desc='Stage 0.1: Collecting rollouts from untrained policy, {} agent steps'.format(n_initial_steps)):
+    for _ in tqdm(range(n_initial_steps), desc='Stage 0.1: Collecting rollouts from untrained policy, {}*{} agent steps'.format(args.selection_factor, args.n_initial_agent_steps)):
         action = q_net.act(state, epsilon_pretrain)
         assert env.action_space.contains(action)
         next_state, r_true, _, _ = env.step(action)    
@@ -96,26 +96,25 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
         state = next_state
 
     # Stage 0.2 Sample without replacement from those rollouts and label them (synthetically)
-    # TODO abstract this and use the same function in training. will require some modification.
-    num_pretraining_labels = n_initial_steps // (2*args.clip_length)
-    print('Stage 0.2: Sample without replacement from those rollouts to collect {} = {} / (2*{}) preference tuples'.format(num_pretraining_labels, n_initial_steps, args.clip_length))
+    # TODO abstract this and use the same function in training
+    num_pretraining_labels = args.n_initial_steps // (2*args.clip_length)
+    print('Stage 0.2: Sample without replacement from those rollouts to collect {} == {} / (2*{}) preference tuples'.format(num_pretraining_labels, args.n_initial_steps, args.clip_length))
     writer1.add_scalar('labels requested per round', num_pretraining_labels, -1)
-    rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample(num_pretraining_labels)
     if args.active_learning:
+        print('Doing Active Learning, so actually collect {} preference tuples and select the best 1/{} using {} method'.format(
+                args.selection_factor * num_pretraining_labels, args.selection_factor, args.active_learning))
+        rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample(args.selection_factor * num_pretraining_labels)
         if args.active_learning == 'MC_variance':
             info_per_clip_pair = compute_MC_variance(rand_clip_pairs, reward_model, args.num_MC_samples)
         elif args.active_learning == 'info_gain':
             info_per_clip_pair = compute_entropy_reductions(rand_clip_pairs, reward_model, args.num_MC_samples)
         elif args.active_learning == 'ensemble_variance':
             info_per_clip_pair = compute_ensemble_variance(rand_clip_pairs, reward_model)
-        # the following line might be stupid, as better code design would mean you don't have to recalculate num pairs
-        num_pairs = len(rand_clip_pairs) // args.selection_factor # len(rand_clip_pairs) == n_initial_steps // (2*args.clip_length) == args.selection_factor * args.n_initial_steps_agent  // (2*args.clip_length) should be divisible by selection_factor anyway
-        idx = np.argpartition(info_per_clip_pair, -num_pairs)[-num_pairs:] # see: tinyurl.com/ya7xr4kn
+        idx = np.argpartition(info_per_clip_pair, -num_pretraining_labels)[-num_pretraining_labels:] # see: tinyurl.com/ya7xr4kn
         clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx] # returned indices are not sorted
         log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num=-1)
     else:
-        clip_pairs, rews, mus = rand_clip_pairs, rand_rews, rand_mus
-
+        clip_pairs, rews, mus = agent_experience.sample(num_pretraining_labels)
     # put chosen clip_pairs, true rewards (just to compute mean/var of true reward across prefs_buffer)
     # and synthetic preferences into prefs_buffer
     prefs_buffer.push(clip_pairs, rews, mus)
@@ -133,7 +132,7 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
             optimizer_rm.zero_grad()
             loss_rm.backward()
             optimizer_rm.step()
-            writer1.add_scalar('reward model loss pretraining', loss_rm, epoch)
+            writer1.add_scalar('reward model loss/pretraining', loss_rm, epoch)
 
     # evaluate reward model correlation after pretraining
     if not args.no_eval_rm_correlation:
