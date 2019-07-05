@@ -19,10 +19,11 @@ def parse_arguments():
     # experiment settings
     parser.add_argument('--env_class', type=str, default='CartPoleContinuous-v0')
     parser.add_argument('--n_rounds', type=int, default=10, help='number of rounds to repeat main training loop')
-    parser.add_argument('--RL_baseline', type=bool, default=False, help='do RL baseline instead of reward learning?')
+    parser.add_argument('--RL_baseline', action='store_true', help='Do RL baseline instead of reward learning?')
+    # parser.add_argument('--RL_baseline', type=bool, default=False, help='do RL baseline instead of reward learning?')
     parser.add_argument('--info', type=str, default='', help='Tensorboard log is saved in ./logs/*info*_pred/true')
     parser.add_argument('--random_seed', type=int, default=0)
-    parser.add_argument('--test', type=bool, default=False, help='Flag to make training procedure very short (to check for errors)')
+    parser.add_argument('--test', action='store_true', help='Flag to make training procedure very short (to check for errors)')
     # agent hyperparams
     parser.add_argument('--h1_agent', type=int, default=32)
     parser.add_argument('--h2_agent', type=int, default=64)
@@ -39,6 +40,7 @@ def parse_arguments():
     parser.add_argument('--epsilon_stop', type=float, default=0.01)
     parser.add_argument('--n_initial_agent_steps', type=int, default=5000, help='No. of steps that agent takes in environment during pretraining') # Ibarz: 25k
     parser.add_argument('--n_agent_steps', type=int, default=3000, help='No. of steps that agent takes in environment, in main training loop') # Ibarz: 100k
+    parser.add_argument('--dummy_ep_length', type=int, default=200, help="After how many steps do we interpret an 'episode' as having elapsed and log performance? (This affects only result presentation not algo)")
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
 
     # reward model hyperparamas
@@ -51,8 +53,7 @@ def parse_arguments():
     parser.add_argument('--n_epochs_train_rm', type=int, default=1000, help='No. epochs to train reward model per round in main training loop') # Ibarz: 6250
     parser.add_argument('--prefs_buffer_size', type=int, default=1000) # Ibarz: 6800. since currently we collect strictly lt 100 + 50*5 = 350 labels this doesn't matter
     parser.add_argument('--clip_length', type=int, default=25) # as per Ibarz/Christiano; i'm interested in changing this
-    parser.add_argument('--use_indiff_labels', type=bool, default=True, help='Does synthetic annotator label clips about which it is indifferent as 0.5? If `False`, label equally good clips randomly')
-    parser.add_argument('--no_eval_rm_correlation', action='store_true', help='Evaluate reward model correlation after training it?')
+    parser.add_argument('--force_label_choice', action='store_true', help='Does synthetic annotator label clips about which it is indifferent as 0.5? If `True`, label equally good clips randomly')
     parser.add_argument('--corr_rollout_steps', type=int, default=1000, help='When collecting rollouts to evaluate correlation of true and predicted reward, how many steps per rollout?')
     parser.add_argument('--corr_num_rollouts', type=int, default=5, help='When collecting rollouts to evaluate correlation of true and predicted reward, how many rollouts in total?')
 
@@ -66,15 +67,13 @@ def parse_arguments():
     # and we want to find whether active learning using the same amount of *data from the human* beats the random baseline)
     args = parser.parse_args()
     if args.test:
-        args.n_rounds=2
-        args.n_initial_agent_steps=1000
-        args.n_agent_steps=50000
-        args.agent_gdt_step_period=50000
-        args.n_epochs_pretrain_rm=1
-        args.n_epochs_train_rm=1
+        args.n_rounds=1
+        # args.n_initial_agent_steps=3000
+        # args.n_agent_steps=3000
+        args.n_epochs_pretrain_rm=10
+        args.n_epochs_train_rm=10
     if args.active_learning == 'ensemble_variance':
         assert args.size_rm_ensemble >= 2
-
     return args
     
 
@@ -88,7 +87,7 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
                 args.active_learning, args.selection_factor))
     num_clips = int(n_initial_steps//args.clip_length)
     assert n_initial_steps % args.clip_length == 0, "Agent should take a number of steps that's divisible by the desired clip_length"
-    agent_experience = AgentExperience((num_clips, args.clip_length, obs_shape+act_shape), args.use_indiff_labels)
+    agent_experience = AgentExperience((num_clips, args.clip_length, obs_shape+act_shape), args.force_label_choice)
     state = env.reset()
     for _ in tqdm(range(n_initial_steps), desc='Stage 0.1: Collecting rollouts from untrained policy, {} agent steps'.format(n_initial_steps)):
         action = q_net.act(state, epsilon_pretrain)
@@ -139,7 +138,7 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
             writer1.add_scalar('reward model loss/pretraining', loss_rm, epoch)
 
     # evaluate reward model correlation after pretraining
-    if not args.no_eval_rm_correlation:
+    if not args.RL_baseline:
         print('Reward model training complete... Evaluating reward model correlation on {} state-action pairs, accumulated on {} rollouts of length {}'.format(
                 args.corr_rollout_steps * args.corr_num_rollouts, args.corr_num_rollouts, args.corr_rollout_steps))
         r_xy, plots = eval_rm_correlation(reward_model, env, q_net, args, obs_shape, act_shape, rollout_steps=args.corr_rollout_steps, num_rollouts=args.corr_num_rollouts)
@@ -153,14 +152,13 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
     optimizer_agent = optim.Adam(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent) # q_net initialised above
     replay_buffer = ReplayBuffer(args.replay_buffer_size)
     optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm) # reinitialise optimizer so we don't need to pass it between funcs
-    dummy_ep_length = 200
 
     for i_train_round in range(args.n_rounds):
         print('[Start Round {}]'.format(i_train_round))
         # Stage 1.1: Reinforcement learning with (normalised) rewards from current reward model
-        q_net, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
-                                                        reward_model, prefs_buffer, args, i_train_round, dummy_ep_length,
-                                                        obs_shape, act_shape, writer1, writer2)
+        q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
+                                                                 reward_model, prefs_buffer, args, i_train_round,
+                                                                 obs_shape, act_shape, writer1, writer2)
         
         # Stage 1.2: Sample clip pairs without replacement from recent rollouts and label them (synthetically)
         num_labels_requested = int(50*5 / (i_train_round + 5)) #int(58.56 * (5e6 / (i_train_round * args.n_agent_steps + 5e6) )) # compute_label_annealing_const.py
@@ -200,7 +198,7 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
                 writer1.add_scalar('reward model loss/round {}'.format(i_train_round), loss_rm, epoch)
 
         # evaluate reward model correlation
-        if not args.no_eval_rm_correlation:
+        if not args.RL_baseline:
             print('Reward model training complete... Evaluating reward model correlation on {} state-action pairs, accumulated on {} rollouts of length {}'.format(
                 args.corr_rollout_steps * args.corr_num_rollouts, args.corr_num_rollouts, args.corr_rollout_steps))
             r_xy, plots = eval_rm_correlation(reward_model, env, q_net, args, obs_shape, act_shape, rollout_steps=args.corr_rollout_steps, num_rollouts=args.corr_num_rollouts)

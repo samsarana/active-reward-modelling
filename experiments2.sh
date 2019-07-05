@@ -1,5 +1,5 @@
 #!/bin/bash
-python main.py --info=baseline-0-RL --RL_baseline=True --n_rounds=1 --n_epochs_pretrain_rm=0 --n_epochs_train_rm=0 --no_eval_rm_correlation
+python main.py --info=baseline-0-RL --RL_baseline --n_rounds=1 --n_epochs_pretrain_rm=0 --n_epochs_train_rm=0
 python main.py --info=baseline-1-random
 python main.py --info=baseline-2a-ens3 --size_rm_ensemble=3
 python main.py --info=baseline-2b-ens10 --size_rm_ensemble=10

@@ -88,9 +88,9 @@ class AgentExperience():
        In particular, AgentExperience() instances are tensors
        with size of dim 1 that can be spe
     """
-    def __init__(self, experience_shape, use_indiff_labels=True):
+    def __init__(self, experience_shape, force_label_choice=False):
         self.num_clips, self.clip_length, self.obs_act_size = experience_shape
-        self.use_indiff_labels = use_indiff_labels
+        self.force_label_choice = force_label_choice
         self.clips = np.zeros(shape=experience_shape) # default dtype=np.float64. OK for torching later?
         self.clip_rewards = np.zeros(shape=(self.num_clips, self.clip_length))
         self.clip_returns = np.zeros(shape=self.num_clips) # TODO remove as it's unused, apart from as a check
@@ -133,13 +133,12 @@ class AgentExperience():
         returns = self.clip_rewards[rows_i].sum(axis=-1)
         returns2 = self.clip_returns[rows_i] # TODO remove clip_returns as an attr of AgentExperience; it's just wasting computation
         assert (returns == returns2).all()
-        if self.use_indiff_labels:
+        if self.force_label_choice:
+            mus = np.where(returns[:, 0] > returns[:, 1], 1, 
+                            np.where(returns[:, 0] == returns[:, 1], random.choice([0, 1]), 0))
+        else: # allow clips to be labeled as 0.5
             mus = np.where(returns[:, 0] > returns[:, 1], 1, 
                            np.where(returns[:, 0] == returns[:, 1], 0.5, 0))
-        else:
-            mus = np.where(returns[:, 0] > returns[:, 1], 1, 
-                           np.where(returns[:, 0] == returns[:, 1], random.choice([0, 1]), 0))
-            # mus = returns[:, 0] > returns[:, 1] # old version that didn't handle indifference
         return clip_pairs, rewards, mus
 
 
@@ -199,7 +198,7 @@ def compute_mean_var(r, prefs_buffer):
     return rews.mean().item(), rews.var().item()
 
 
-def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, prefs_buffer, args, i_train_round, dummy_ep_length, obs_shape, act_shape, writer1, writer2):
+def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, prefs_buffer, args, i_train_round, obs_shape, act_shape, writer1, writer2):
     # compute mean and variance of true and predicted reward (for normalising rewards sent to agent)
     rp_mean, rp_var = compute_mean_var(reward_model, prefs_buffer)
     rt_mean, rt_var = prefs_buffer.compute_mean_var_GT()
@@ -208,74 +207,75 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
     if args.active_learning:
         n_agent_steps = args.selection_factor * args.n_agent_steps
         n_train_steps = args.n_agent_steps
+        print('Active Learning so will take {} further steps *without training*; this goes into agent_experience, so algo can sample extra *possible* clip pairs, and keep the best 1/{}'.format(n_agent_steps - n_train_steps, args.selection_factor))
+        desc_stage_11 = 'Stage 1.1: RL using reward model for {} agent steps, of which the first {} include training'.format(n_agent_steps, n_train_steps)
     else:
         n_agent_steps = n_train_steps = args.n_agent_steps
+        if args.RL_baseline:
+            desc_stage_11 = 'Stage 1.1: RL using *true reward* for {} agent steps'.format(n_agent_steps)
+        else:
+            desc_stage_11 = 'Stage 1.1: RL using reward model for {} agent steps'.format(n_agent_steps)
     num_clips = int(n_agent_steps//args.clip_length)
     assert n_agent_steps % args.clip_length == 0
-    agent_experience = AgentExperience((num_clips, args.clip_length, obs_shape+act_shape), args.use_indiff_labels) # since episodes do not end we will collect one long trajectory then sample clips from it     
+    agent_experience = AgentExperience((num_clips, args.clip_length, obs_shape+act_shape), args.force_label_choice) # since episodes do not end we will collect one long trajectory then sample clips from it     
     dummy_returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
                     'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
     # train!
-    if args.active_learning:
-        print('Active Learning so will take {} further steps *without training*; this goes into agent_experience, so algo can sample extra *possible* clip pairs, and keep the best 1/{}'.format(n_agent_steps - n_train_steps, args.selection_factor))
     state = env.reset()
-    with trange(n_agent_steps) as t:
-        t.set_description('Stage 1.1: RL using reward model for {} agent steps'.format(n_train_steps))
-        for step in t:
-            # agent interact with env
-            action = q_net.act(state, q_net.epsilon)
-            assert env.action_space.contains(action)
-            next_state, r_true, _, _ = env.step(action) # one continuous episode
-            # record step info
-            sa_pair = torch.tensor(np.append(state, action)).float()
-            agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
-            if step < n_train_steps:
-                replay_buffer.push(state, action, r_true, next_state, False) # reward used to check against RL baseline; done=False since agent is in one continuous episode
-                dummy_returns['ep']['true'] += r_true
-                dummy_returns['ep']['true_norm'] += (r_true - rt_mean) / np.sqrt(rt_var + 1e-8) # TODO make a custom class for this, np array with size fixed in advance, given 2 means and vars, have it do the normalisation automatically and per batch (before logging)
-                # also log reward the agent thinks it's getting according to current reward_model
-                if not args.RL_baseline:
-                    reward_model.eval() # dropout off at 'test' time i.e. when logging performance
-                    r_pred = reward_model(sa_pair).item() # TODO ensure that this does not effect gradient computation for reward_model in stage 1.3
-                    dummy_returns['ep']['pred'] += r_pred
-                    dummy_returns['ep']['pred_norm'] += (r_pred - rp_mean) / np.sqrt(rp_var + 1e-8)
-            # prepare for next step
-            state = next_state
+    for step in trange(n_agent_steps, desc=desc_stage_11):
+        # agent interact with env
+        action = q_net.act(state, q_net.epsilon)
+        assert env.action_space.contains(action)
+        next_state, r_true, _, _ = env.step(action) # one continuous episode
+        # record step info
+        sa_pair = torch.tensor(np.append(state, action)).float()
+        agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
+        if step < n_train_steps:
+            replay_buffer.push(state, action, r_true, next_state, False) # reward used to check against RL baseline; done=False since agent is in one continuous episode
+            dummy_returns['ep']['true'] += r_true
+            dummy_returns['ep']['true_norm'] += (r_true - rt_mean) / np.sqrt(rt_var + 1e-8) # TODO make a custom class for this, np array with size fixed in advance, given 2 means and vars, have it do the normalisation automatically and per batch (before logging)
+            # also log reward the agent thinks it's getting according to current reward_model
+            if not args.RL_baseline:
+                reward_model.eval() # dropout off at 'test' time i.e. when logging performance
+                r_pred = reward_model(sa_pair).item() # TODO ensure that this does not effect gradient computation for reward_model in stage 1.3
+                dummy_returns['ep']['pred'] += r_pred
+                dummy_returns['ep']['pred_norm'] += (r_pred - rp_mean) / np.sqrt(rp_var + 1e-8)
+        # prepare for next step
+        state = next_state
 
-            # log performance after a "dummy" episode has elapsed
-            if (step % dummy_ep_length == 0 or step == args.n_agent_steps - 1) and step < n_train_steps:
-                if not args.RL_baseline:
-                    writer1.add_scalar('dummy ep return against step/round {}'.format(i_train_round), dummy_returns['ep']['pred'], step)
-                    writer1.add_scalar('dummy ep return against step normalised/round {}'.format(i_train_round), dummy_returns['ep']['pred_norm'], step)
-                # interpreting writers: 2 == blue == true!
-                writer2.add_scalar('dummy ep return against step/round {}'.format(i_train_round), dummy_returns['ep']['true'], step)
-                writer2.add_scalar('dummy ep return against step normalised/round {}'.format(i_train_round), dummy_returns['ep']['true_norm'], step)
-                for key, value in dummy_returns['ep'].items():
-                    dummy_returns['all'][key].append(value)
-                    dummy_returns['ep'][key] = 0
+        # log performance after a "dummy" episode has elapsed
+        if (step % args.dummy_ep_length == 0 or step == args.n_agent_steps - 1) and step < n_train_steps:
+            if not args.RL_baseline:
+                writer1.add_scalar('dummy ep return against step/round {}'.format(i_train_round), dummy_returns['ep']['pred'], step)
+                writer1.add_scalar('dummy ep return against step normalised/round {}'.format(i_train_round), dummy_returns['ep']['pred_norm'], step)
+            # interpreting writers: 2 == blue == true!
+            writer2.add_scalar('dummy ep return against step/round {}'.format(i_train_round), dummy_returns['ep']['true'], step)
+            writer2.add_scalar('dummy ep return against step normalised/round {}'.format(i_train_round), dummy_returns['ep']['true_norm'], step)
+            for key, value in dummy_returns['ep'].items():
+                dummy_returns['all'][key].append(value)
+                dummy_returns['ep'][key] = 0
 
-            # q_net gradient step
-            if step % args.agent_gdt_step_period == 0 and len(replay_buffer) >= 3*q_net.batch_size and step < n_train_steps:
-                if args.RL_baseline:
-                    loss_agent = q_learning_loss(q_net, q_target, replay_buffer, rt_mean, rt_var)
-                else:
-                    loss_agent = q_learning_loss(q_net, q_target, replay_buffer, rp_mean, rp_var, reward_model)
-                optimizer_agent.zero_grad()
-                loss_agent.backward()
-                optimizer_agent.step()
-                # decay epsilon every learning step
-                writer1.add_scalar('agent epsilon/round {}'.format(i_train_round), q_net.epsilon, step)
-                if q_net.epsilon > q_net.epsilon_stop:
-                    q_net.epsilon *= q_net.epsilon_decay
-                # t.set_postfix(loss=loss_agent) # log with tqdm
-                writer1.add_scalar('agent loss/round {}'.format(i_train_round), loss_agent, step)
-                # scheduler.step() # Ibarz doesn't mention lr annealing...
+        # q_net gradient step
+        if step % args.agent_gdt_step_period == 0 and len(replay_buffer) >= 3*q_net.batch_size and step < n_train_steps:
+            if args.RL_baseline:
+                loss_agent = q_learning_loss(q_net, q_target, replay_buffer, rt_mean, rt_var)
+            else:
+                loss_agent = q_learning_loss(q_net, q_target, replay_buffer, rp_mean, rp_var, reward_model)
+            optimizer_agent.zero_grad()
+            loss_agent.backward()
+            optimizer_agent.step()
+            # decay epsilon every learning step
+            writer1.add_scalar('agent epsilon/round {}'.format(i_train_round), q_net.epsilon, step)
+            if q_net.epsilon > q_net.epsilon_stop:
+                q_net.epsilon *= q_net.epsilon_decay
+            writer1.add_scalar('agent loss/round {}'.format(i_train_round), loss_agent, step)
+            # scheduler.step() # Ibarz doesn't mention lr annealing...
 
-                # update q_target
-                if step % args.target_update_period == 0: # soft update target parameters
-                    for target_param, local_param in zip(q_target.parameters(), q_net.parameters()):
-                        target_param.data.copy_(q_net.tau*local_param.data + (1.0-q_net.tau)*target_param.data)
-                    # q_target.load_state_dict(q_net.state_dict()) # old hard update code
+            # update q_target
+            if step % args.target_update_period == 0: # soft update target parameters
+                for target_param, local_param in zip(q_target.parameters(), q_net.parameters()):
+                    target_param.data.copy_(q_net.tau*local_param.data + (1.0-q_net.tau)*target_param.data)
+                # q_target.load_state_dict(q_net.state_dict()) # old hard update code
 
     # log mean recent return this training round
     mean_dummy_true_returns = np.sum(np.array(dummy_returns['all']['true'][-3:])) / 3. # 3 dummy eps is the final 3*200/3000 == 1/5 eps in the round
@@ -284,4 +284,4 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
         mean_dummy_pred_returns = np.sum(np.array(dummy_returns['all']['pred'][-3:])) / 3.
         writer1.add_scalar('mean dummy ep returns per training round', mean_dummy_pred_returns, i_train_round)
     
-    return q_net, replay_buffer, agent_experience
+    return q_net, q_target, replay_buffer, agent_experience
