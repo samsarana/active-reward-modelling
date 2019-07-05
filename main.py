@@ -238,7 +238,9 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
 def main(): 
     # experiment settings
     args = parse_arguments()
-    print('Running experiment with the following settings:\n{}\n'.format(args))
+    print('Running experiment with the following settings:')
+    for arg in vars(args):
+        print(arg, getattr(args, arg))
 
     # for reproducibility
     torch.manual_seed(args.random_seed) # TODO check that setting random seed here also applies to random calls in modules
