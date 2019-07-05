@@ -1,14 +1,11 @@
 """Classes and functions to do reward learning"""
 
-import math, random, argparse, sys, time, itertools
+import math, random
 import numpy as np
-from collections import deque
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
-# TODO tidy up dependencies
 
 class PrefsBuffer():
     def __init__(self, capacity, clip_shape):

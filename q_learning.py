@@ -3,7 +3,7 @@
 import math, random, argparse, sys, time, itertools
 import numpy as np
 from collections import deque
-from tqdm import tqdm, trange
+from tqdm import trange
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -222,7 +222,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
                     'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
     # train!
     state = env.reset()
-    for step in trange(n_agent_steps, desc=desc_stage_11):
+    for step in trange(n_agent_steps, desc=desc_stage_11, dynamic_ncols=True):
         # agent interact with env
         action = q_net.act(state, q_net.epsilon)
         assert env.action_space.contains(action)
