@@ -238,7 +238,7 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
 def main(): 
     # experiment settings
     args = parse_arguments()
-    print('Running experiment with the following settings:')
+    print('\nRunning experiment with the following settings:')
     for arg in vars(args):
         print(arg, getattr(args, arg))
 
