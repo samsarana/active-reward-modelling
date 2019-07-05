@@ -29,7 +29,7 @@ def compute_entropy_reductions(rand_clip_pairs, reward_model, num_MC_samples=100
     # TODO remove check
     check = - (E_p_hat_12_per_batch       * E_p_hat_12_per_batch.log() + 
                (1 - E_p_hat_12_per_batch) * (1 - E_p_hat_12_per_batch).log()  )
-    assert torch.all(torch.lt(torch.abs(torch.add(H_y_xD, -check)), 1e-6))
+    assert torch.all(torch.lt(torch.abs(torch.add(H_y_xD, -check)), 1e-4))
 
     # TODO is it correct NOT to do fresh draw from posterior?
     # NB when I tried doing fresh draws, this made (info_gain >= 0).all() False !! (which is bad...)
