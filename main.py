@@ -20,7 +20,6 @@ def parse_arguments():
     parser.add_argument('--env_class', type=str, default='CartPoleContinuous-v0')
     parser.add_argument('--n_rounds', type=int, default=10, help='number of rounds to repeat main training loop')
     parser.add_argument('--RL_baseline', action='store_true', help='Do RL baseline instead of reward learning?')
-    # parser.add_argument('--RL_baseline', type=bool, default=False, help='do RL baseline instead of reward learning?')
     parser.add_argument('--info', type=str, default='', help='Tensorboard log is saved in ./logs/*info*_pred/true')
     parser.add_argument('--random_seed', type=int, default=0)
     parser.add_argument('--test', action='store_true', help='Flag to make training procedure very short (to check for errors)')
@@ -38,8 +37,9 @@ def parse_arguments():
     parser.add_argument('--epsilon_start', type=float, default=1.0, help='exploration probability for agent at start')
     parser.add_argument('--epsilon_decay', type=float, default=0.999, help='`epsilon *= epsilon * epsilon_decay` every learning step, until `epsilon_stop`') 
     parser.add_argument('--epsilon_stop', type=float, default=0.01)
-    parser.add_argument('--n_initial_agent_steps', type=int, default=5000, help='No. of steps that agent takes in environment during pretraining') # Ibarz: 25k
-    parser.add_argument('--n_agent_steps', type=int, default=3000, help='No. of steps that agent takes in environment, in main training loop') # Ibarz: 100k
+    parser.add_argument('--n_labels_pretraining', type=int, default=5000, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining') # Ibarz: 25k
+    parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[5]*10, help='How many labels to acquire per round? (in main training loop). len should be same as n_rounds')
+    parser.add_argument('--n_agent_steps', type=int, default=2000, help='No. of steps that agent takes in environment, per round (in main training loop)') # Ibarz: 100k
     parser.add_argument('--dummy_ep_length', type=int, default=200, help="After how many steps do we interpret an 'episode' as having elapsed and log performance? (This affects only result presentation not algo)")
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
 
@@ -74,13 +74,15 @@ def parse_arguments():
         args.n_epochs_train_rm=10
     if args.active_learning == 'ensemble_variance':
         assert args.size_rm_ensemble >= 2
+    assert len(args.n_labels_per_round) == args.n_rounds, "Experiment has {} rounds, but you specified no. labels to collect in {} rounds".format(args.n_rounds, len(args.n_labels_per_round))
     return args
     
 
 def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_shape, writer1, writer2):
     # Stage 0.1 Initialise policy and do some rollouts
     epsilon_pretrain = 0.1 # for now I'll use a constant epilson during pretraining
-    n_initial_steps = args.n_initial_agent_steps
+    # n_initial_steps = args.n_initial_agent_steps
+    n_initial_steps = args.n_labels_pretraining * 2 * args.clip_length
     if args.active_learning:
         n_initial_steps *= args.selection_factor
         print('Doing Active Learning ({} method), so collect {}x more rollouts than usual'.format(
@@ -100,24 +102,24 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
 
     # Stage 0.2 Sample without replacement from those rollouts and label them (synthetically)
     # TODO abstract this and use the same function in training
-    num_pretraining_labels = args.n_initial_agent_steps // (2*args.clip_length)
-    print('Stage 0.2: Sample without replacement from those rollouts to collect {} == {} / (2*{}) preference tuples'.format(num_pretraining_labels, args.n_initial_agent_steps, args.clip_length))
-    writer1.add_scalar('labels requested per round', num_pretraining_labels, -1)
+    # num_pretraining_labels = args.n_initial_agent_steps // (2*args.clip_length)
+    print('Stage 0.2: Sample without replacement from those rollouts to collect {} == {} / (2*{}) preference tuples'.format(args.n_labels_pretraining, args.n_initial_agent_steps, args.clip_length))
+    writer1.add_scalar('labels requested per round', args.n_labels_pretraining, -1)
     if args.active_learning:
         print('Doing Active Learning, so actually collect {} preference tuples and select the best 1/{} using {} method'.format(
-                args.selection_factor * num_pretraining_labels, args.selection_factor, args.active_learning))
-        rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample(args.selection_factor * num_pretraining_labels)
+                args.selection_factor * args.n_labels_pretraining, args.selection_factor, args.active_learning))
+        rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample(args.selection_factor * args.n_labels_pretraining)
         if args.active_learning == 'MC_variance':
             info_per_clip_pair = compute_MC_variance(rand_clip_pairs, reward_model, args.num_MC_samples)
         elif args.active_learning == 'info_gain':
             info_per_clip_pair = compute_entropy_reductions(rand_clip_pairs, reward_model, args.num_MC_samples)
         elif args.active_learning == 'ensemble_variance':
             info_per_clip_pair = compute_ensemble_variance(rand_clip_pairs, reward_model)
-        idx = np.argpartition(info_per_clip_pair, -num_pretraining_labels)[-num_pretraining_labels:] # see: tinyurl.com/ya7xr4kn
+        idx = np.argpartition(info_per_clip_pair, -args.n_labels_pretraining)[-args.n_labels_pretraining:] # see: tinyurl.com/ya7xr4kn
         clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx] # returned indices are not sorted
         log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num=-1)
     else:
-        clip_pairs, rews, mus = agent_experience.sample(num_pretraining_labels)
+        clip_pairs, rews, mus = agent_experience.sample(args.n_labels_pretraining)
     # put chosen clip_pairs, true rewards (just to compute mean/var of true reward across prefs_buffer)
     # and synthetic preferences into prefs_buffer
     prefs_buffer.push(clip_pairs, rews, mus)
@@ -161,11 +163,12 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
                                                                  obs_shape, act_shape, writer1, writer2)
         
         # Stage 1.2: Sample clip pairs without replacement from recent rollouts and label them (synthetically)
-        num_labels_requested = int(50*5 / (i_train_round + 5)) #int(58.56 * (5e6 / (i_train_round * args.n_agent_steps + 5e6) )) # compute_label_annealing_const.py
-        print('Stage 1.2: Sample without replacement from those rollouts to collect {} preference tuples'.format(num_labels_requested))
+        # num_labels_requested = int(50*5 / (i_train_round + 5)) #int(58.56 * (5e6 / (i_train_round * args.n_agent_steps + 5e6) )) # compute_label_annealing_const.py
+        num_labels_requested = args.n_labels_per_round[i_train_round]
+        print('Stage 1.2: Sample without replacement from those rollouts to collect {} labels/preference tuples'.format(num_labels_requested))
         writer1.add_scalar('labels requested per round', num_labels_requested, i_train_round)
         if args.active_learning:
-            print('Doing Active Learning, so actually collect {} preference tuples and select the best 1/{} using {} method'.format(
+            print('Doing Active Learning, so actually collect {} labels and select the best 1/{} using {} method'.format(
                 args.selection_factor * num_labels_requested, args.selection_factor, args.active_learning))
             rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample(args.selection_factor * num_labels_requested)
             if args.active_learning == 'MC_variance':
