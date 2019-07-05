@@ -20,6 +20,8 @@ def parse_arguments():
     parser.add_argument('--env_class', type=str, default='CartPoleContinuous-v0')
     parser.add_argument('--n_rounds', type=int, default=10, help='number of rounds to repeat main training loop')
     parser.add_argument('--RL_baseline', action='store_true', help='Do RL baseline instead of reward learning?')
+    parser.add_argument('--random_policy', action='store_true', help='Do the experiments with an entirely random policy, to benchmark performance')
+    parser.add_argument('--ep_end_penalty', type=float, default=-29.0, help='How much reward does agent get when the (dummy) episode ends?')
     parser.add_argument('--info', type=str, default='', help='Tensorboard log is saved in ./logs/*info*_pred/true')
     parser.add_argument('--random_seed', type=int, default=0)
     parser.add_argument('--test', action='store_true', help='Flag to make training procedure very short (to check for errors)')
@@ -37,7 +39,7 @@ def parse_arguments():
     parser.add_argument('--epsilon_start', type=float, default=1.0, help='exploration probability for agent at start')
     parser.add_argument('--epsilon_decay', type=float, default=0.999, help='`epsilon *= epsilon * epsilon_decay` every learning step, until `epsilon_stop`') 
     parser.add_argument('--epsilon_stop', type=float, default=0.01)
-    parser.add_argument('--n_labels_pretraining', type=int, default=5000, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining') # Ibarz: 25k
+    parser.add_argument('--n_labels_pretraining', type=int, default=10, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining') # Ibarz: 25k
     parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[5]*10, help='How many labels to acquire per round? (in main training loop). len should be same as n_rounds')
     parser.add_argument('--n_agent_steps', type=int, default=2000, help='No. of steps that agent takes in environment, per round (in main training loop)') # Ibarz: 100k
     parser.add_argument('--dummy_ep_length', type=int, default=200, help="After how many steps do we interpret an 'episode' as having elapsed and log performance? (This affects only result presentation not algo)")
@@ -66,6 +68,11 @@ def parse_arguments():
     # sample complexity rather than computational complexity (we assume it's cheap for the agent to do rollouts
     # and we want to find whether active learning using the same amount of *data from the human* beats the random baseline)
     args = parser.parse_args()
+    if args.RL_baseline:
+        args.n_epochs_pretrain_rm = 0
+        args.n_epochs_train_rm = 0
+    else:
+        assert len(args.n_labels_per_round) == args.n_rounds, "Experiment has {} rounds, but you specified the number labels to collect in {} rounds".format(args.n_rounds, len(args.n_labels_per_round))
     if args.test:
         args.n_rounds=1
         # args.n_initial_agent_steps=3000
@@ -74,9 +81,29 @@ def parse_arguments():
         args.n_epochs_train_rm=10
     if args.active_learning == 'ensemble_variance':
         assert args.size_rm_ensemble >= 2
-    assert len(args.n_labels_per_round) == args.n_rounds, "Experiment has {} rounds, but you specified no. labels to collect in {} rounds".format(args.n_rounds, len(args.n_labels_per_round))
     return args
     
+def do_random_experiment(env, args, writer1, writer2):
+    for i_train_round in range(args.n_rounds):
+        print('[Start Round {}]'.format(i_train_round))
+        dummy_returns = {'ep': 0, 'all': []}
+        env.reset()
+        for step in trange(args.n_agent_steps, desc='Taking random actions for {} steps'.format(args.n_agent_steps), dynamic_ncols=True):
+            # agent interact with env
+            action = env.action_space.sample()
+            assert env.action_space.contains(action)
+            _, r_true, _, _ = env.step(action) # one continuous episode
+            dummy_returns['ep'] += r_true # record step info
+
+            # log performance after a "dummy" episode has elapsed
+            if (step % args.dummy_ep_length == 0 or step == args.n_agent_steps - 1):
+                writer2.add_scalar('2.dummy ep return against step/round {}'.format(i_train_round), dummy_returns['ep'], step)
+                dummy_returns['all'].append(dummy_returns['ep'])
+                dummy_returns['ep'] = 0
+
+        # log mean recent return this training round
+        mean_dummy_true_returns = np.sum(np.array(dummy_returns['all'][-3:])) / 3. # 3 dummy eps is the final 3*200/2000 == 3/10 eps in the round
+        writer2.add_scalar('1.mean dummy ep returns per training round', mean_dummy_true_returns, i_train_round)
 
 def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_shape, writer1, writer2):
     # Stage 0.1 Initialise policy and do some rollouts
@@ -103,8 +130,8 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
     # Stage 0.2 Sample without replacement from those rollouts and label them (synthetically)
     # TODO abstract this and use the same function in training
     # num_pretraining_labels = args.n_initial_agent_steps // (2*args.clip_length)
-    print('Stage 0.2: Sample without replacement from those rollouts to collect {} == {} / (2*{}) preference tuples'.format(args.n_labels_pretraining, args.n_initial_agent_steps, args.clip_length))
-    writer1.add_scalar('labels requested per round', args.n_labels_pretraining, -1)
+    print('Stage 0.2: Sample without replacement from those rollouts to collect {} labels. Each label is on a pair of clips of length {}'.format(args.n_labels_pretraining, args.clip_length))
+    writer1.add_scalar('6.labels requested per round', args.n_labels_pretraining, -1)
     if args.active_learning:
         print('Doing Active Learning, so actually collect {} preference tuples and select the best 1/{} using {} method'.format(
                 args.selection_factor * args.n_labels_pretraining, args.selection_factor, args.active_learning))
@@ -137,7 +164,7 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
             optimizer_rm.zero_grad()
             loss_rm.backward()
             optimizer_rm.step()
-            writer1.add_scalar('reward model loss/pretraining', loss_rm, epoch)
+            writer1.add_scalar('7.reward model loss/pretraining', loss_rm, epoch)
 
     # evaluate reward model correlation after pretraining
     if not args.RL_baseline:
@@ -166,7 +193,7 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
         # num_labels_requested = int(50*5 / (i_train_round + 5)) #int(58.56 * (5e6 / (i_train_round * args.n_agent_steps + 5e6) )) # compute_label_annealing_const.py
         num_labels_requested = args.n_labels_per_round[i_train_round]
         print('Stage 1.2: Sample without replacement from those rollouts to collect {} labels/preference tuples'.format(num_labels_requested))
-        writer1.add_scalar('labels requested per round', num_labels_requested, i_train_round)
+        writer1.add_scalar('6.labels requested per round', num_labels_requested, i_train_round)
         if args.active_learning:
             print('Doing Active Learning, so actually collect {} labels and select the best 1/{} using {} method'.format(
                 args.selection_factor * num_labels_requested, args.selection_factor, args.active_learning))
@@ -198,7 +225,7 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
                 optimizer_rm.zero_grad()
                 loss_rm.backward()
                 optimizer_rm.step()
-                writer1.add_scalar('reward model loss/round {}'.format(i_train_round), loss_rm, epoch)
+                writer1.add_scalar('7.reward model loss/round {}'.format(i_train_round), loss_rm, epoch)
 
         # evaluate reward model correlation
         if not args.RL_baseline:
@@ -224,26 +251,29 @@ def main():
     writer2 = SummaryWriter(log_dir=logdir+'{}_true'.format(args.info))
 
     # make environment
-    env = gym.make(args.env_class, ep_end_penalty=-4.0)
+    env = gym.make(args.env_class, ep_end_penalty=args.ep_end_penalty)
     obs_shape = env.observation_space.shape[0] # env.observation_space is Box(4,) and calling .shape returns (4,) [gym can be ugly]
     assert isinstance(env.action_space, gym.spaces.Discrete), 'DQN requires discrete action space.'
     act_shape = 1 # [gym doesn't have a nice way to get shape of Discrete space... env.action_space.shape -> () ]
     n_actions = env.action_space.n # env.action_space is Discrete(2) and calling .n returns 2
 
-    # instantiate neural nets and buffer for preferences
-    q_net = DQN(obs_shape, n_actions, args)
-    q_target = DQN(obs_shape, n_actions, args)
-    q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
-    if args.size_rm_ensemble >= 2:
-        reward_model = RewardModelEnsemble(obs_shape, act_shape, args)
-        print('Using a {}-ensemble of nets for our reward model'.format(args.size_rm_ensemble))
+    if args.random_policy:
+        do_random_experiment(env, args, writer1, writer2)
     else:
-        reward_model = RewardModel(obs_shape, act_shape, args)
-    prefs_buffer = PrefsBuffer(capacity=args.prefs_buffer_size, clip_shape=(args.clip_length, obs_shape+act_shape))
+        # instantiate neural nets and buffer for preferences
+        q_net = DQN(obs_shape, n_actions, args)
+        q_target = DQN(obs_shape, n_actions, args)
+        q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
+        if args.size_rm_ensemble >= 2:
+            reward_model = RewardModelEnsemble(obs_shape, act_shape, args)
+            print('Using a {}-ensemble of nets for our reward model'.format(args.size_rm_ensemble))
+        else:
+            reward_model = RewardModel(obs_shape, act_shape, args)
+        prefs_buffer = PrefsBuffer(capacity=args.prefs_buffer_size, clip_shape=(args.clip_length, obs_shape+act_shape))
 
-    # fire away!
-    reward_model, prefs_buffer = do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_shape, writer1, writer2)
-    do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shape, act_shape, writer1, writer2)
+        # fire away!
+        reward_model, prefs_buffer = do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_shape, writer1, writer2)
+        do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shape, act_shape, writer1, writer2)
     
     writer1.close()
     writer2.close()

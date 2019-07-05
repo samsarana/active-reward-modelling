@@ -125,5 +125,5 @@ def log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num):
     selected_info = info_per_clip_pair[idx].sum()
     # print('Total info: {}'.format(total_info))
     # print('Selected info: {}'.format(selected_info))
-    writer1.add_scalar('info_gain_per_round_Total_blue_Selected_orange', selected_info, round_num)
-    writer2.add_scalar('info_gain_per_round_Total_blue_Selected_orange', total_info, round_num)
+    writer1.add_scalar('5.info_gain_per_round_Total_blue_Selected_orange', selected_info, round_num)
+    writer2.add_scalar('5.info_gain_per_round_Total_blue_Selected_orange', total_info, round_num)

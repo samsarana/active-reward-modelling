@@ -246,11 +246,11 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
         # log performance after a "dummy" episode has elapsed
         if (step % args.dummy_ep_length == 0 or step == args.n_agent_steps - 1) and step < n_train_steps:
             if not args.RL_baseline:
-                writer1.add_scalar('dummy ep return against step/round {}'.format(i_train_round), dummy_returns['ep']['pred'], step)
-                writer1.add_scalar('dummy ep return against step normalised/round {}'.format(i_train_round), dummy_returns['ep']['pred_norm'], step)
+                writer1.add_scalar('2.dummy ep return against step/round {}'.format(i_train_round), dummy_returns['ep']['pred'], step)
+                writer1.add_scalar('3.dummy ep return against step normalised/round {}'.format(i_train_round), dummy_returns['ep']['pred_norm'], step)
             # interpreting writers: 2 == blue == true!
-            writer2.add_scalar('dummy ep return against step/round {}'.format(i_train_round), dummy_returns['ep']['true'], step)
-            writer2.add_scalar('dummy ep return against step normalised/round {}'.format(i_train_round), dummy_returns['ep']['true_norm'], step)
+            writer2.add_scalar('2.dummy ep return against step/round {}'.format(i_train_round), dummy_returns['ep']['true'], step)
+            writer2.add_scalar('3.dummy ep return against step normalised/round {}'.format(i_train_round), dummy_returns['ep']['true_norm'], step)
             for key, value in dummy_returns['ep'].items():
                 dummy_returns['all'][key].append(value)
                 dummy_returns['ep'][key] = 0
@@ -265,10 +265,10 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
             loss_agent.backward()
             optimizer_agent.step()
             # decay epsilon every learning step
-            writer1.add_scalar('agent epsilon/round {}'.format(i_train_round), q_net.epsilon, step)
+            writer1.add_scalar('9.agent epsilon/round {}'.format(i_train_round), q_net.epsilon, step)
             if q_net.epsilon > q_net.epsilon_stop:
                 q_net.epsilon *= q_net.epsilon_decay
-            writer1.add_scalar('agent loss/round {}'.format(i_train_round), loss_agent, step)
+            writer1.add_scalar('8.agent loss/round {}'.format(i_train_round), loss_agent, step)
             # scheduler.step() # Ibarz doesn't mention lr annealing...
 
             # update q_target
@@ -279,9 +279,9 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
 
     # log mean recent return this training round
     mean_dummy_true_returns = np.sum(np.array(dummy_returns['all']['true'][-3:])) / 3. # 3 dummy eps is the final 3*200/3000 == 1/5 eps in the round
-    writer2.add_scalar('mean dummy ep returns per training round', mean_dummy_true_returns, i_train_round)
+    writer2.add_scalar('1.mean dummy ep returns per training round', mean_dummy_true_returns, i_train_round)
     if not args.RL_baseline:
         mean_dummy_pred_returns = np.sum(np.array(dummy_returns['all']['pred'][-3:])) / 3.
-        writer1.add_scalar('mean dummy ep returns per training round', mean_dummy_pred_returns, i_train_round)
+        writer1.add_scalar('1.mean dummy ep returns per training round', mean_dummy_pred_returns, i_train_round)
     
     return q_net, q_target, replay_buffer, agent_experience
