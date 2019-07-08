@@ -61,7 +61,7 @@ def parse_arguments():
 
     # active learning
     parser.add_argument('--active_learning', type=str, default=None, help='Choice of: MC_variance, info_gain, ensemble_variance')
-    parser.add_argument('--num_MC_samples', type=int, default=100)
+    parser.add_argument('--num_MC_samples', type=int, default=10)
     parser.add_argument('--size_rm_ensemble', type=int, default=1, help='If active_learning == ensemble_variance then this must be >= 2')
     parser.add_argument('--selection_factor', type=int, default=10, help='when doing active learning, 1/selection_factor of the randomly sampled clip pairs are sent to human for evaluation')
     # if doing active learning n_steps_(pre)train is automatically increased by this factor bc we consider
