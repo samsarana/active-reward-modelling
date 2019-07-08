@@ -4,6 +4,25 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from reward_model import RewardModelEnsemble
 
+def acquire_clip_pairs_v0(agent_experience, num_labels_requested, args, writer1, writer2, i_train_round):
+    print('Doing Active Learning, so actually collect {} labels and select the best 1/{} using {} method'.format(
+        args.selection_factor * num_labels_requested, args.selection_factor, args.active_learning))
+    rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample_pairs(args.selection_factor * num_labels_requested)
+    if args.active_learning == 'MC_variance':
+        info_per_clip_pair = compute_MC_variance(rand_clip_pairs, reward_model, args.num_MC_samples)
+    elif args.active_learning == 'info_gain':
+        info_per_clip_pair = compute_info_gain(rand_clip_pairs, reward_model, args.num_MC_samples)
+    elif args.active_learning == 'ensemble_variance':
+        info_per_clip_pair = compute_ensemble_variance(rand_clip_pairs, reward_model)
+    idx = np.argpartition(info_per_clip_pair, -num_labels_requested)[-num_labels_requested:] # see: tinyurl.com/ya7xr4kn
+    clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx] # returned indices are not sorted
+    log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
+    return clip_pairs, rews, mus
+
+# def acquire_clip_pairs_v1():
+
+#     return clip_pairs, rews, mus
+
 def compute_info_gain(rand_clip_pairs, reward_model, num_MC_samples):
     """NB this is just an assert-free version of compute_entropy_reductions...
        Takes np.array rand_clip_pairs with shape
@@ -30,16 +49,7 @@ def compute_info_gain(rand_clip_pairs, reward_model, num_MC_samples):
     # assert E_p_hat_12_per_batch.shape == (batch_size,)
     H_y_xD = F.binary_cross_entropy(input=E_p_hat_12_per_batch, target=E_p_hat_12_per_batch, reduction='none')
 
-    # TODO is it correct NOT to do fresh draw from posterior?
-    # NB when I tried doing fresh draws, this made (info_gain >= 0).all() False !! (which seems bad...)
-    # If you do want fresh draws after all, here is the code:
-    # -------------------------------------------------------
-    # r_preds_per_oa_pair = torch.cat([
-    #     reward_model(clip_pairs_tensor).detach() for _ in range(num_MC_samples)
-    # ], dim=-1) # concatenate r_preds for same s-a pairs together
-    # exp_sum_r_preds_per_batch_pair_draw = r_preds_per_oa_pair.sum(dim=2).exp()
-    # p_hat_12_per_batch_draw = exp_sum_r_preds_per_batch_pair_draw[:, 0, :] / exp_sum_r_preds_per_batch_pair_draw.sum(dim=1)
-    # -------------------------------------------------------
+    # use the *same* draws from the posterior to approximate the second term
     X_entropy_per_batch_draw = F.binary_cross_entropy(input=p_hat_12_per_batch_draw, target=p_hat_12_per_batch_draw, reduction='none')
     # assert X_entropy_per_batch_draw.shape == (batch_size, num_MC_samples)
     E_H_y_xDw = X_entropy_per_batch_draw.mean(dim=1)
@@ -49,7 +59,7 @@ def compute_info_gain(rand_clip_pairs, reward_model, num_MC_samples):
     # assert (info_gain >= 0).all()
     return info_gain
 
-def compute_entropy_reductions(rand_clip_pairs, reward_model, num_MC_samples=100):
+def compute_info_gain_w_checks(rand_clip_pairs, reward_model, num_MC_samples=100):
     """Takes np.array rand_clip_pairs with shape
        (batch_size, 2, clip_length, obs_act_length)
        as well as reward_model, and returns np.array with shape

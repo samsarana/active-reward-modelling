@@ -134,18 +134,7 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
     print('Stage 0.2: Sample without replacement from those rollouts to collect {} labels. Each label is on a pair of clips of length {}'.format(args.n_labels_pretraining, args.clip_length))
     writer1.add_scalar('6.labels requested per round', args.n_labels_pretraining, -1)
     if args.active_learning:
-        print('Doing Active Learning, so actually collect {} preference tuples and select the best 1/{} using {} method'.format(
-                args.selection_factor * args.n_labels_pretraining, args.selection_factor, args.active_learning))
-        rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample_pairs(args.selection_factor * args.n_labels_pretraining)
-        if args.active_learning == 'MC_variance':
-            info_per_clip_pair = compute_MC_variance(rand_clip_pairs, reward_model, args.num_MC_samples)
-        elif args.active_learning == 'info_gain':
-            info_per_clip_pair = compute_info_gain(rand_clip_pairs, reward_model, args.num_MC_samples)
-        elif args.active_learning == 'ensemble_variance':
-            info_per_clip_pair = compute_ensemble_variance(rand_clip_pairs, reward_model)
-        idx = np.argpartition(info_per_clip_pair, -args.n_labels_pretraining)[-args.n_labels_pretraining:] # see: tinyurl.com/ya7xr4kn
-        clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx] # returned indices are not sorted
-        log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num=-1)
+        clip_pairs, rews, mus = acquire_clip_pairs_v0(agent_experience, args.n_labels_pretraining, args, writer1, writer2, i_train_round=-1)
     else:
         clip_pairs, rews, mus = agent_experience.sample_pairs(args.n_labels_pretraining)
     # put chosen clip_pairs, true rewards (just to compute mean/var of true reward across prefs_buffer)
@@ -196,18 +185,7 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
         print('Stage 1.2: Sample without replacement from those rollouts to collect {} labels/preference tuples'.format(num_labels_requested))
         writer1.add_scalar('6.labels requested per round', num_labels_requested, i_train_round)
         if args.active_learning:
-            print('Doing Active Learning, so actually collect {} labels and select the best 1/{} using {} method'.format(
-                args.selection_factor * num_labels_requested, args.selection_factor, args.active_learning))
-            rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample_pairs(args.selection_factor * num_labels_requested)
-            if args.active_learning == 'MC_variance':
-                info_per_clip_pair = compute_MC_variance(rand_clip_pairs, reward_model, args.num_MC_samples)
-            elif args.active_learning == 'info_gain':
-                info_per_clip_pair = compute_info_gain(rand_clip_pairs, reward_model, args.num_MC_samples)
-            elif args.active_learning == 'ensemble_variance':
-                info_per_clip_pair = compute_ensemble_variance(rand_clip_pairs, reward_model)
-            idx = np.argpartition(info_per_clip_pair, -num_labels_requested)[-num_labels_requested:] # see: tinyurl.com/ya7xr4kn
-            clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx] # returned indices are not sorted
-            log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
+            clip_pairs, rews, mus = acquire_clip_pairs_v0(agent_experience, num_labels_requested, args, writer1, writer2, i_train_round)
         else:
             clip_pairs, rews, mus = agent_experience.sample_pairs(num_labels_requested)
         # put labelled clip_pairs into prefs_buffer
