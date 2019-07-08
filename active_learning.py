@@ -8,19 +8,46 @@ def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, 
     print('Doing Active Learning, so actually collect {} labels and select the best 1/{} using {} method'.format(
         args.selection_factor * num_labels_requested, args.selection_factor, args.active_learning))
     rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample_pairs(args.selection_factor * num_labels_requested)
-    if args.active_learning == 'MC_variance':
-        info_per_clip_pair = compute_MC_variance(rand_clip_pairs, reward_model, args.num_MC_samples)
-    elif args.active_learning == 'info_gain':
+    if args.active_learning == 'BALD':
         info_per_clip_pair = compute_info_gain(rand_clip_pairs, reward_model, args.num_MC_samples)
+    elif args.active_learning == 'MC_variance':
+        info_per_clip_pair = compute_MC_variance(rand_clip_pairs, reward_model, args.num_MC_samples)
     elif args.active_learning == 'ensemble_variance':
         info_per_clip_pair = compute_ensemble_variance(rand_clip_pairs, reward_model)
+    else:
+        raise RuntimeError("You specified {} as the active_learning type, but I don't know what that is!".format(args.active_learning))
     idx = np.argpartition(info_per_clip_pair, -num_labels_requested)[-num_labels_requested:] # see: tinyurl.com/ya7xr4kn
     clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx] # returned indices are not sorted
     log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
     return clip_pairs, rews, mus
 
-def acquire_clip_pairs_v1():
-    
+def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, args, writer1, writer2, i_train_round):
+    """1. Samples m = `args.selection_factor * num_labels_requested` clips from agent_experience.
+       2. Finds the clip with minimum entropy according to current reward_model (using a given 
+           Active Learning method). This will be the reference clip `sigma_1`.
+       3. For every other clip `sigma_2` in agent_experience, computes the mutual information
+          between the predicted label of (`sigma_1`, `sigma_2`) and `reward_model` parameters.
+          (This is for BALD. If `args.active_learning != 'bald'` then use some other method.)
+       4. Return batch of (sigma_1, sigma_2, mu) with the sigma_2's that maximise the MI.
+          Batch size is `num_labels_requested`. Also returns corresponding rewards and
+          mu for each clip/pair.
+          clip_pairs.shape == (num_labels_requested, 2, args.clip_length, args.obs_act_length)
+          rews.shape       == (num_labels_requested, 2, args.clip_length)
+          mus.shape        == (num_labels_requested,)
+    """
+    print('Doing Active Learning so actually collect {} labels and select the best 1/{} using {} method.'.format(
+        args.selection_factor * num_labels_requested, args.selection_factor, args.active_learning))
+    print("Also, we're using the new clip pair acquisition method.")
+    rand_clips, rand_rews, rand_mus = agent_experience.sample_singles(args.selection_factor * num_labels_requested)
+    if args.active_learning == 'BALD':
+        info_per_clip = compute_info(rand_clips, reward_model, args.num_MC_samples)
+    elif args.active_learning == 'MC_variance':
+        pass
+    elif args.active_learning == 'ensemble_variance':
+        pass
+    else:
+        raise RuntimeError("You specified {} as the active_learning type, but I don't know what that is!".format(args.active_learning))
+    # TODO some more things
     return clip_pairs, rews, mus
 
 def compute_info_gain(rand_clip_pairs, reward_model, num_MC_samples):

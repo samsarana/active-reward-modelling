@@ -258,7 +258,8 @@ def main():
         else:
             reward_model = RewardModel(obs_shape, act_shape, args)
         prefs_buffer = PrefsBuffer(capacity=args.prefs_buffer_size, clip_shape=(args.clip_length, obs_shape+act_shape))
-
+        # if args.active_learning == 'BALD': # TODO better code design to instantiate acq_funcs out here? do we need different acq_funcs for singles and pairs?
+        #     acq_func = 'blah'
         # fire away!
         reward_model, prefs_buffer = do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_shape, writer1, writer2)
         do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shape, act_shape, writer1, writer2)
