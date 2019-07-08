@@ -136,7 +136,7 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
     if args.active_learning:
         print('Doing Active Learning, so actually collect {} preference tuples and select the best 1/{} using {} method'.format(
                 args.selection_factor * args.n_labels_pretraining, args.selection_factor, args.active_learning))
-        rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample(args.selection_factor * args.n_labels_pretraining)
+        rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample_pairs(args.selection_factor * args.n_labels_pretraining)
         if args.active_learning == 'MC_variance':
             info_per_clip_pair = compute_MC_variance(rand_clip_pairs, reward_model, args.num_MC_samples)
         elif args.active_learning == 'info_gain':
@@ -147,7 +147,7 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
         clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx] # returned indices are not sorted
         log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num=-1)
     else:
-        clip_pairs, rews, mus = agent_experience.sample(args.n_labels_pretraining)
+        clip_pairs, rews, mus = agent_experience.sample_pairs(args.n_labels_pretraining)
     # put chosen clip_pairs, true rewards (just to compute mean/var of true reward across prefs_buffer)
     # and synthetic preferences into prefs_buffer
     prefs_buffer.push(clip_pairs, rews, mus)
@@ -198,7 +198,7 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
         if args.active_learning:
             print('Doing Active Learning, so actually collect {} labels and select the best 1/{} using {} method'.format(
                 args.selection_factor * num_labels_requested, args.selection_factor, args.active_learning))
-            rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample(args.selection_factor * num_labels_requested)
+            rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample_pairs(args.selection_factor * num_labels_requested)
             if args.active_learning == 'MC_variance':
                 info_per_clip_pair = compute_MC_variance(rand_clip_pairs, reward_model, args.num_MC_samples)
             elif args.active_learning == 'info_gain':
@@ -209,7 +209,7 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
             clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx] # returned indices are not sorted
             log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
         else:
-            clip_pairs, rews, mus = agent_experience.sample(num_labels_requested)
+            clip_pairs, rews, mus = agent_experience.sample_pairs(num_labels_requested)
         # put labelled clip_pairs into prefs_buffer
         assert len(clip_pairs) == num_labels_requested
         prefs_buffer.push(clip_pairs, rews, mus)

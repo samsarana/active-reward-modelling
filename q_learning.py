@@ -93,7 +93,7 @@ class AgentExperience():
         self.force_label_choice = force_label_choice
         self.clips = np.zeros(shape=experience_shape) # default dtype=np.float64. OK for torching later?
         self.clip_rewards = np.zeros(shape=(self.num_clips, self.clip_length))
-        self.clip_returns = np.zeros(shape=self.num_clips) # TODO remove as it's unused, apart from as a check
+        # self.clip_returns = np.zeros(shape=self.num_clips) # TODO remove as it's unused, apart from as a check
         self.i = 0 # maintain pointer to where to add next clip
 
     def add(self, oa_pair, reward):
@@ -110,12 +110,28 @@ class AgentExperience():
         try:
             self.clips[i_clip, i_step] = oa_pair
             self.clip_rewards[i_clip, i_step] = reward
-            self.clip_returns[i_clip] += reward
+            # self.clip_returns[i_clip] += reward
             self.i += 1 # increment pointer
         except IndexError:
             print('Oopsie, agent_experience buffer (self.clips) is full!')
 
-    def sample(self, batch_size):
+    def sample_singles(self, batch_size):
+        """Samples, without replacement, batch_size *single* clips
+           Returns batch of clips (shape=batch_size, clip_length, obs_act_length)
+           and rewards (shape=batch_size, clip_length)
+           Rewards are returned in order to (i) compute mu later on
+           once clips are paired together, and (ii) compute mean and variance
+           of reward functions over prefs buffer to normalise rewards sent to agent
+           **Assumption: when sampling, self.clips is full**
+        """
+        assert self.i == self.num_clips * self.clip_length, "Whoops, self.clips must be full when sampling otherwise your algo is incorrect!"
+        assert self.clips.shape[0] >= batch_size, "Trying to sample {} clips but agent_experience only has {} clips!".format(batch_size, self.clips.shape[0])
+        rows_i = np.random.choice(batch_size, replace=False)
+        clip_pairs = self.clips[rows_i]
+        rewards = self.clip_rewards[rows_i]
+        return clip_pairs, rewards
+
+    def sample_pairs(self, batch_size):
         """Samples, without replacement, batch_size *pairs* of clips
            i.e. 2 * `batch_size` clips in total
            Returns batch of pairs (shape=batch_size, 2, clip_length, obs_act_length)
@@ -131,8 +147,8 @@ class AgentExperience():
         clip_pairs = self.clips[rows_i] # TODO fancy indexing is slow. is this a bottleneck?
         rewards = self.clip_rewards[rows_i]
         returns = self.clip_rewards[rows_i].sum(axis=-1)
-        returns2 = self.clip_returns[rows_i] # TODO remove clip_returns as an attr of AgentExperience; it's just wasting computation
-        assert (returns == returns2).all()
+        # returns2 = self.clip_returns[rows_i] # TODO remove clip_returns as an attr of AgentExperience; it's just wasting computation
+        # assert (returns == returns2).all()
         if self.force_label_choice:
             mus = np.where(returns[:, 0] > returns[:, 1], 1, 
                             np.where(returns[:, 0] == returns[:, 1], random.choice([0, 1]), 0))
