@@ -4,7 +4,7 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from reward_model import RewardModelEnsemble
 
-def acquire_clip_pairs_v0(agent_experience, num_labels_requested, args, writer1, writer2, i_train_round):
+def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, args, writer1, writer2, i_train_round):
     print('Doing Active Learning, so actually collect {} labels and select the best 1/{} using {} method'.format(
         args.selection_factor * num_labels_requested, args.selection_factor, args.active_learning))
     rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample_pairs(args.selection_factor * num_labels_requested)
