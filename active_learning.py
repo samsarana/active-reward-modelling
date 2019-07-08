@@ -19,9 +19,9 @@ def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, 
     log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
     return clip_pairs, rews, mus
 
-# def acquire_clip_pairs_v1():
-
-#     return clip_pairs, rews, mus
+def acquire_clip_pairs_v1():
+    
+    return clip_pairs, rews, mus
 
 def compute_info_gain(rand_clip_pairs, reward_model, num_MC_samples):
     """NB this is just an assert-free version of compute_entropy_reductions...
