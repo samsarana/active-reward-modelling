@@ -2,7 +2,7 @@ python main.py --info=random_policy --random_policy
 python main.py --info=baseline-0-RL --RL_baseline --n_rounds=2
 python main.py --info=baseline-1-random
 
-python main.py --info=active-BALD-10x-k10-p.2 --active_learning=info_gain
+python main.py --info=active-BALD-10x-T10-p.2 --active_learning=info_gain
 
 python main.py --info=active-BALD-20x --active_learning=info_gain --selection_factor=20
 python main.py --info=active-BALD-50x --active_learning=info_gain --selection_factor=50
