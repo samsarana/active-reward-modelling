@@ -4,6 +4,51 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from reward_model import RewardModelEnsemble
 
+def compute_info_gain(rand_clip_pairs, reward_model, num_MC_samples):
+    """NB this is just an assert-free version of compute_entropy_reductions...
+       Takes np.array rand_clip_pairs with shape
+       (batch_size, 2, clip_length, obs_act_length)
+       as well as reward_model, and returns np.array with shape
+       (batch_size,) of the information gain
+       resulting from adding each clip pair to the dataset, as per
+       the BALD algo (Houlsby et al., 2011), or more
+       specifically its approximation using MC samples from
+       (Gal et al. 2017)
+    """
+    # batch_size, _, clip_length, _ = rand_clip_pairs.shape # used only in asserts
+    reward_model.train() # MC-Dropout
+    clip_pairs_tensor = torch.from_numpy(rand_clip_pairs).float()
+    r_preds_per_oa_pair = torch.cat([
+        reward_model(clip_pairs_tensor).detach() for _ in range(num_MC_samples)
+    ], dim=-1) # concatenate r_preds for same s-a pairs together
+    # assert r_preds_per_oa_pair.shape == (batch_size, 2, clip_length, num_MC_samples)
+    exp_sum_r_preds_per_batch_pair_draw = r_preds_per_oa_pair.sum(dim=2).exp()
+    # assert exp_sum_r_preds_per_batch_pair_draw.shape == (batch_size, 2, num_MC_samples)
+    p_hat_12_per_batch_draw = exp_sum_r_preds_per_batch_pair_draw[:, 0, :] / exp_sum_r_preds_per_batch_pair_draw.sum(dim=1)
+    # assert p_hat_12_per_batch_draw.shape == (batch_size, num_MC_samples)
+    E_p_hat_12_per_batch = p_hat_12_per_batch_draw.mean(dim=1)
+    # assert E_p_hat_12_per_batch.shape == (batch_size,)
+    H_y_xD = F.binary_cross_entropy(input=E_p_hat_12_per_batch, target=E_p_hat_12_per_batch, reduction='none')
+
+    # TODO is it correct NOT to do fresh draw from posterior?
+    # NB when I tried doing fresh draws, this made (info_gain >= 0).all() False !! (which seems bad...)
+    # If you do want fresh draws after all, here is the code:
+    # -------------------------------------------------------
+    # r_preds_per_oa_pair = torch.cat([
+    #     reward_model(clip_pairs_tensor).detach() for _ in range(num_MC_samples)
+    # ], dim=-1) # concatenate r_preds for same s-a pairs together
+    # exp_sum_r_preds_per_batch_pair_draw = r_preds_per_oa_pair.sum(dim=2).exp()
+    # p_hat_12_per_batch_draw = exp_sum_r_preds_per_batch_pair_draw[:, 0, :] / exp_sum_r_preds_per_batch_pair_draw.sum(dim=1)
+    # -------------------------------------------------------
+    X_entropy_per_batch_draw = F.binary_cross_entropy(input=p_hat_12_per_batch_draw, target=p_hat_12_per_batch_draw, reduction='none')
+    # assert X_entropy_per_batch_draw.shape == (batch_size, num_MC_samples)
+    E_H_y_xDw = X_entropy_per_batch_draw.mean(dim=1)
+    # assert E_H_y_xDw.shape == (batch_size,)
+
+    info_gain = H_y_xD - E_H_y_xDw
+    # assert (info_gain >= 0).all()
+    return info_gain
+
 def compute_entropy_reductions(rand_clip_pairs, reward_model, num_MC_samples=100):
     """Takes np.array rand_clip_pairs with shape
        (batch_size, 2, clip_length, obs_act_length)
@@ -52,7 +97,7 @@ def compute_entropy_reductions(rand_clip_pairs, reward_model, num_MC_samples=100
     assert check1.shape == (batch_size, num_MC_samples)
     check2 = check1.mean(dim=1)
     assert check2.shape == (batch_size,)
-    assert torch.all(torch.lt(torch.abs(torch.add(E_H_y_xDw, -check2)), 1e-6))
+    assert torch.all(torch.lt(torch.abs(torch.add(E_H_y_xDw, -check2)), 1e-4))
 
     info_gain = H_y_xD - E_H_y_xDw
     assert (info_gain >= 0).all()

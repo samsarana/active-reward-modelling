@@ -102,7 +102,8 @@ def do_random_experiment(env, args, writer1, writer2):
                 dummy_returns['ep'] = 0
 
         # log mean recent return this training round
-        mean_dummy_true_returns = np.sum(np.array(dummy_returns['all'][-3:])) / 3. # 3 dummy eps is the final 3*200/2000 == 3/10 eps in the round
+        # mean_dummy_true_returns = np.sum(np.array(dummy_returns['all'][-3:])) / 3. # 3 dummy eps is the final 3*200/2000 == 3/10 eps in the round
+        mean_dummy_true_returns = np.sum(np.array(dummy_returns['all']))
         writer2.add_scalar('1.mean dummy ep returns per training round', mean_dummy_true_returns, i_train_round)
 
 def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_shape, writer1, writer2):
@@ -139,7 +140,7 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
         if args.active_learning == 'MC_variance':
             info_per_clip_pair = compute_MC_variance(rand_clip_pairs, reward_model, args.num_MC_samples)
         elif args.active_learning == 'info_gain':
-            info_per_clip_pair = compute_entropy_reductions(rand_clip_pairs, reward_model, args.num_MC_samples)
+            info_per_clip_pair = compute_info_gain(rand_clip_pairs, reward_model, args.num_MC_samples)
         elif args.active_learning == 'ensemble_variance':
             info_per_clip_pair = compute_ensemble_variance(rand_clip_pairs, reward_model)
         idx = np.argpartition(info_per_clip_pair, -args.n_labels_pretraining)[-args.n_labels_pretraining:] # see: tinyurl.com/ya7xr4kn
@@ -201,7 +202,7 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
             if args.active_learning == 'MC_variance':
                 info_per_clip_pair = compute_MC_variance(rand_clip_pairs, reward_model, args.num_MC_samples)
             elif args.active_learning == 'info_gain':
-                info_per_clip_pair = compute_entropy_reductions(rand_clip_pairs, reward_model, args.num_MC_samples)
+                info_per_clip_pair = compute_info_gain(rand_clip_pairs, reward_model, args.num_MC_samples)
             elif args.active_learning == 'ensemble_variance':
                 info_per_clip_pair = compute_ensemble_variance(rand_clip_pairs, reward_model)
             idx = np.argpartition(info_per_clip_pair, -num_labels_requested)[-num_labels_requested:] # see: tinyurl.com/ya7xr4kn
