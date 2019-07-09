@@ -244,6 +244,7 @@ def main():
     assert isinstance(env.action_space, gym.spaces.Discrete), 'DQN requires discrete action space.'
     act_shape = 1 # [gym doesn't have a nice way to get shape of Discrete space... env.action_space.shape -> () ]
     n_actions = env.action_space.n # env.action_space is Discrete(2) and calling .n returns 2
+    args.obs_act_shape = obs_shape + act_shape
 
     if args.random_policy:
         do_random_experiment(env, args, writer1, writer2)
