@@ -160,51 +160,6 @@ def compute_info_gain(rand_clip_pairs, reward_model, args):
     # assert (info_gain >= 0).all()
     return info_gain
 
-# TODO delete this function
-def compute_MC_variance(rand_clip_pairs, reward_model, num_MC_samples):
-    """Takes np.array rand_clip_pairs with shape
-       (batch_size, 2, clip_length, obs_act_shape)
-       as well as reward_model, and returns np.array with shape
-       (batch_size,) of the predictive variance of the reward model
-       summed over all (state, action) pairs in the pair of clips
-       (e.g. 50 state-action pairs with default settings)
-       for each clip_pair, according to MC-Dropout.
-    """
-    reward_model.train() # MC-Dropout
-    batch_size, _, clip_length, _ = rand_clip_pairs.shape
-    clip_pairs_tensor = torch.from_numpy(rand_clip_pairs).float()
-    r_preds_per_oa_pair = torch.cat([
-        reward_model(clip_pairs_tensor).detach() for _ in range(num_MC_samples)
-    ], dim=-1) # concatenate r_preds for same s-a pairs together
-    assert r_preds_per_oa_pair.shape == (batch_size, 2, clip_length, num_MC_samples)
-    var_r_preds_per_oa_pair = r_preds_per_oa_pair.var(dim=-1) # take variance across r_preds for each s-a pair
-    assert var_r_preds_per_oa_pair.shape == (batch_size, 2, clip_length)
-    var_r_preds_per_clip_pair = var_r_preds_per_oa_pair.sum(dim=-1).sum(dim=-1)
-    assert var_r_preds_per_clip_pair.shape == (batch_size,)
-    return var_r_preds_per_clip_pair.numpy()
-
-# TODO delete this function
-def compute_ensemble_variance(rand_clip_pairs, reward_model):
-    """Takes np.array rand_clip_pairs with shape
-       (batch_size, 2, clip_length, obs_act_shape)
-       as well as reward_model which must be an ensemble
-       (in particular, it must have a variance(.) method)
-       and returns np.array with shape
-       (batch_size,) of the predictive variance of the ensemble
-       summed over all (state, action) pairs in the pair of clips
-       (e.g. 50 state-action pairs with default settings)
-       for each clip_pair.
-    """
-    assert isinstance(reward_model, RewardModelEnsemble)
-    batch_size, _, clip_length, _ = rand_clip_pairs.shape # this line only used for asserts
-    reward_model.eval() # no dropout
-    clip_pairs_tensor = torch.from_numpy(rand_clip_pairs).float()
-    pred_vars_per_oa_pair = reward_model.variance(clip_pairs_tensor).detach()
-    assert pred_vars_per_oa_pair.shape == (batch_size, 2, clip_length)
-    pred_vars_per_clip_pair = pred_vars_per_oa_pair.sum(dim=-1).sum(dim=-1)
-    assert pred_vars_per_clip_pair.shape == (batch_size,)
-    return pred_vars_per_clip_pair.numpy()
-
 
 def log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num):
     """1. Plots a bar chart with the info of each clip pair
