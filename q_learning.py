@@ -126,7 +126,7 @@ class AgentExperience():
         """
         assert self.i == self.num_clips * self.clip_length, "Whoops, self.clips must be full when sampling otherwise your algo is incorrect!"
         assert self.clips.shape[0] >= batch_size, "Trying to sample {} clips but agent_experience only has {} clips!".format(batch_size, self.clips.shape[0])
-        rows_i = np.random.choice(batch_size, replace=False)
+        rows_i = np.random.choice(batch_size, size=(batch_size,), replace=False)
         clip_pairs = self.clips[rows_i]
         rewards = self.clip_rewards[rows_i]
         return clip_pairs, rewards

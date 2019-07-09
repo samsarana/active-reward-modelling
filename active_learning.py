@@ -110,7 +110,7 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
     idx = np.argpartition(info_per_clip_pair, -num_labels_requested)[-num_labels_requested:] # see: tinyurl.com/ya7xr4kn
 
     # compute mu
-    returns = rand_clips_paired_w_ref_rews[idx].sum(axis=-1) # sum up rews in each clip
+    returns = rand_clips_paired_w_ref_rews.sum(axis=-1) # sum up rews in each clip
     if args.force_label_choice:
         rand_mus = np.where(returns[:, 0] > returns[:, 1], 1, 
                         np.where(returns[:, 0] == returns[:, 1], random.choice([0, 1]), 0))
@@ -120,7 +120,7 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
     assert rand_mus.shape == (args.selection_factor*num_labels_requested,)
 
     clip_pairs, rews, mus = rand_clips_paired_w_ref[idx], rand_clips_paired_w_ref_rews[idx], rand_mus[idx] # returned indices are not sorted
-    log_active_learning(rand_clips_paired_w_ref, idx, writer1, writer2, round_num=i_train_round)
+    log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
     return clip_pairs, rews, mus
 
 
@@ -218,7 +218,7 @@ def compute_info_gain_MC_w_checks(rand_clip_pairs, reward_model, num_MC_samples)
     return info_gain
 
 
-def  compute_MC_variance(rand_clip_pairs, reward_model, num_MC_samples):
+def compute_MC_variance(rand_clip_pairs, reward_model, num_MC_samples):
     """Takes np.array rand_clip_pairs with shape
        (batch_size, 2, clip_length, obs_act_shape)
        as well as reward_model, and returns np.array with shape
