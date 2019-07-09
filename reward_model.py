@@ -132,6 +132,19 @@ class RewardModelEnsemble(nn.Module):
             output += net(x)
         return output / self.ensemble_size
 
+    def forward_all(self, x):
+        """Instead of averaging output across `ensemble_size`
+           networks, return tensor of the output from each network
+           in ensemble. Results from different ensembles are
+           concatenated on the innermost dimension.
+           This will be used, for example, in the BALD algo.
+        """
+        outputs = []
+        for ensemble_num in range(self.ensemble_size):
+            net = getattr(self, 'layers{}'.format(ensemble_num))
+            outputs.append(net(x))
+        return torch.cat(outputs, dim=-1)
+
     def variance(self, x):
         """Returns predictive variance of the networks
            in the ensemble, on input x

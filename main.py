@@ -103,8 +103,8 @@ def do_random_experiment(env, args, writer1, writer2):
                 dummy_returns['ep'] = 0
 
         # log mean recent return this training round
-        # mean_dummy_true_returns = np.sum(np.array(dummy_returns['all'][-3:])) / 3. # 3 dummy eps is the final 3*200/2000 == 3/10 eps in the round
-        mean_dummy_true_returns = np.sum(np.array(dummy_returns['all']))
+        mean_dummy_true_returns = np.sum(np.array(dummy_returns['all'][-3:])) / 3. # 3 dummy eps is the final 3*200/2000 == 3/10 eps in the round
+        # mean_dummy_true_returns = np.sum(np.array(dummy_returns['all'])) / len(dummy_returns['all'])
         writer2.add_scalar('1.mean dummy ep returns per training round', mean_dummy_true_returns, i_train_round)
 
 def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_shape, writer1, writer2):
@@ -136,7 +136,7 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
     writer1.add_scalar('6.labels requested per round', args.n_labels_pretraining, -1)
     if args.active_learning:
         if args.acquisition_search_strategy == 'v0':
-                clip_pairs, rews, mus = acquire_clip_pairs_v0(agent_experience, reward_model, args.n_labels_pretraining, args, writer1, writer2, i_train_round=-1)
+            clip_pairs, rews, mus = acquire_clip_pairs_v0(agent_experience, reward_model, args.n_labels_pretraining, args, writer1, writer2, i_train_round=-1)
         elif args.acquisition_search_strategy == 'v1':
             clip_pairs, rews, mus = acquire_clip_pairs_v1(agent_experience, reward_model, args.n_labels_pretraining, args, writer1, writer2, i_train_round=-1)
     else:

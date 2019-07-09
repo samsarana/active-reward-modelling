@@ -294,12 +294,12 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
                 # q_target.load_state_dict(q_net.state_dict()) # old hard update code
 
     # log mean recent return this training round
-    # mean_dummy_true_returns = np.sum(np.array(dummy_returns['all']['true'][-3:])) / 3. # 3 dummy eps is the final 3*200/3000 == 1/5 eps in the round
-    mean_dummy_true_returns = np.sum(np.array(dummy_returns['all']['true'])) # 3 dummy eps is the final 3*200/3000 == 1/5 eps in the round
+    mean_dummy_true_returns = np.sum(np.array(dummy_returns['all']['true'][-3:])) / 3. # 3 dummy eps is the final 3*200/2000 == 3/10 eps in the round
+    # mean_dummy_true_returns = np.sum(np.array(dummy_returns['all']['true'])) / len(dummy_returns['all']['true'])
     writer2.add_scalar('1.mean dummy ep returns per training round', mean_dummy_true_returns, i_train_round)
     if not args.RL_baseline:
-        # mean_dummy_pred_returns = np.sum(np.array(dummy_returns['all']['pred'][-3:])) / 3.
-        mean_dummy_pred_returns = np.sum(np.array(dummy_returns['all']['pred']))
+        mean_dummy_pred_returns = np.sum(np.array(dummy_returns['all']['pred'][-3:])) / 3.
+        # mean_dummy_pred_returns = np.sum(np.array(dummy_returns['all']['pred'])) / len(dummy_returns['all']['pred'])
         writer1.add_scalar('1.mean dummy ep returns per training round', mean_dummy_pred_returns, i_train_round)
     
     return q_net, q_target, replay_buffer, agent_experience

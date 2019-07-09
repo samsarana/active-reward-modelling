@@ -5,49 +5,6 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from reward_model import RewardModelEnsemble
 
-def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, args, writer1, writer2, i_train_round):
-    print('Doing Active Learning, so actually collect {} labels and select the best 1/{} using {} method'.format(
-        args.selection_factor * num_labels_requested, args.selection_factor, args.active_learning))
-    rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample_pairs(args.selection_factor * num_labels_requested)
-    if args.active_learning == 'BALD-MC':
-        info_per_clip_pair = compute_info_gain_MC(rand_clip_pairs, reward_model, args.num_MC_samples)
-    elif args.active_learning == 'MC_variance':
-        info_per_clip_pair = compute_MC_variance(rand_clip_pairs, reward_model, args.num_MC_samples)
-    elif args.active_learning == 'ensemble_variance':
-        info_per_clip_pair = compute_ensemble_variance(rand_clip_pairs, reward_model)
-    else:
-        raise RuntimeError("You specified {} as the active_learning type, but I don't know what that is!".format(args.active_learning))
-    idx = np.argpartition(info_per_clip_pair, -num_labels_requested)[-num_labels_requested:] # see: tinyurl.com/ya7xr4kn
-    clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx] # returned indices are not sorted
-    log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
-    return clip_pairs, rews, mus
-
-def compute_sample_variance_clipwise(rand_clips, reward_model, args):
-    """Takes array `rand_clips` of shape (batch_size, clip_length, obs_act_shape),
-       and computes `args.num_MC_samples` stochastic forward passes through `reward_model`.
-       Returns an array of shape (batch_size,) of the sample variance of the stochastic
-       forward passes for each clip in `rand_clips`, where the variance of a clip
-       is defined as the sum of the variance of each (obs, action) pair in the clip.
-       TODO correct this docstring to mention either doing stochastic forward passes
-       or ensemble method
-    """
-    batch_size = rand_clips.shape[0] # TODO remove; this is only used for asserts
-    if args.active_learning in ['BALD-ensemble', 'ensemble_variance']: # TODO better: if args.uncert_method == 'ensemble'
-        raise NotImplementedError
-    else: # TODO elif args.uncert_method == 'MC'
-        reward_model.train() # MC dropout
-        clip_pairs_tensor = torch.from_numpy(rand_clips).float()
-        r_preds_per_oa_pair = torch.cat([
-            reward_model(clip_pairs_tensor).detach() for _ in range(args.num_MC_samples)
-        ], dim=-1) # concatenate r_preds for same s-a pairs together
-        assert r_preds_per_oa_pair.shape == (batch_size, args.clip_length, args.num_MC_samples)
-        var_r_preds_per_oa_pair = r_preds_per_oa_pair.var(dim=-1) # take variance across r_preds for each s-a pair
-        assert var_r_preds_per_oa_pair.shape == (batch_size, args.clip_length)
-        var_r_preds_per_clip = var_r_preds_per_oa_pair.sum(dim=-1)
-        assert var_r_preds_per_clip.shape == (batch_size,)
-    return var_r_preds_per_clip.numpy()
-
-
 def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, args, writer1, writer2, i_train_round):
     """1. Samples m = `args.selection_factor * num_labels_requested` clips from agent_experience.
        2. Finds the clip with minimum uncertainty according to current reward_model (using the sample
@@ -91,9 +48,9 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
     assert rand_clips_paired_w_ref_rews.shape == (args.selection_factor*num_labels_requested, 2, args.clip_length)
 
     # step 3 # TODO clean up ugly if-elifs. Also the taxonomy of methods is: ensemble/MC x BALD/var_ratios/max_entropy/naive variance. Structure code to reflect this.
-    # in other words, we should have args.uncertainty_method and args.active_method
+    # in other words, we should have args.uncert_method and args.active_method
     if args.active_learning == 'BALD-MC':
-        info_per_clip_pair = compute_info_gain_MC(rand_clips_paired_w_ref, reward_model, args.num_MC_samples)
+        info_per_clip_pair = compute_info_gain(rand_clips_paired_w_ref, reward_model, args.num_MC_samples)
     elif args.active_learning == 'BALD-ensemble':
         raise NotImplementedError
     elif args.active_learning == 'var_ratios':
@@ -124,97 +81,81 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
     return clip_pairs, rews, mus
 
 
-def compute_info_gain_MC(rand_clip_pairs, reward_model, num_MC_samples):
-    """NB this is just an assert-free version of compute_entropy_reductions...
-       Takes np.array rand_clip_pairs with shape
+def sample_reward_model(reward_model, clips, args):
+    """Takes array `clips` which must have shape[-1] == args.obs_act_shape
+       and uses sampling method `args.uncert_method` to generate samples
+       from the approximate poserior `reward_model`.
+       Returns `r_preds_per_oa_pair` of the same shape as `clips` but with
+       the obs_act_shape dimension removed.
+    """
+    batch_size = clips.shape[0] # TODO remove; this is only used for asserts
+    clips_tensor = torch.from_numpy(clips).float()
+    if args.uncert_method == 'MC':
+        reward_model.train() # MC dropout
+        r_preds_per_oa_pair = torch.cat([
+            reward_model(clips_tensor).detach() for _ in range(args.num_MC_samples)
+        ], dim=-1) # concatenate r_preds for same s-a pairs together
+        check_num_samples = args.num_MC_samples
+    elif args.uncert_method == 'ensemble':
+        r_preds_per_oa_pair = reward_model.forward_all(clips_tensor).detach() # TODO check this line
+        check_num_samples = reward_model.ensemble_size
+    else:
+        raise NotImplementedError("You specified {} as the `uncert_method`, but I don't know what that is!".format(args.uncert_method))
+    assert r_preds_per_oa_pair.shape[0] == batch_size
+    assert r_preds_per_oa_pair.shape[-2] == args.clip_length 
+    assert r_preds_per_oa_pair.shape[-1] == check_num_samples
+    if len(r_preds_per_oa_pair.shape) == 4:
+        r_preds_per_oa_pair.shape[1] == 2
+    return r_preds_per_oa_pair
+
+
+def compute_sample_variance_clipwise(rand_clips, reward_model, args):
+    """Takes array `rand_clips` of shape (batch_size, clip_length, obs_act_shape),
+       and computes `args.num_MC_samples` stochastic forward passes through `reward_model`.
+       Returns an array of shape (batch_size,) of the sample variance of the stochastic
+       forward passes for each clip in `rand_clips`, where the variance of a clip
+       is defined as the sum of the variance of each (obs, action) pair in the clip.
+       TODO correct this docstring to mention either doing stochastic forward passes
+       or ensemble method
+    """
+    r_preds_per_oa_pair = sample_reward_model(reward_model, rand_clips, args)
+    batch_size = rand_clips.shape[0] # TODO remove; this is only used for asserts
+    var_r_preds_per_oa_pair = r_preds_per_oa_pair.var(dim=-1) # take variance across r_preds for each s-a pair
+    assert var_r_preds_per_oa_pair.shape == (batch_size, args.clip_length)
+    var_r_preds_per_clip = var_r_preds_per_oa_pair.sum(dim=-1)
+    assert var_r_preds_per_clip.shape == (batch_size,)
+    return var_r_preds_per_clip.numpy()
+
+
+def compute_info_gain(rand_clip_pairs, reward_model, args):
+    """Takes np.array rand_clip_pairs with shape
        (batch_size, 2, clip_length, obs_act_shape)
        as well as reward_model, and returns np.array with shape
        (batch_size,) of the information gain
        resulting from adding each clip pair to the dataset, as per
        the BALD algo (Houlsby et al., 2011), or more
-       specifically its approximation using MC samples from
-       (Gal et al. 2017)
+       specifically its approximation using samples from either the
+       ensemble `reward_model` or using MC dropout (Gal et al. 2017)
     """
-    # batch_size, _, clip_length, _ = rand_clip_pairs.shape # used only in asserts
-    reward_model.train() # MC-Dropout
-    clip_pairs_tensor = torch.from_numpy(rand_clip_pairs).float()
-    r_preds_per_oa_pair = torch.cat([
-        reward_model(clip_pairs_tensor).detach() for _ in range(num_MC_samples)
-    ], dim=-1) # concatenate r_preds for same s-a pairs together
-    # assert r_preds_per_oa_pair.shape == (batch_size, 2, clip_length, num_MC_samples)
-    exp_sum_r_preds_per_batch_pair_draw = r_preds_per_oa_pair.sum(dim=2).exp()
-    # assert exp_sum_r_preds_per_batch_pair_draw.shape == (batch_size, 2, num_MC_samples)
-    p_hat_12_per_batch_draw = exp_sum_r_preds_per_batch_pair_draw[:, 0, :] / exp_sum_r_preds_per_batch_pair_draw.sum(dim=1)
-    # assert p_hat_12_per_batch_draw.shape == (batch_size, num_MC_samples)
-    E_p_hat_12_per_batch = p_hat_12_per_batch_draw.mean(dim=1)
-    # assert E_p_hat_12_per_batch.shape == (batch_size,)
-    H_y_xD = F.binary_cross_entropy(input=E_p_hat_12_per_batch, target=E_p_hat_12_per_batch, reduction='none')
-
-    # use the *same* draws from the posterior to approximate the second term
-    X_entropy_per_batch_draw = F.binary_cross_entropy(input=p_hat_12_per_batch_draw, target=p_hat_12_per_batch_draw, reduction='none')
-    # assert X_entropy_per_batch_draw.shape == (batch_size, num_MC_samples)
-    E_H_y_xDw = X_entropy_per_batch_draw.mean(dim=1)
-    # assert E_H_y_xDw.shape == (batch_size,)
-
-    info_gain = H_y_xD - E_H_y_xDw
-    # assert (info_gain >= 0).all()
-    return info_gain
-
-def compute_info_gain_ensemble(rand_clip_pairs, reward_model, num_MC_samples):
-    pass
-
-def compute_info_gain_MC_w_checks(rand_clip_pairs, reward_model, num_MC_samples):
-    """Takes np.array rand_clip_pairs with shape
-       (batch_size, 2, clip_length, obs_act_shape)
-       as well as reward_model, and returns np.array with shape
-       (batch_size,) of the entropy reduction (information gain)
-       resulting from adding each clip pair to the dataset.
-    """
+    r_preds_per_oa_pair = sample_reward_model(reward_model, rand_clip_pairs, args)
     batch_size, _, clip_length, _ = rand_clip_pairs.shape # used only in asserts
-    reward_model.train() # MC-Dropout
-    clip_pairs_tensor = torch.from_numpy(rand_clip_pairs).float()
-    r_preds_per_oa_pair = torch.cat([
-        reward_model(clip_pairs_tensor).detach() for _ in range(num_MC_samples)
-    ], dim=-1) # concatenate r_preds for same s-a pairs together
-    assert r_preds_per_oa_pair.shape == (batch_size, 2, clip_length, num_MC_samples)
+    check_num_samples = r_preds_per_oa_pair.shape[-1]
     exp_sum_r_preds_per_batch_pair_draw = r_preds_per_oa_pair.sum(dim=2).exp()
-    assert exp_sum_r_preds_per_batch_pair_draw.shape == (batch_size, 2, num_MC_samples)
+    assert exp_sum_r_preds_per_batch_pair_draw.shape == (batch_size, 2, check_num_samples)
     p_hat_12_per_batch_draw = exp_sum_r_preds_per_batch_pair_draw[:, 0, :] / exp_sum_r_preds_per_batch_pair_draw.sum(dim=1)
-    assert p_hat_12_per_batch_draw.shape == (batch_size, num_MC_samples)
+    assert p_hat_12_per_batch_draw.shape == (batch_size, check_num_samples)
     E_p_hat_12_per_batch = p_hat_12_per_batch_draw.mean(dim=1)
     assert E_p_hat_12_per_batch.shape == (batch_size,)
     H_y_xD = F.binary_cross_entropy(input=E_p_hat_12_per_batch, target=E_p_hat_12_per_batch, reduction='none')
 
-    # TODO remove check
-    check = - (E_p_hat_12_per_batch       * E_p_hat_12_per_batch.log() + 
-               (1 - E_p_hat_12_per_batch) * (1 - E_p_hat_12_per_batch).log()  )
-    assert torch.all(torch.lt(torch.abs(torch.add(H_y_xD, -check)), 1e-4))
-
-    # TODO is it correct NOT to do fresh draw from posterior?
-    # NB when I tried doing fresh draws, this made (info_gain >= 0).all() False !! (which is bad...)
-    # If you do want fresh draws after all, here is the code:
-    # -------------------------------------------------------
-    # r_preds_per_oa_pair = torch.cat([
-    #     reward_model(clip_pairs_tensor).detach() for _ in range(num_MC_samples)
-    # ], dim=-1) # concatenate r_preds for same s-a pairs together
-    # exp_sum_r_preds_per_batch_pair_draw = r_preds_per_oa_pair.sum(dim=2).exp()
-    # p_hat_12_per_batch_draw = exp_sum_r_preds_per_batch_pair_draw[:, 0, :] / exp_sum_r_preds_per_batch_pair_draw.sum(dim=1)
-    # -------------------------------------------------------
+    # use the *same* draws from the posterior to approximate the second term
     X_entropy_per_batch_draw = F.binary_cross_entropy(input=p_hat_12_per_batch_draw, target=p_hat_12_per_batch_draw, reduction='none')
-    assert X_entropy_per_batch_draw.shape == (batch_size, num_MC_samples)
+    assert X_entropy_per_batch_draw.shape == (batch_size, check_num_samples)
     E_H_y_xDw = X_entropy_per_batch_draw.mean(dim=1)
     assert E_H_y_xDw.shape == (batch_size,)
 
-    # TODO remove check
-    check1 = - (p_hat_12_per_batch_draw       * p_hat_12_per_batch_draw.log() + 
-               (1 - p_hat_12_per_batch_draw) * (1 - p_hat_12_per_batch_draw).log()  )
-    assert check1.shape == (batch_size, num_MC_samples)
-    check2 = check1.mean(dim=1)
-    assert check2.shape == (batch_size,)
-    assert torch.all(torch.lt(torch.abs(torch.add(E_H_y_xDw, -check2)), 1e-4))
-
     info_gain = H_y_xD - E_H_y_xDw
-    assert (info_gain >= 0).all()
+    # assert (info_gain >= 0).all()
     return info_gain
 
 
@@ -286,3 +227,23 @@ def log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num):
     # print('Selected info: {}'.format(selected_info))
     writer1.add_scalar('5.info_gain_per_round_Total_blue_Selected_orange', selected_info, round_num)
     writer2.add_scalar('5.info_gain_per_round_Total_blue_Selected_orange', total_info, round_num)
+
+
+def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, args, writer1, writer2, i_train_round):
+    raise RuntimeError("Warning, this function is no longer compatible with the args I pass to specify active learning types!")
+    
+    print('Doing Active Learning, so actually collect {} labels and select the best 1/{} using {} method'.format(
+        args.selection_factor * num_labels_requested, args.selection_factor, args.active_learning))
+    rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample_pairs(args.selection_factor * num_labels_requested)
+    if args.active_learning == 'BALD-MC':
+        info_per_clip_pair = compute_info_gain(rand_clip_pairs, reward_model, args)
+    elif args.active_learning == 'MC_variance':
+        info_per_clip_pair = compute_MC_variance(rand_clip_pairs, reward_model, args.num_MC_samples)
+    elif args.active_learning == 'ensemble_variance':
+        info_per_clip_pair = compute_ensemble_variance(rand_clip_pairs, reward_model)
+    else:
+        raise RuntimeError("You specified {} as the active_learning type, but I don't know what that is!".format(args.active_learning))
+    idx = np.argpartition(info_per_clip_pair, -num_labels_requested)[-num_labels_requested:] # see: tinyurl.com/ya7xr4kn
+    clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx] # returned indices are not sorted
+    log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
+    return clip_pairs, rews, mus
