@@ -13,7 +13,7 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
            different x under the same model). This will be the reference clip `sigma_1`.
        3. For every other clip `sigma_2` in agent_experience, computes the mutual information
           between the predicted label of (`sigma_1`, `sigma_2`) and `reward_model` parameters.
-          (This is for BALD. If `args.active_learning != 'bald'` then use some other method.)
+          (This is for BALD. If `args.active_method != 'bald'` then use some other method.)
        4. Return batch of (sigma_1, sigma_2, mu) with the sigma_2's that maximise the MI.
           Batch size is `num_labels_requested`. Also returns corresponding rewards and
           mu for each clip/pair.
@@ -27,7 +27,7 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
     """
     # step 1
     print('Doing Active Learning so actually collect {} labels and select the best 1/{} using {} method.'.format(
-        args.selection_factor * num_labels_requested, args.selection_factor, args.active_learning))
+        args.selection_factor * num_labels_requested, args.selection_factor, args.active_method))
     print("Also, we're using the new clip pair acquisition method.")
     rand_clips, rand_rews = agent_experience.sample_singles(args.selection_factor * num_labels_requested)
     # step 2
@@ -47,22 +47,17 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
     rand_clips_paired_w_ref_rews = np.stack((repeated_ref_clip_rew, rand_rews), axis=1)
     assert rand_clips_paired_w_ref_rews.shape == (args.selection_factor*num_labels_requested, 2, args.clip_length)
 
-    # step 3 # TODO clean up ugly if-elifs. Also the taxonomy of methods is: ensemble/MC x BALD/var_ratios/max_entropy/naive variance. Structure code to reflect this.
-    # in other words, we should have args.uncert_method and args.active_method
-    if args.active_learning == 'BALD-MC':
-        info_per_clip_pair = compute_info_gain(rand_clips_paired_w_ref, reward_model, args.num_MC_samples)
-    elif args.active_learning == 'BALD-ensemble':
+    # step 3
+    if args.active_method == 'BALD':
+        info_per_clip_pair = compute_info_gain(rand_clips_paired_w_ref, reward_model, args)
+    elif args.active_method == 'var_ratios':
         raise NotImplementedError
-    elif args.active_learning == 'var_ratios':
+    elif args.active_method == 'max_entropy':
         raise NotImplementedError
-    elif args.active_learning == 'max_entropy':
-        raise NotImplementedError
-    elif args.active_learning == 'MC_variance':
-        info_per_clip_pair = compute_MC_variance(rand_clips_paired_w_ref, reward_model, args.num_MC_samples)
-    elif args.active_learning == 'ensemble_variance':
-        info_per_clip_pair = compute_ensemble_variance(rand_clips_paired_w_ref, reward_model)
+    elif args.active_method == 'naive_variance':
+        info_per_clip_pair = compute_sample_variance_clipwise(rand_clips_paired_w_ref, reward_model, args) # TODO debug this
     else:
-        raise RuntimeError("You specified {} as the active_learning type, but I don't know what that is!".format(args.active_learning))
+        raise RuntimeError("You specified {} as the active_method type, but I don't know what that is!".format(args.active_method))
     # step 4
     idx = np.argpartition(info_per_clip_pair, -num_labels_requested)[-num_labels_requested:] # see: tinyurl.com/ya7xr4kn
 
@@ -121,9 +116,16 @@ def compute_sample_variance_clipwise(rand_clips, reward_model, args):
     r_preds_per_oa_pair = sample_reward_model(reward_model, rand_clips, args)
     batch_size = rand_clips.shape[0] # TODO remove; this is only used for asserts
     var_r_preds_per_oa_pair = r_preds_per_oa_pair.var(dim=-1) # take variance across r_preds for each s-a pair
-    assert var_r_preds_per_oa_pair.shape == (batch_size, args.clip_length)
+    assert var_r_preds_per_oa_pair.shape[0] == batch_size
+    assert var_r_preds_per_oa_pair.shape[-1] == args.clip_length
+    if len(var_r_preds_per_oa_pair.shape) == 3:
+            var_r_preds_per_oa_pair.shape[1] == 2
     var_r_preds_per_clip = var_r_preds_per_oa_pair.sum(dim=-1)
-    assert var_r_preds_per_clip.shape == (batch_size,)
+    assert var_r_preds_per_clip.shape[0] == batch_size
+    if len(var_r_preds_per_clip.shape) == 2:
+        assert var_r_preds_per_clip.shape[1] == 2
+        var_r_preds_per_clip = var_r_preds_per_clip.sum(dim=1) # sum variance of clip pairs across the pair.
+    # ugly and hacky to be using the function for 2 different purposes. TODO make this nicer
     return var_r_preds_per_clip.numpy()
 
 
@@ -158,7 +160,7 @@ def compute_info_gain(rand_clip_pairs, reward_model, args):
     # assert (info_gain >= 0).all()
     return info_gain
 
-
+# TODO delete this function
 def compute_MC_variance(rand_clip_pairs, reward_model, num_MC_samples):
     """Takes np.array rand_clip_pairs with shape
        (batch_size, 2, clip_length, obs_act_shape)
@@ -181,7 +183,7 @@ def compute_MC_variance(rand_clip_pairs, reward_model, num_MC_samples):
     assert var_r_preds_per_clip_pair.shape == (batch_size,)
     return var_r_preds_per_clip_pair.numpy()
 
-
+# TODO delete this function
 def compute_ensemble_variance(rand_clip_pairs, reward_model):
     """Takes np.array rand_clip_pairs with shape
        (batch_size, 2, clip_length, obs_act_shape)
@@ -233,16 +235,16 @@ def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, 
     raise RuntimeError("Warning, this function is no longer compatible with the args I pass to specify active learning types!")
     
     print('Doing Active Learning, so actually collect {} labels and select the best 1/{} using {} method'.format(
-        args.selection_factor * num_labels_requested, args.selection_factor, args.active_learning))
+        args.selection_factor * num_labels_requested, args.selection_factor, args.active_method))
     rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample_pairs(args.selection_factor * num_labels_requested)
-    if args.active_learning == 'BALD-MC':
+    if args.active_method == 'BALD-MC':
         info_per_clip_pair = compute_info_gain(rand_clip_pairs, reward_model, args)
-    elif args.active_learning == 'MC_variance':
+    elif args.active_method == 'MC_variance':
         info_per_clip_pair = compute_MC_variance(rand_clip_pairs, reward_model, args.num_MC_samples)
-    elif args.active_learning == 'ensemble_variance':
+    elif args.active_method == 'ensemble_variance':
         info_per_clip_pair = compute_ensemble_variance(rand_clip_pairs, reward_model)
     else:
-        raise RuntimeError("You specified {} as the active_learning type, but I don't know what that is!".format(args.active_learning))
+        raise RuntimeError("You specified {} as the active_method type, but I don't know what that is!".format(args.active_method))
     idx = np.argpartition(info_per_clip_pair, -num_labels_requested)[-num_labels_requested:] # see: tinyurl.com/ya7xr4kn
     clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx] # returned indices are not sorted
     log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)

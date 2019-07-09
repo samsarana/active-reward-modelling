@@ -60,10 +60,11 @@ def parse_arguments():
     parser.add_argument('--corr_num_rollouts', type=int, default=5, help='When collecting rollouts to evaluate correlation of true and predicted reward, how many rollouts in total?')
 
     # active learning
-    parser.add_argument('--active_learning', type=str, default=None, help='Choice of: MC_variance, info_gain, ensemble_variance')
+    parser.add_argument('--active_method', type=str, default=None, help='Choice of: BALD, var_ratios, max_entropy, naive_variance')
+    parser.add_argument('--uncert_method', type=str, default=None, help='Choice of: MC, ensemble')
     parser.add_argument('--num_MC_samples', type=int, default=10)
     parser.add_argument('--acquisition_search_strategy', type=str, default='v1', help='Whether to use Christiano (v0) or Angelos (v1) strategy to search for clip pairs')
-    parser.add_argument('--size_rm_ensemble', type=int, default=1, help='If active_learning == ensemble_variance then this must be >= 2')
+    parser.add_argument('--size_rm_ensemble', type=int, default=1, help='If active_method == ensemble then this must be >= 2')
     parser.add_argument('--selection_factor', type=int, default=10, help='when doing active learning, 1/selection_factor of the randomly sampled clip pairs are sent to human for evaluation')
     # if doing active learning n_steps_(pre)train is automatically increased by this factor bc we consider
     # sample complexity rather than computational complexity (we assume it's cheap for the agent to do rollouts
@@ -80,7 +81,7 @@ def parse_arguments():
         # args.n_agent_steps=3000
         args.n_epochs_pretrain_rm=10
         args.n_epochs_train_rm=10
-    if args.active_learning == 'ensemble_variance':
+    if args.uncert_method == 'ensemble':
         assert args.size_rm_ensemble >= 2
     return args
     
@@ -112,10 +113,10 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
     epsilon_pretrain = 0.1 # for now I'll use a constant epilson during pretraining
     # n_initial_steps = args.n_initial_agent_steps
     n_initial_steps = args.n_labels_pretraining * 2 * args.clip_length
-    if args.active_learning:
+    if args.active_method:
         n_initial_steps *= args.selection_factor
         print('Doing Active Learning ({} method), so collect {}x more rollouts than usual'.format(
-                args.active_learning, args.selection_factor))
+                args.active_method, args.selection_factor))
     num_clips = int(n_initial_steps//args.clip_length)
     assert n_initial_steps % args.clip_length == 0, "Agent should take a number of steps that's divisible by the desired clip_length"
     agent_experience = AgentExperience((num_clips, args.clip_length, obs_shape+act_shape), args.force_label_choice)
@@ -134,7 +135,7 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
     # num_pretraining_labels = args.n_initial_agent_steps // (2*args.clip_length)
     print('Stage 0.2: Sample without replacement from those rollouts to collect {} labels. Each label is on a pair of clips of length {}'.format(args.n_labels_pretraining, args.clip_length))
     writer1.add_scalar('6.labels requested per round', args.n_labels_pretraining, -1)
-    if args.active_learning:
+    if args.active_method:
         if args.acquisition_search_strategy == 'v0':
             clip_pairs, rews, mus = acquire_clip_pairs_v0(agent_experience, reward_model, args.n_labels_pretraining, args, writer1, writer2, i_train_round=-1)
         elif args.acquisition_search_strategy == 'v1':
@@ -188,7 +189,7 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
         num_labels_requested = args.n_labels_per_round[i_train_round]
         print('Stage 1.2: Sample without replacement from those rollouts to collect {} labels/preference tuples'.format(num_labels_requested))
         writer1.add_scalar('6.labels requested per round', num_labels_requested, i_train_round)
-        if args.active_learning:
+        if args.active_method:
             if args.acquisition_search_strategy == 'v0':
                 clip_pairs, rews, mus = acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, args, writer1, writer2, i_train_round)
             elif args.acquisition_search_strategy == 'v1':
@@ -259,8 +260,6 @@ def main():
         else:
             reward_model = RewardModel(obs_shape, act_shape, args)
         prefs_buffer = PrefsBuffer(capacity=args.prefs_buffer_size, clip_shape=(args.clip_length, obs_shape+act_shape))
-        # if args.active_learning == 'BALD': # TODO better code design to instantiate acq_funcs out here? do we need different acq_funcs for singles and pairs?
-        #     acq_func = 'blah'
         # fire away!
         reward_model, prefs_buffer = do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_shape, writer1, writer2)
         do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shape, act_shape, writer1, writer2)

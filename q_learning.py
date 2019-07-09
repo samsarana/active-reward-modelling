@@ -219,8 +219,8 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
     rp_mean, rp_var = compute_mean_var(reward_model, prefs_buffer)
     rt_mean, rt_var = prefs_buffer.compute_mean_var_GT()
     # Prepare to train agent for args.n_agent_steps
-    # (or if active_learning, collect more experience but train same amount and on same experience)
-    if args.active_learning:
+    # (or if active_method, collect more experience but train same amount and on same experience)
+    if args.active_method:
         n_agent_steps = args.selection_factor * args.n_agent_steps
         n_train_steps = args.n_agent_steps
         print('Active Learning so will take {} further steps *without training*; this goes into agent_experience, so algo can sample extra *possible* clip pairs, and keep the best 1/{}'.format(n_agent_steps - n_train_steps, args.selection_factor))
