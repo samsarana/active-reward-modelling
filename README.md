@@ -1,7 +1,7 @@
 # barm
 Bayesian Active Reward Modeling
 
-First: ```pip install -r requirements.txt```
+First: ```setup.sh```
 
 Then:
 ```python main.py [**command-line args]```
