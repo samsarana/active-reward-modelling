@@ -1,4 +1,5 @@
 #!/bin/bash
+git clone git@github.com:sckclarke/barm.git
 cd ~/tmp
 curl -O https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh
@@ -8,5 +9,4 @@ conda create -n gym python=3.7
 conda activate gym
 cd barm
 pip install -r requirements.txt
-cd gym-barm
 pip install .

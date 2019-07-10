@@ -2,7 +2,7 @@ import math, random, argparse
 from collections import deque
 import numpy as np
 import matplotlib.pyplot as plt
-import gym
+import gym, gym_barm
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -17,7 +17,7 @@ from active_learning import *
 def parse_arguments():
     parser = argparse.ArgumentParser()
     # experiment settings
-    parser.add_argument('--env_class', type=str, default='CartPoleContinuous-v0')
+    parser.add_argument('--env_class', type=str, default='gym_barm:CartPoleContinuous-v0')
     parser.add_argument('--n_rounds', type=int, default=10, help='number of rounds to repeat main training loop')
     parser.add_argument('--RL_baseline', action='store_true', help='Do RL baseline instead of reward learning?')
     parser.add_argument('--random_policy', action='store_true', help='Do the experiments with an entirely random policy, to benchmark performance')
