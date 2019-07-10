@@ -31,7 +31,7 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
     print("Also, we're using the new clip pair acquisition method.")
     rand_clips, rand_rews = agent_experience.sample_singles(args.selection_factor * num_labels_requested)
     # step 2
-    sample_variance_per_clip = compute_sample_variance_clipwise(rand_clips, reward_model, args) # TODO we might also want to compute variance across ensemble instead of using MC-dropout
+    sample_variance_per_clip = compute_sample_variance_clipwise(rand_clips, reward_model, args)
     ref_clip_idx = np.argpartition(sample_variance_per_clip, 0)[0] # TODO this might become `ref_clips_idx` based on point 2 in the docstring. You'd just need to modify `0` to be `[:num_labels_requested]`
     assert ref_clip_idx.shape == ()
     ref_clip = rand_clips[ref_clip_idx]
@@ -55,7 +55,7 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
     elif args.active_method == 'max_entropy':
         raise NotImplementedError
     elif args.active_method == 'naive_variance':
-        info_per_clip_pair = compute_sample_variance_clipwise(rand_clips_paired_w_ref, reward_model, args) # TODO debug this
+        info_per_clip_pair = compute_sample_variance_clipwise(rand_clips_paired_w_ref, reward_model, args)
     else:
         raise RuntimeError("You specified {} as the active_method type, but I don't know what that is!".format(args.active_method))
     # step 4
@@ -186,18 +186,21 @@ def log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num):
     writer2.add_scalar('5.info_gain_per_round_Total_blue_Selected_orange', total_info, round_num)
 
 
-def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, args, writer1, writer2, i_train_round):
-    raise RuntimeError("Warning, this function is no longer compatible with the args I pass to specify active learning types!")
-    
+def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, args, writer1, writer2, i_train_round):    
+    """NB I haven't tested this function since changing a bunch of things
+       in the acquisitions functions (when I wrote acquire_clip_pairs_v1)
+    """
     print('Doing Active Learning, so actually collect {} labels and select the best 1/{} using {} method'.format(
         args.selection_factor * num_labels_requested, args.selection_factor, args.active_method))
     rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample_pairs(args.selection_factor * num_labels_requested)
-    if args.active_method == 'BALD-MC':
+    if args.active_method == 'BALD':
         info_per_clip_pair = compute_info_gain(rand_clip_pairs, reward_model, args)
-    elif args.active_method == 'MC_variance':
-        info_per_clip_pair = compute_MC_variance(rand_clip_pairs, reward_model, args.num_MC_samples)
-    elif args.active_method == 'ensemble_variance':
-        info_per_clip_pair = compute_ensemble_variance(rand_clip_pairs, reward_model)
+    elif args.active_method == 'var_ratios':
+        raise NotImplementedError
+    elif args.active_method == 'max_entropy':
+        raise NotImplementedError
+    elif args.active_method == 'naive_variance':
+        info_per_clip_pair = compute_sample_variance_clipwise(rand_clip_pairs, reward_model, args)
     else:
         raise RuntimeError("You specified {} as the active_method type, but I don't know what that is!".format(args.active_method))
     idx = np.argpartition(info_per_clip_pair, -num_labels_requested)[-num_labels_requested:] # see: tinyurl.com/ya7xr4kn
