@@ -51,9 +51,9 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
     if args.active_method == 'BALD':
         info_per_clip_pair = compute_info_gain(rand_clips_paired_w_ref, reward_model, args)
     elif args.active_method == 'var_ratios':
-        raise NotImplementedError
+        info_per_clip_pair = compute_var_ratio(rand_clips_paired_w_ref, reward_model, args)
     elif args.active_method == 'max_entropy':
-        raise NotImplementedError
+        info_per_clip_pair = compute_pred_entropy(rand_clips_paired_w_ref, reward_model, args)
     elif args.active_method == 'naive_variance':
         info_per_clip_pair = compute_sample_variance_clipwise(rand_clips_paired_w_ref, reward_model, args)
     else:
@@ -159,6 +159,66 @@ def compute_info_gain(rand_clip_pairs, reward_model, args):
     info_gain = H_y_xD - E_H_y_xDw
     # assert (info_gain >= 0).all()
     return info_gain
+
+def compute_pred_entropy(clip_pairs, reward_model, args):
+    """Takes np.array `clip_pairs` with shape
+       (batch_size, 2, clip_length, obs_act_shape)
+       as well as `reward_model`, and returns np.array with shape
+       (batch_size,) of the predictive entropy of each clip pair
+       in the batch (Shannon, 1948).
+       As per Yarin's Thesis, we approximate p(y=c | x, D_train)
+       by averaging the T probability vectors from T stochastic
+       forward passes (or rather, in our setting, the prob obtained
+       from applying the ELO function to stochastic forward passes
+       through `reward_model`). We perform the stochastic forward
+       passes with either the ensemble `reward_model`
+       or using MC dropout (Gal et al. 2017).
+       Note that this is essentially the same acquisition function as
+       compute_info_gain (BALD) except *without the second term*
+    """
+    r_preds_per_oa_pair = sample_reward_model(reward_model, clip_pairs, args)
+    batch_size, _, clip_length, _ = clip_pairs.shape # used only in asserts
+    check_num_samples = r_preds_per_oa_pair.shape[-1]
+    exp_sum_r_preds_per_batch_pair_draw = r_preds_per_oa_pair.sum(dim=2).exp()
+    assert exp_sum_r_preds_per_batch_pair_draw.shape == (batch_size, 2, check_num_samples)
+    p_hat_12_per_batch_draw = exp_sum_r_preds_per_batch_pair_draw[:, 0, :] / exp_sum_r_preds_per_batch_pair_draw.sum(dim=1)
+    assert p_hat_12_per_batch_draw.shape == (batch_size, check_num_samples)
+    E_p_hat_12_per_batch = p_hat_12_per_batch_draw.mean(dim=1)
+    assert E_p_hat_12_per_batch.shape == (batch_size,)
+    return F.binary_cross_entropy(input=E_p_hat_12_per_batch, target=E_p_hat_12_per_batch, reduction='none')
+
+def compute_var_ratio(clip_pairs, reward_model, args):
+    """Takes np.array `clip_pairs` with shape
+       (batch_size, 2, clip_length, obs_act_shape)
+       as well as `reward_model`, and returns np.array with shape
+       (batch_size,) of the variation ratio of each clip pair
+       in the batch (Freeman, 1965).
+       As per Deep Bayesian Active Learning with Image Data (2017),
+       we approximate p(y=c | x, D_train)
+       by averaging the T probability vectors from T stochastic
+       forward passes (or rather, in our setting, the prob obtained
+       from applying the ELO function to stochastic forward passes
+       through `reward_model`). We perform the stochastic forward
+       passes with either the ensemble `reward_model`
+       or using MC dropout (Gal et al. 2017).
+       NB there seems to be a discrepancy between the "mode" version
+       version presented in Yarin's thesis (p.51) and the one
+       implemented here and presented in the 2017 paper.
+       But I'm sure I've misunderstood this, and that they are
+       actually identical.
+    """
+    r_preds_per_oa_pair = sample_reward_model(reward_model, clip_pairs, args)
+    batch_size, _, clip_length, _ = clip_pairs.shape # used only in asserts
+    check_num_samples = r_preds_per_oa_pair.shape[-1]
+    exp_sum_r_preds_per_batch_pair_draw = r_preds_per_oa_pair.sum(dim=2).exp()
+    assert exp_sum_r_preds_per_batch_pair_draw.shape == (batch_size, 2, check_num_samples)
+    p_hat_12_per_batch_draw = exp_sum_r_preds_per_batch_pair_draw[:, 0, :] / exp_sum_r_preds_per_batch_pair_draw.sum(dim=1)
+    assert p_hat_12_per_batch_draw.shape == (batch_size, check_num_samples)
+    E_p_hat_12_per_batch = p_hat_12_per_batch_draw.mean(dim=1)
+    assert E_p_hat_12_per_batch.shape == (batch_size,)
+    max_p_12_p21 = np.maximum(E_p_hat_12_per_batch, 1 - E_p_hat_12_per_batch) # element-wise max of 2 arrays
+    assert max_p_12_p21.shape == (batch_size,)
+    return 1 - max_p_12_p21
 
 
 def log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num):
