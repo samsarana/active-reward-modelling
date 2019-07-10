@@ -1,7 +1,7 @@
 # barm
 Bayesian Active Reward Modeling
 
-First: ```setup.sh```
+First: ```setup_script.sh```
 
 Then:
 ```python main.py [**command-line args]```
