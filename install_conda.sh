@@ -8,3 +8,5 @@ conda create -n gym python=3.7
 conda activate gym
 cd barm
 pip install -r requirements.txt
+cd gym-barm
+pip install .
