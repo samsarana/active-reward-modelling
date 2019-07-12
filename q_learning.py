@@ -1,6 +1,6 @@
 """Classes and functions to do Q-learning"""
 
-import math, random, argparse, sys, time, itertools
+import random, sys
 import numpy as np
 from collections import deque
 from tqdm import trange
@@ -238,7 +238,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
                     'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
     # train!
     state = env.reset()
-    for step in trange(n_agent_steps, desc=desc_stage_11, dynamic_ncols=True):
+    for step in trange(n_agent_steps, desc=desc_stage_11, dynamic_ncols=True, file=sys.stdout):
         # agent interact with env
         action = q_net.act(state, q_net.epsilon)
         assert env.action_space.contains(action)

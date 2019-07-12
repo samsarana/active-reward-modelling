@@ -1,4 +1,4 @@
-import math, random, argparse
+import math, random, argparse, sys
 from collections import deque
 import numpy as np
 import matplotlib.pyplot as plt
@@ -41,7 +41,7 @@ def parse_arguments():
     parser.add_argument('--epsilon_stop', type=float, default=0.01)
     parser.add_argument('--n_labels_pretraining', type=int, default=10, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining') # Ibarz: 25k
     parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[5]*10, help='How many labels to acquire per round? (in main training loop). len should be same as n_rounds')
-    parser.add_argument('--n_agent_steps', type=int, default=2000, help='No. of steps that agent takes in environment, per round (in main training loop)') # Ibarz: 100k
+    parser.add_argument('--n_agent_steps', type=int, default=3000, help='No. of steps that agent takes in environment, per round (in main training loop)') # Ibarz: 100k
     parser.add_argument('--dummy_ep_length', type=int, default=200, help="After how many steps do we interpret an 'episode' as having elapsed and log performance? (This affects only result presentation not algo)")
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
 
@@ -90,7 +90,7 @@ def do_random_experiment(env, args, writer1, writer2):
         print('[Start Round {}]'.format(i_train_round))
         dummy_returns = {'ep': 0, 'all': []}
         env.reset()
-        for step in trange(args.n_agent_steps, desc='Taking random actions for {} steps'.format(args.n_agent_steps), dynamic_ncols=True):
+        for step in trange(args.n_agent_steps, desc='Taking random actions for {} steps'.format(args.n_agent_steps), dynamic_ncols=True, file=sys.stdout):
             # agent interact with env
             action = env.action_space.sample()
             assert env.action_space.contains(action)
@@ -121,7 +121,7 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
     assert n_initial_steps % args.clip_length == 0, "Agent should take a number of steps that's divisible by the desired clip_length"
     agent_experience = AgentExperience((num_clips, args.clip_length, obs_shape+act_shape), args.force_label_choice)
     state = env.reset()
-    for _ in trange(n_initial_steps, desc='Stage 0.1: Collecting rollouts from untrained policy, {} agent steps'.format(n_initial_steps), dynamic_ncols=True):
+    for _ in trange(n_initial_steps, desc='Stage 0.1: Collecting rollouts from untrained policy, {} agent steps'.format(n_initial_steps), dynamic_ncols=True, file=sys.stdout):
         action = q_net.act(state, epsilon_pretrain)
         assert env.action_space.contains(action)
         next_state, r_true, _, _ = env.step(action)    
@@ -149,7 +149,7 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
     # Stage 0.3 Intialise and pretrain reward model
     optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm)
     reward_model.train() # dropout on
-    for epoch in trange(args.n_epochs_pretrain_rm, desc='Stage 0.3: Intialise and pretrain reward model for {} batches on those preferences'.format(args.n_epochs_pretrain_rm), dynamic_ncols=True):
+    for epoch in trange(args.n_epochs_pretrain_rm, desc='Stage 0.3: Intialise and pretrain reward model for {} batches on those preferences'.format(args.n_epochs_pretrain_rm), dynamic_ncols=True, file=sys.stdout):
         with torch.autograd.detect_anomaly(): # detects NaNs; useful for debugging
             clip_pair_batch, mu_batch = prefs_buffer.sample(args.batch_size_rm)
             r_hats_batch = reward_model(clip_pair_batch).squeeze(-1)
@@ -202,7 +202,7 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
         
         # Stage 1.3: Train reward model
         reward_model.train() # dropout on
-        for epoch in trange(args.n_epochs_train_rm, desc='Stage 1.3: Train reward model for {} batches on those preferences'.format(args.n_epochs_train_rm), dynamic_ncols=True):
+        for epoch in trange(args.n_epochs_train_rm, desc='Stage 1.3: Train reward model for {} batches on those preferences'.format(args.n_epochs_train_rm), dynamic_ncols=True, file=sys.stdout):
             with torch.autograd.detect_anomaly():
                 clip_pair_batch, mu_batch = prefs_buffer.sample(args.batch_size_rm)
                 r_hats_batch = reward_model(clip_pair_batch).squeeze(-1) # squeeze the oa_pair dimension that was passed through reward_model

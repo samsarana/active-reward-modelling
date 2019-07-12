@@ -291,6 +291,6 @@ def eval_rm_correlation(reward_model, env, agent, args, obs_shape, act_shape, ro
 
 def log_correlation(r_xy, plots, writer, round_num):
     writer.add_scalar('4.r_xy', r_xy, round_num)
-    writer.add_figure('alignment/1-non-norm', plots['non-norm'], round_num) # we can have mutliple figures with the same tag and scroll through them!
-    writer.add_figure('alignment/2-norm', plots['norm'], round_num)
-    writer.add_figure('alignment/3-norm_error_bars', plots['norm_error_bars'], round_num)
+    writer.add_figure('4.alignment/1-non-norm', plots['non-norm'], round_num) # we can have mutliple figures with the same tag and scroll through them!
+    writer.add_figure('4.alignment/2-norm', plots['norm'], round_num)
+    writer.add_figure('4.alignment/3-norm_error_bars', plots['norm_error_bars'], round_num)

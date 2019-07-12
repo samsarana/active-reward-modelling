@@ -34,7 +34,7 @@ def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, 
     idx = np.argpartition(info_per_clip_pair, -num_labels_requested)[-num_labels_requested:] # see: tinyurl.com/ya7xr4kn
     clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx] # returned indices are not sorted
     log_info_gain(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
-    log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, round_num=i_train_round)
+    log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, args, round_num=i_train_round)
     return clip_pairs, rews, mus
 
 
@@ -109,7 +109,7 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
 
     clip_pairs, rews, mus = rand_clips_paired_w_ref[idx], rand_clips_paired_w_ref_rews[idx], rand_mus[idx] # returned indices are not sorted
     log_info_gain(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
-    log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, round_num=i_train_round)
+    log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, args, round_num=i_train_round)
     return clip_pairs, rews, mus
 
 
@@ -292,7 +292,7 @@ def log_info_gain(info_per_clip_pair, idx, writer1, writer2, round_num):
     plt.xlabel('Clip pairs')
     plt.ylabel('Metric of info gain')
     plt.bar(np.arange(num_pairs), info_per_clip_pair, color=colours)
-    writer1.add_figure('info_gain_per_clip_pair', info_bars, round_num)
+    writer1.add_figure('3.info gain per clip pair', info_bars, round_num)
 
     total_info = info_per_clip_pair.sum()
     selected_info = info_per_clip_pair[idx].sum()
@@ -301,11 +301,44 @@ def log_info_gain(info_per_clip_pair, idx, writer1, writer2, round_num):
     writer1.add_scalar('5.info_gain_per_round_Total_blue_Selected_orange', selected_info, round_num)
     writer2.add_scalar('5.info_gain_per_round_Total_blue_Selected_orange', total_info, round_num)
 
-def log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, round_num):
+def log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, args, round_num):
     """Plots two histograms: the labels and return
        for each clip pair candidate and acquisition.
     """
-    writer1.add_histogram('10.labels candidate and acquired', mus, round_num)
-    writer2.add_histogram('10.labels candidate and acquired', rand_mus, round_num)
-    writer1.add_histogram('11.return of clip pairs candidate and acquired', rews.sum(-1).sum(-1), round_num)
-    writer2.add_histogram('11.return of clip pairs candidate and acquired', rand_rews.sum(-1).sum(-1), round_num)
+    labels_hist = plt.figure()
+    plt.title('Label histogram, round {}'.format(round_num))
+    plt.xlabel('mu')
+    plt.ylabel('Frequency')
+    plt.hist(rand_mus, bins=11, range=(-0.05,1.05), color='tab:blue', alpha=0.7, label='Candidate')
+    plt.hist(mus, bins=11, range=(-0.05,1.05), color='tab:orange', alpha=0.7, label='Acquired')
+    plt.legend()
+    writer1.add_figure('1.label histogram', labels_hist, round_num)
+
+    mean_ret_hist = plt.figure()
+    plt.title('Return histogram, round {}'.format(round_num))
+    plt.xlabel('Return, averaged over both clips in pair')
+    plt.ylabel('Frequency')
+    if len(rand_rews.shape) == 3: # v0 acq func => rand_rews paired
+        mean_rand_rews = rand_rews.sum(-1).sum(-1) / 2
+    elif len(rand_rews.shape) == 2: # v1 acq func => rand_rews not paired
+        mean_rand_rews = rand_rews.sum(-1)
+    else:
+        raise RuntimeError('`rand_rews` is of the wrong shape.')
+    rews_max = args.clip_length * 1
+    # as a approximation to the min reward, in CartPoleContinuous the agent never seems to do worse than ending the episode once per 3 steps
+    # NB this is a very crude approximation and will definitely not transfer to other envs
+    assert args.env_class == 'gym_barm:CartPoleContinuous-v0', "You ought to adjust the range of your histogram plots because your current values are tuned to CartPoleContinuous"
+    rews_min = args.ep_end_penalty * args.clip_length * 1/3  + 1 * args.clip_length * (1 - 1/3)
+    rand_label = 'Candidate (paired)' if args.acquisition_search_strategy == 'v0' else 'Candidate (unpaired)'
+    plt.hist(mean_rand_rews, bins=100, range=(rews_min, rews_max), # min possible value is -39*25 
+        color='tab:blue', alpha=0.7, label=rand_label)
+    plt.hist(rews.sum(-1).sum(-1) / 2, bins=100, range=(rews_min, rews_max), 
+        color='tab:orange', alpha=0.7, label='Acquired')
+    plt.legend()
+    writer1.add_figure('2.return histogram', mean_ret_hist, round_num)
+
+    # Old code: Tensorboard histograms are bad for discrete data...
+    # writer1.add_histogram('10.labels acquired and candidate', mus, round_num, bins=10)
+    # writer2.add_histogram('10.labels acquired and candidate', rand_mus, round_num, bins=10)
+    # writer1.add_histogram('11.mean return of clip pairs acquired and candidate', rews.sum(-1).sum(-1) / rews.shape[0], round_num, bins=1000)
+    # writer2.add_histogram('11.mean return of clip pairs acquired and candidate', rand_rews.sum(-1).sum(-1) / rand_rews.shape[0], round_num, bins=1000)
