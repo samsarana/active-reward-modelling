@@ -7,12 +7,13 @@ from reward_model import RewardModelEnsemble
 
 def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, args, writer1, writer2, i_train_round):    
     """NB I haven't tested this function since changing a bunch of things
-       in the acquisitions functions (when I wrote acquire_clip_pairs_v1)
-       1. Samples m = `args.selection_factor * num_labels_requested` *pairs* of clips from agent_experience.
+       in the acquisitions functions (when I wrote `acquire_clip_pairs_v1`)
+       1. Samples m = `args.selection_factor * num_labels_requested` *pairs*
+          of clips from agent_experience.
        2. Returns batch of (sigma_1, sigma_2) that maximise 
           some metric of information gain.
-          Batch size is `num_labels_requested`. Also returns corresponding rewards and
-          mu for each clip/pair.
+          Batch size is `num_labels_requested`. Also returns corresponding
+          rewards/mu for each clip/pair.
           clip_pairs.shape == (num_labels_requested, 2, args.clip_length, args.obs_act_shape)
           rews.shape       == (num_labels_requested, 2, args.clip_length)
           mus.shape        == (num_labels_requested,)
@@ -32,7 +33,8 @@ def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, 
         raise RuntimeError("You specified {} as the active_method type, but I don't know what that is!".format(args.active_method))
     idx = np.argpartition(info_per_clip_pair, -num_labels_requested)[-num_labels_requested:] # see: tinyurl.com/ya7xr4kn
     clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx] # returned indices are not sorted
-    log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
+    log_info_gain(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
+    log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, round_num)
     return clip_pairs, rews, mus
 
 
@@ -42,9 +44,9 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
           That function samples `args.selection_factor * num_labels_requested` clip *pairs* so if we didn't
           double here, then v0 would unfairly be sampling more clips overall
        2. Finds the clip with minimum uncertainty according to current reward_model (using the sample
-           variance of multiple MC samples. See Yarin's thesis p.49, 51 for why this is justified.
-           TODO 1. check that I am allowed to ignore the precision term when eval'ing uncertainty of 
-           different x under the same model). This will be the reference clip `sigma_1`.
+          variance of multiple MC samples. See Yarin's thesis p.49, 51 for why this is justified.
+          TODO 1. check that I am allowed to ignore the precision term when eval'ing uncertainty of 
+          different x under the same model). This will be the reference clip `sigma_1`.
        3. For every other clip `sigma_2` in agent_experience, computes the mutual information
           between the predicted label of (`sigma_1`, `sigma_2`) and `reward_model` parameters.
           (This is for BALD. If `args.active_method != 'bald'` then use some other method.)
@@ -274,7 +276,7 @@ def compute_var_ratio(clip_pairs, reward_model, args):
     return 1 - max_p_12_p21
 
 
-def log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num):
+def log_info_gain(info_per_clip_pair, idx, writer1, writer2, round_num):
     """1. Plots a bar chart with the info of each clip pair
           Clips pairs which were selected (given by idx) are orange; rest are blue.
        2. Plots two scalars: info summed over all clip pairs
@@ -297,3 +299,12 @@ def log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num):
     # print('Selected info: {}'.format(selected_info))
     writer1.add_scalar('5.info_gain_per_round_Total_blue_Selected_orange', selected_info, round_num)
     writer2.add_scalar('5.info_gain_per_round_Total_blue_Selected_orange', total_info, round_num)
+
+def log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, round_num):
+    """Plots two histograms: the labels and return
+       for each clip pair candidate and acquisition.
+    """
+    writer1.add_histogram('10.labels candidate and acquired', mus, round_num)
+    writer2.add_histogram('10.labels candidate and acquired', rand_mus, round_num)
+    writer1.add_histogram('11.return of clip pairs candidate and acquired', rews.sum(-1).sum(-1), round_num)
+    writer2.add_histogram('11.return of clip pairs candidate and acquired', rand_rews.sum(-1).sum(-1), round_num)
