@@ -63,7 +63,7 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
     """
     # step 1
     print('Doing Active Learning so actually collect {} clips and select the best 1/{} (put into pairs) using {} method.'.format(
-        2 * args.selection_factor * num_labels_requested, 2 * args.selection_factor, args.active_method))
+        2 * args.selection_factor * num_labels_requested, args.selection_factor, args.active_method))
     print("Also, we're using the new clip pair acquisition method.")
     rand_clips, rand_rews = agent_experience.sample_singles(2 * args.selection_factor * num_labels_requested)
     # step 2
@@ -72,16 +72,16 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
     assert ref_clip_idx.shape == ()
     ref_clip = rand_clips[ref_clip_idx]
     assert ref_clip.shape == (args.clip_length, args.obs_act_shape)
-    repeated_ref_clip = np.repeat(np.expand_dims(ref_clip, axis=0), repeats=args.selection_factor*num_labels_requested, axis=0)
-    assert repeated_ref_clip.shape == rand_clips.shape == (args.selection_factor*num_labels_requested, args.clip_length, args.obs_act_shape)
+    repeated_ref_clip = np.repeat(np.expand_dims(ref_clip, axis=0), repeats=2*args.selection_factor*num_labels_requested, axis=0)
+    assert repeated_ref_clip.shape == rand_clips.shape == (2*args.selection_factor*num_labels_requested, args.clip_length, args.obs_act_shape)
     rand_clips_paired_w_ref = np.stack((repeated_ref_clip, rand_clips), axis=1)
-    assert rand_clips_paired_w_ref.shape == (args.selection_factor*num_labels_requested, 2, args.clip_length, args.obs_act_shape)
+    assert rand_clips_paired_w_ref.shape == (2*args.selection_factor*num_labels_requested, 2, args.clip_length, args.obs_act_shape)
 
     # compute corresponding rews for use later on (need access to this in order to normalise rewards across prefs_buffer)
     ref_clip_rew = rand_rews[ref_clip_idx]
-    repeated_ref_clip_rew = np.repeat(np.expand_dims(ref_clip_rew, axis=0), repeats=args.selection_factor*num_labels_requested, axis=0)
+    repeated_ref_clip_rew = np.repeat(np.expand_dims(ref_clip_rew, axis=0), repeats=2*args.selection_factor*num_labels_requested, axis=0)
     rand_clips_paired_w_ref_rews = np.stack((repeated_ref_clip_rew, rand_rews), axis=1)
-    assert rand_clips_paired_w_ref_rews.shape == (args.selection_factor*num_labels_requested, 2, args.clip_length)
+    assert rand_clips_paired_w_ref_rews.shape == (2*args.selection_factor*num_labels_requested, 2, args.clip_length)
 
     # step 3
     if args.active_method == 'BALD':
@@ -105,7 +105,7 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
     else: # allow clips to be labeled as 0.5
         rand_mus = np.where(returns[:, 0] > returns[:, 1], 1, 
                         np.where(returns[:, 0] == returns[:, 1], 0.5, 0))
-    assert rand_mus.shape == (args.selection_factor*num_labels_requested,)
+    assert rand_mus.shape == (2*args.selection_factor*num_labels_requested,)
 
     clip_pairs, rews, mus = rand_clips_paired_w_ref[idx], rand_clips_paired_w_ref_rews[idx], rand_mus[idx] # returned indices are not sorted
     log_info_gain(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
