@@ -5,6 +5,29 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 from reward_model import RewardModelEnsemble
 
+def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, args, writer1, writer2, i_train_round):    
+    """NB I haven't tested this function since changing a bunch of things
+       in the acquisitions functions (when I wrote acquire_clip_pairs_v1)
+    """
+    print('Doing Active Learning, so actually collect {} labels and select the best 1/{} using {} method'.format(
+        args.selection_factor * num_labels_requested, args.selection_factor, args.active_method))
+    rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample_pairs(args.selection_factor * num_labels_requested)
+    if args.active_method == 'BALD':
+        info_per_clip_pair = compute_info_gain(rand_clip_pairs, reward_model, args)
+    elif args.active_method == 'var_ratios':
+        info_per_clip_pair = compute_var_ratio(rand_clip_pairs, reward_model, args)
+    elif args.active_method == 'max_entropy':
+        info_per_clip_pair = compute_pred_entropy(rand_clip_pairs, reward_model, args)
+    elif args.active_method == 'naive_variance':
+        info_per_clip_pair = compute_sample_var_clip_pair(rand_clip_pairs, reward_model, args)
+    else:
+        raise RuntimeError("You specified {} as the active_method type, but I don't know what that is!".format(args.active_method))
+    idx = np.argpartition(info_per_clip_pair, -num_labels_requested)[-num_labels_requested:] # see: tinyurl.com/ya7xr4kn
+    clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx] # returned indices are not sorted
+    log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
+    return clip_pairs, rews, mus
+
+
 def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, args, writer1, writer2, i_train_round):
     """1. Samples m = `args.selection_factor * num_labels_requested` clips from agent_experience.
        2. Finds the clip with minimum uncertainty according to current reward_model (using the sample
@@ -31,7 +54,7 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
     print("Also, we're using the new clip pair acquisition method.")
     rand_clips, rand_rews = agent_experience.sample_singles(args.selection_factor * num_labels_requested)
     # step 2
-    sample_variance_per_clip = compute_sample_variance_clipwise(rand_clips, reward_model, args)
+    sample_variance_per_clip = compute_sample_var_clip(rand_clips, reward_model, args)
     ref_clip_idx = np.argpartition(sample_variance_per_clip, 0)[0] # TODO this might become `ref_clips_idx` based on point 2 in the docstring. You'd just need to modify `0` to be `[:num_labels_requested]`
     assert ref_clip_idx.shape == ()
     ref_clip = rand_clips[ref_clip_idx]
@@ -55,7 +78,7 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
     elif args.active_method == 'max_entropy':
         info_per_clip_pair = compute_pred_entropy(rand_clips_paired_w_ref, reward_model, args)
     elif args.active_method == 'naive_variance':
-        info_per_clip_pair = compute_sample_variance_clipwise(rand_clips_paired_w_ref, reward_model, args)
+        info_per_clip_pair = compute_sample_var_clip_pair(rand_clips_paired_w_ref, reward_model, args)
     else:
         raise RuntimeError("You specified {} as the active_method type, but I don't know what that is!".format(args.active_method))
     # step 4
@@ -104,29 +127,48 @@ def sample_reward_model(reward_model, clips, args):
     return r_preds_per_oa_pair
 
 
-def compute_sample_variance_clipwise(rand_clips, reward_model, args):
+def compute_sample_var_clip(rand_clips, reward_model, args):
     """Takes array `rand_clips` of shape (batch_size, clip_length, obs_act_shape),
        and computes `args.num_MC_samples` stochastic forward passes through `reward_model`.
-       Returns an array of shape (batch_size,) of the sample variance of the stochastic
-       forward passes for each clip in `rand_clips`, where the variance of a clip
-       is defined as the sum of the variance of each (obs, action) pair in the clip.
-       TODO correct this docstring to mention either doing stochastic forward passes
-       or ensemble method
+       Returns an array of shape (batch_size,) of the variance of samples from
+       `reward_model` approximate posterior, for each clip in `rand_clips`,
+       where the sample variance of a clip is defined as the sum of the variance of
+       each (obs, action) pair in the clip.
+       Approximate posterior comes from either stochastic forward passes
+       or by sampling from each reward predictor in the ensemble
+       (depending on args.uncert_method).
     """
     r_preds_per_oa_pair = sample_reward_model(reward_model, rand_clips, args)
     batch_size = rand_clips.shape[0] # TODO remove; this is only used for asserts
     var_r_preds_per_oa_pair = r_preds_per_oa_pair.var(dim=-1) # take variance across r_preds for each s-a pair
-    assert var_r_preds_per_oa_pair.shape[0] == batch_size
-    assert var_r_preds_per_oa_pair.shape[-1] == args.clip_length
-    if len(var_r_preds_per_oa_pair.shape) == 3:
-            var_r_preds_per_oa_pair.shape[1] == 2
+    assert var_r_preds_per_oa_pair.shape[0] == (batch_size, args.clip_length)
     var_r_preds_per_clip = var_r_preds_per_oa_pair.sum(dim=-1)
-    assert var_r_preds_per_clip.shape[0] == batch_size
-    if len(var_r_preds_per_clip.shape) == 2:
-        assert var_r_preds_per_clip.shape[1] == 2
-        var_r_preds_per_clip = var_r_preds_per_clip.sum(dim=1) # sum variance of clip pairs across the pair.
-    # ugly and hacky to be using the function for 2 different purposes. TODO make this nicer
+    assert var_r_preds_per_clip.shape == (batch_size,)
     return var_r_preds_per_clip.numpy()
+
+
+def compute_sample_var_clip_pair(rand_clip_pairs, reward_model, args):
+    """Takes np.array rand_clip_pairs with shape
+       (batch_size, 2, clip_length, obs_act_shape)
+       as well as reward_model, and returns np.array with shape
+       (batch_size,) of the sample variance of the predictions
+       according to `reward_model` of which clip in the pair
+       is preferred by the annotator.
+       Samples are drawn from `reward_model` approximate posterior
+       which we get from either stochastic forward passes
+       or by sampling from each reward predictor in the ensemble
+       (depending on args.uncert_method).
+    """
+    r_preds_per_oa_pair = sample_reward_model(reward_model, rand_clip_pairs, args)
+    batch_size, _, clip_length, _ = rand_clip_pairs.shape # used only in asserts
+    check_num_samples = r_preds_per_oa_pair.shape[-1]
+    exp_sum_r_preds_per_batch_pair_draw = r_preds_per_oa_pair.sum(dim=2).exp()
+    assert exp_sum_r_preds_per_batch_pair_draw.shape == (batch_size, 2, check_num_samples)
+    p_hat_12_per_batch_draw = exp_sum_r_preds_per_batch_pair_draw[:, 0, :] / exp_sum_r_preds_per_batch_pair_draw.sum(dim=1)
+    assert p_hat_12_per_batch_draw.shape == (batch_size, check_num_samples)
+    Var_p_hat_12_per_batch = p_hat_12_per_batch_draw.var(dim=1)
+    assert Var_p_hat_12_per_batch.shape == (batch_size,)
+    return Var_p_hat_12_per_batch
 
 
 def compute_info_gain(rand_clip_pairs, reward_model, args):
@@ -207,7 +249,7 @@ def compute_var_ratio(clip_pairs, reward_model, args):
        But I'm sure I've misunderstood this, and that they are
        actually identical.
     """
-    r_preds_per_oa_pair = sample_reward_model(reward_model, clip_pairs, args)
+    r_preds_per_oa_pair = sample_reward_model(reward_model, clip_pairs, args) # TODO there is a lot of copy-pasted code in these last 4 functions
     batch_size, _, clip_length, _ = clip_pairs.shape # used only in asserts
     check_num_samples = r_preds_per_oa_pair.shape[-1]
     exp_sum_r_preds_per_batch_pair_draw = r_preds_per_oa_pair.sum(dim=2).exp()
@@ -244,26 +286,3 @@ def log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num):
     # print('Selected info: {}'.format(selected_info))
     writer1.add_scalar('5.info_gain_per_round_Total_blue_Selected_orange', selected_info, round_num)
     writer2.add_scalar('5.info_gain_per_round_Total_blue_Selected_orange', total_info, round_num)
-
-
-def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, args, writer1, writer2, i_train_round):    
-    """NB I haven't tested this function since changing a bunch of things
-       in the acquisitions functions (when I wrote acquire_clip_pairs_v1)
-    """
-    print('Doing Active Learning, so actually collect {} labels and select the best 1/{} using {} method'.format(
-        args.selection_factor * num_labels_requested, args.selection_factor, args.active_method))
-    rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample_pairs(args.selection_factor * num_labels_requested)
-    if args.active_method == 'BALD':
-        info_per_clip_pair = compute_info_gain(rand_clip_pairs, reward_model, args)
-    elif args.active_method == 'var_ratios':
-        raise NotImplementedError
-    elif args.active_method == 'max_entropy':
-        raise NotImplementedError
-    elif args.active_method == 'naive_variance':
-        info_per_clip_pair = compute_sample_variance_clipwise(rand_clip_pairs, reward_model, args)
-    else:
-        raise RuntimeError("You specified {} as the active_method type, but I don't know what that is!".format(args.active_method))
-    idx = np.argpartition(info_per_clip_pair, -num_labels_requested)[-num_labels_requested:] # see: tinyurl.com/ya7xr4kn
-    clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx] # returned indices are not sorted
-    log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
-    return clip_pairs, rews, mus
