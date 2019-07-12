@@ -34,7 +34,7 @@ def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, 
     idx = np.argpartition(info_per_clip_pair, -num_labels_requested)[-num_labels_requested:] # see: tinyurl.com/ya7xr4kn
     clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx] # returned indices are not sorted
     log_info_gain(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
-    log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, round_num)
+    log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, round_num=i_train_round)
     return clip_pairs, rews, mus
 
 
@@ -108,7 +108,8 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
     assert rand_mus.shape == (args.selection_factor*num_labels_requested,)
 
     clip_pairs, rews, mus = rand_clips_paired_w_ref[idx], rand_clips_paired_w_ref_rews[idx], rand_mus[idx] # returned indices are not sorted
-    log_active_learning(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
+    log_info_gain(info_per_clip_pair, idx, writer1, writer2, round_num=i_train_round)
+    log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, round_num=i_train_round)
     return clip_pairs, rews, mus
 
 
