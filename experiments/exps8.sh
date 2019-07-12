@@ -1,5 +1,4 @@
 #!/bin/bash
-
 python main.py --info=active-max_entropy-3ens-10x --active_method=max_entropy --uncert_method=ensemble --size_rm_ensemble=3
 python main.py --info=active-max_entropy-3ens-100x --active_method=max_entropy --uncert_method=ensemble --size_rm_ensemble=3 --selection_factor=100
 python main.py --info=active-max_entropy-3ens-1000x --active_method=max_entropy --uncert_method=ensemble --size_rm_ensemble=3 --selection_factor=1000
