@@ -8,8 +8,16 @@ from reward_model import RewardModelEnsemble
 def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, args, writer1, writer2, i_train_round):    
     """NB I haven't tested this function since changing a bunch of things
        in the acquisitions functions (when I wrote acquire_clip_pairs_v1)
+       1. Samples m = `args.selection_factor * num_labels_requested` *pairs* of clips from agent_experience.
+       2. Returns batch of (sigma_1, sigma_2) that maximise 
+          some metric of information gain.
+          Batch size is `num_labels_requested`. Also returns corresponding rewards and
+          mu for each clip/pair.
+          clip_pairs.shape == (num_labels_requested, 2, args.clip_length, args.obs_act_shape)
+          rews.shape       == (num_labels_requested, 2, args.clip_length)
+          mus.shape        == (num_labels_requested,)
     """
-    print('Doing Active Learning, so actually collect {} labels and select the best 1/{} using {} method'.format(
+    print('Doing Active Learning, so actually collect {} clip pairs and select the best 1/{} using {} method'.format(
         args.selection_factor * num_labels_requested, args.selection_factor, args.active_method))
     rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample_pairs(args.selection_factor * num_labels_requested)
     if args.active_method == 'BALD':
@@ -29,7 +37,10 @@ def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, 
 
 
 def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, args, writer1, writer2, i_train_round):
-    """1. Samples m = `args.selection_factor * num_labels_requested` clips from agent_experience.
+    """1. Samples m = `2 * args.selection_factor * num_labels_requested` clips from agent_experience.
+          We double the selection factor in order to make a fair comparison with `acquire_clip_pairs_v0`
+          That function samples `args.selection_factor * num_labels_requested` clip *pairs* so if we didn't
+          double here, then v0 would unfairly be sampling more clips overall
        2. Finds the clip with minimum uncertainty according to current reward_model (using the sample
            variance of multiple MC samples. See Yarin's thesis p.49, 51 for why this is justified.
            TODO 1. check that I am allowed to ignore the precision term when eval'ing uncertainty of 
@@ -49,10 +60,10 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
           each
     """
     # step 1
-    print('Doing Active Learning so actually collect {} labels and select the best 1/{} using {} method.'.format(
-        args.selection_factor * num_labels_requested, args.selection_factor, args.active_method))
+    print('Doing Active Learning so actually collect {} clips and select the best 1/{} (put into pairs) using {} method.'.format(
+        2 * args.selection_factor * num_labels_requested, 2 * args.selection_factor, args.active_method))
     print("Also, we're using the new clip pair acquisition method.")
-    rand_clips, rand_rews = agent_experience.sample_singles(args.selection_factor * num_labels_requested)
+    rand_clips, rand_rews = agent_experience.sample_singles(2 * args.selection_factor * num_labels_requested)
     # step 2
     sample_variance_per_clip = compute_sample_var_clip(rand_clips, reward_model, args)
     ref_clip_idx = np.argpartition(sample_variance_per_clip, 0)[0] # TODO this might become `ref_clips_idx` based on point 2 in the docstring. You'd just need to modify `0` to be `[:num_labels_requested]`
