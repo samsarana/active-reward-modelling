@@ -155,7 +155,7 @@ def compute_sample_var_clip(rand_clips, reward_model, args):
     r_preds_per_oa_pair = sample_reward_model(reward_model, rand_clips, args)
     batch_size = rand_clips.shape[0] # TODO remove; this is only used for asserts
     var_r_preds_per_oa_pair = r_preds_per_oa_pair.var(dim=-1) # take variance across r_preds for each s-a pair
-    assert var_r_preds_per_oa_pair.shape[0] == (batch_size, args.clip_length)
+    assert var_r_preds_per_oa_pair.shape == (batch_size, args.clip_length)
     var_r_preds_per_clip = var_r_preds_per_oa_pair.sum(dim=-1)
     assert var_r_preds_per_clip.shape == (batch_size,)
     return var_r_preds_per_clip.numpy()
