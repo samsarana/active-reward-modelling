@@ -142,6 +142,7 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
             clip_pairs, rews, mus = acquire_clip_pairs_v1(agent_experience, reward_model, args.n_labels_pretraining, args, writer1, writer2, i_train_round=-1)
     else:
         clip_pairs, rews, mus = agent_experience.sample_pairs(args.n_labels_pretraining)
+        log_random_acquisitions(mus, rews, writer1, writer2, args, round_num=-1)
     # put chosen clip_pairs, true rewards (just to compute mean/var of true reward across prefs_buffer)
     # and synthetic preferences into prefs_buffer
     prefs_buffer.push(clip_pairs, rews, mus)
@@ -196,6 +197,7 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
                 clip_pairs, rews, mus = acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, args, writer1, writer2, i_train_round)
         else:
             clip_pairs, rews, mus = agent_experience.sample_pairs(num_labels_requested)
+            log_random_acquisitions(mus, rews, writer1, writer2, args, i_train_round)
         # put labelled clip_pairs into prefs_buffer
         assert len(clip_pairs) == num_labels_requested
         prefs_buffer.push(clip_pairs, rews, mus)

@@ -344,3 +344,36 @@ def log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, args, rou
     writer2.add_histogram('1.labels acquired and candidate', rand_mus, round_num, bins='auto')
     writer1.add_histogram('2.mean return of clip pairs acquired and candidate', rews.sum(-1).sum(-1) / 2, round_num, bins='auto')
     writer2.add_histogram('2.mean return of clip pairs acquired and candidate', mean_rand_rews, round_num, bins='auto')
+
+def log_random_acquisitions(mus, rews, writer1, writer2, args, round_num):
+    """Plots two histograms: the labels and return
+       for each clip pair acquired by random baseline.
+    """
+    labels_hist = plt.figure()
+    plt.title('Label histogram, round {}'.format(round_num))
+    plt.xlabel('mu')
+    plt.ylabel('Frequency')
+    # plt.yscale('log')
+    plt.hist(mus, bins=11, range=(-0.05,1.05), color='tab:orange', alpha=0.7, label='Acquired')
+    plt.legend()
+    writer1.add_figure('1.label histogram', labels_hist, round_num)
+
+    mean_ret_hist = plt.figure()
+    plt.title('Return histogram, round {}'.format(round_num))
+    plt.xlabel('Return, averaged over both clips in pair')
+    plt.ylabel('Frequency')
+    # plt.yscale('log')
+    rews_max = args.clip_length * 1
+    # as a approximation to the min reward, in CartPoleContinuous the agent never seems to do worse than ending the episode once per 4 steps
+    # NB this is a very crude approximation and will definitely not transfer to other envs
+    assert args.env_class == 'gym_barm:CartPoleContinuous-v0', "You ought to adjust the range of your histogram plots because your current values are tuned to CartPoleContinuous"
+    rews_min = args.ep_end_penalty * args.clip_length * 1/4  + 1 * args.clip_length * (1 - 1/4)
+    rand_label = 'Candidate (paired)' if args.acq_search_strategy == 'v0' else 'Candidate (unpaired)'
+    plt.hist(rews.sum(-1).sum(-1) / 2, bins=100, range=(rews_min, rews_max), 
+        color='tab:orange', alpha=0.7, label='Acquired')
+    plt.legend()
+    writer1.add_figure('2.return histogram', mean_ret_hist, round_num)
+
+    # Tensorboard histograms are bad for discrete data but can be dynamically adjusted so I'll print them anyway as a complementary thing
+    writer1.add_histogram('1.labels acquired and candidate', mus, round_num, bins='auto')
+    writer1.add_histogram('2.mean return of clip pairs acquired and candidate', rews.sum(-1).sum(-1) / 2, round_num, bins='auto')
