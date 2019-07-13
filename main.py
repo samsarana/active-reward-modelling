@@ -122,7 +122,7 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
     agent_experience = AgentExperience((num_clips, args.clip_length, obs_shape+act_shape), args.force_label_choice)
     state = env.reset()
     print('Stage 0.1: Collecting rollouts from untrained policy, {} agent steps'.format(n_initial_steps))
-    for _ in range(n_initial_steps)
+    for _ in range(n_initial_steps):
         action = q_net.act(state, epsilon_pretrain)
         assert env.action_space.contains(action)
         next_state, r_true, _, _ = env.step(action)    
@@ -152,7 +152,7 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
     optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm)
     reward_model.train() # dropout on
     print('Stage 0.3: Intialise and pretrain reward model for {} batches on those preferences'.format(args.n_epochs_pretrain_rm))
-    for epoch in range(args.n_epochs_pretrain_rm)
+    for epoch in range(args.n_epochs_pretrain_rm):
         with torch.autograd.detect_anomaly(): # detects NaNs; useful for debugging
             clip_pair_batch, mu_batch = prefs_buffer.sample(args.batch_size_rm)
             r_hats_batch = reward_model(clip_pair_batch).squeeze(-1)
@@ -207,7 +207,7 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
         # Stage 1.3: Train reward model
         reward_model.train() # dropout on
         print('Stage 1.3: Train reward model for {} batches on those preferences'.format(args.n_epochs_train_rm))
-        for epoch in range(args.n_epochs_train_rm)
+        for epoch in range(args.n_epochs_train_rm):
             with torch.autograd.detect_anomaly():
                 clip_pair_batch, mu_batch = prefs_buffer.sample(args.batch_size_rm)
                 r_hats_batch = reward_model(clip_pair_batch).squeeze(-1) # squeeze the oa_pair dimension that was passed through reward_model
