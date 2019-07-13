@@ -3,7 +3,6 @@
 import random, sys
 import numpy as np
 from collections import deque
-from tqdm import trange
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -224,13 +223,13 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
         n_agent_steps = args.selection_factor * args.n_agent_steps
         n_train_steps = args.n_agent_steps
         print('Active Learning so will take {} further steps *without training*; this goes into agent_experience, so algo can sample extra *possible* clip pairs, and keep the best 1/{}'.format(n_agent_steps - n_train_steps, args.selection_factor))
-        desc_stage_11 = 'Stage 1.1: RL using reward model for {} agent steps, of which the first {} include training'.format(n_agent_steps, n_train_steps)
+        print('Stage 1.1: RL using reward model for {} agent steps, of which the first {} include training'.format(n_agent_steps, n_train_steps))
     else:
         n_agent_steps = n_train_steps = args.n_agent_steps
         if args.RL_baseline:
-            desc_stage_11 = 'Stage 1.1: RL using *true reward* for {} agent steps'.format(n_agent_steps)
+            print('Stage 1.1: RL using *true reward* for {} agent steps'.format(n_agent_steps))
         else:
-            desc_stage_11 = 'Stage 1.1: RL using reward model for {} agent steps'.format(n_agent_steps)
+            print('Stage 1.1: RL using reward model for {} agent steps'.format(n_agent_steps))
     num_clips = int(n_agent_steps//args.clip_length)
     assert n_agent_steps % args.clip_length == 0
     agent_experience = AgentExperience((num_clips, args.clip_length, obs_shape+act_shape), args.force_label_choice) # since episodes do not end we will collect one long trajectory then sample clips from it     
@@ -238,7 +237,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
                     'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
     # train!
     state = env.reset()
-    for step in trange(n_agent_steps, desc=desc_stage_11, dynamic_ncols=True, file=sys.stdout, miniters=n_agent_steps):
+    for step in range(n_agent_steps):
         # agent interact with env
         action = q_net.act(state, q_net.epsilon)
         assert env.action_space.contains(action)

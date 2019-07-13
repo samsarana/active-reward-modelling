@@ -8,7 +8,6 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
-from tqdm import trange
 
 from q_learning import *
 from reward_model import *
@@ -90,7 +89,8 @@ def do_random_experiment(env, args, writer1, writer2):
         print('[Start Round {}]'.format(i_train_round))
         dummy_returns = {'ep': 0, 'all': []}
         env.reset()
-        for step in trange(args.n_agent_steps, desc='Taking random actions for {} steps'.format(args.n_agent_steps), dynamic_ncols=True, file=sys.stdout, miniters=args.n_agent_steps):
+        print('Taking random actions for {} steps'.format(args.n_agent_steps))
+        for step in range(args.n_agent_steps):
             # agent interact with env
             action = env.action_space.sample()
             assert env.action_space.contains(action)
@@ -121,7 +121,8 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
     assert n_initial_steps % args.clip_length == 0, "Agent should take a number of steps that's divisible by the desired clip_length"
     agent_experience = AgentExperience((num_clips, args.clip_length, obs_shape+act_shape), args.force_label_choice)
     state = env.reset()
-    for _ in trange(n_initial_steps, desc='Stage 0.1: Collecting rollouts from untrained policy, {} agent steps'.format(n_initial_steps), dynamic_ncols=True, file=sys.stdout, miniters=n_initial_steps):
+    print('Stage 0.1: Collecting rollouts from untrained policy, {} agent steps'.format(n_initial_steps))
+    for _ in range(n_initial_steps)
         action = q_net.act(state, epsilon_pretrain)
         assert env.action_space.contains(action)
         next_state, r_true, _, _ = env.step(action)    
@@ -150,7 +151,8 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
     # Stage 0.3 Intialise and pretrain reward model
     optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm)
     reward_model.train() # dropout on
-    for epoch in trange(args.n_epochs_pretrain_rm, desc='Stage 0.3: Intialise and pretrain reward model for {} batches on those preferences'.format(args.n_epochs_pretrain_rm), dynamic_ncols=True, file=sys.stdout, miniters=args.n_epochs_pretrain_rm):
+    print('Stage 0.3: Intialise and pretrain reward model for {} batches on those preferences'.format(args.n_epochs_pretrain_rm))
+    for epoch in range(args.n_epochs_pretrain_rm)
         with torch.autograd.detect_anomaly(): # detects NaNs; useful for debugging
             clip_pair_batch, mu_batch = prefs_buffer.sample(args.batch_size_rm)
             r_hats_batch = reward_model(clip_pair_batch).squeeze(-1)
@@ -204,7 +206,8 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
         
         # Stage 1.3: Train reward model
         reward_model.train() # dropout on
-        for epoch in trange(args.n_epochs_train_rm, desc='Stage 1.3: Train reward model for {} batches on those preferences'.format(args.n_epochs_train_rm), dynamic_ncols=True, file=sys.stdout, miniters=args.n_epochs_train_rm):
+        print('Stage 1.3: Train reward model for {} batches on those preferences'.format(args.n_epochs_train_rm))
+        for epoch in range(args.n_epochs_train_rm)
             with torch.autograd.detect_anomaly():
                 clip_pair_batch, mu_batch = prefs_buffer.sample(args.batch_size_rm)
                 r_hats_batch = reward_model(clip_pair_batch).squeeze(-1) # squeeze the oa_pair dimension that was passed through reward_model
