@@ -63,7 +63,7 @@ def parse_arguments():
     parser.add_argument('--active_method', type=str, default=None, help='Choice of: BALD, var_ratios, max_entropy, naive_variance')
     parser.add_argument('--uncert_method', type=str, default=None, help='Choice of: MC, ensemble')
     parser.add_argument('--num_MC_samples', type=int, default=10)
-    parser.add_argument('--acquisition_search_strategy', type=str, default='v1', help='Whether to use Christiano (v0) or Angelos (v1) strategy to search for clip pairs')
+    parser.add_argument('--acq_search_strategy', type=str, default='v0', help='Whether to use Christiano (v0) or Angelos (v1) strategy to search for clip pairs')
     parser.add_argument('--size_rm_ensemble', type=int, default=1, help='If active_method == ensemble then this must be >= 2')
     parser.add_argument('--selection_factor', type=int, default=10, help='when doing active learning, 1/selection_factor of the randomly sampled clip pairs are sent to human for evaluation')
     # if doing active learning n_steps_(pre)train is automatically increased by this factor bc we consider
@@ -136,9 +136,9 @@ def do_pretraining(env, q_net, reward_model, prefs_buffer, args, obs_shape, act_
     print('Stage 0.2: Sample without replacement from those rollouts to collect {} labels. Each label is on a pair of clips of length {}'.format(args.n_labels_pretraining, args.clip_length))
     writer1.add_scalar('6.labels requested per round', args.n_labels_pretraining, -1)
     if args.active_method:
-        if args.acquisition_search_strategy == 'v0':
+        if args.acq_search_strategy == 'v0':
             clip_pairs, rews, mus = acquire_clip_pairs_v0(agent_experience, reward_model, args.n_labels_pretraining, args, writer1, writer2, i_train_round=-1)
-        elif args.acquisition_search_strategy == 'v1':
+        elif args.acq_search_strategy == 'v1':
             clip_pairs, rews, mus = acquire_clip_pairs_v1(agent_experience, reward_model, args.n_labels_pretraining, args, writer1, writer2, i_train_round=-1)
     else:
         clip_pairs, rews, mus = agent_experience.sample_pairs(args.n_labels_pretraining)
@@ -190,9 +190,9 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, obs_shap
         print('Stage 1.2: Sample without replacement from those rollouts to collect {} labels/preference tuples'.format(num_labels_requested))
         writer1.add_scalar('6.labels requested per round', num_labels_requested, i_train_round)
         if args.active_method:
-            if args.acquisition_search_strategy == 'v0':
+            if args.acq_search_strategy == 'v0':
                 clip_pairs, rews, mus = acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, args, writer1, writer2, i_train_round)
-            elif args.acquisition_search_strategy == 'v1':
+            elif args.acq_search_strategy == 'v1':
                 clip_pairs, rews, mus = acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, args, writer1, writer2, i_train_round)
         else:
             clip_pairs, rews, mus = agent_experience.sample_pairs(num_labels_requested)
