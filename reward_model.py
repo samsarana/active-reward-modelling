@@ -266,25 +266,25 @@ def eval_rm_correlation(reward_model, env, agent, args, obs_shape, act_shape, ro
     plt.scatter(r_true_norm, r_pred_norm)
 
     # 4. error bars
-    reward_model.train() # we'll now draw samples from posterior to get error bars on scatter plot
-    r_pred_samples = np.array([reward_model(sa_pairs).detach().squeeze().numpy() for _ in range(100)])
-    # dims: 0=samples, 1=examples
+    # reward_model.train() # we'll now draw samples from posterior to get error bars on scatter plot
+    # r_pred_samples = np.array([reward_model(sa_pairs).detach().squeeze().numpy() for _ in range(100)])
+    # # dims: 0=samples, 1=examples
 
-    r_pred_samples_norm = (r_pred_samples - r_pred.mean()) / np.sqrt(r_pred.var() + 1e-8)
-    tenth, ninetieth = np.percentile(r_pred_samples_norm, 10, axis=0), np.percentile(r_pred_samples_norm, 90, axis=0)
-    assert tenth.shape == (num_rollouts * rollout_steps,)
-    assert ninetieth.shape == (num_rollouts * rollout_steps,)
-    minus_err = r_pred_norm - tenth
-    assert (minus_err >= 0).all()
-    plus_err = ninetieth - r_pred_norm
+    # r_pred_samples_norm = (r_pred_samples - r_pred.mean()) / np.sqrt(r_pred.var() + 1e-8)
+    # tenth, ninetieth = np.percentile(r_pred_samples_norm, 10, axis=0), np.percentile(r_pred_samples_norm, 90, axis=0)
+    # assert tenth.shape == (num_rollouts * rollout_steps,)
+    # assert ninetieth.shape == (num_rollouts * rollout_steps,)
+    # minus_err = r_pred_norm - tenth
+    # assert (minus_err >= 0).all()
+    # plus_err = ninetieth - r_pred_norm
 
-    scatter_plots['norm_error_bars'] = plt.figure(figsize=(15,8))
-    plt.title('Correlation of (normalised) predicted and true reward with error bars. r_xy = {:.2f}\nAccumulated over {} steps'.format(
-        r_xy, args.corr_rollout_steps * args.corr_num_rollouts))
-    # maybe do something later about changing colour of reward and error bars corresp. to out-of-distribution state-action pairs
-    plt.errorbar(r_true_norm, r_pred_norm, yerr=np.array([plus_err, minus_err]), fmt='o', ecolor='g', alpha=0.3, capsize=5) # would be nicer to make errors(_norm) a namedtuple (or namedlist if plt.errorbar yerr arg needs a list), s.t. it can be passed straight in, here
-    plt.xlabel('True reward (normalised)')
-    plt.ylabel('Modelled reward (normalised)')
+    # scatter_plots['norm_error_bars'] = plt.figure(figsize=(15,8))
+    # plt.title('Correlation of (normalised) predicted and true reward with error bars. r_xy = {:.2f}\nAccumulated over {} steps'.format(
+    #     r_xy, args.corr_rollout_steps * args.corr_num_rollouts))
+    # # maybe do something later about changing colour of reward and error bars corresp. to out-of-distribution state-action pairs
+    # plt.errorbar(r_true_norm, r_pred_norm, yerr=np.array([plus_err, minus_err]), fmt='o', ecolor='g', alpha=0.3, capsize=5) # would be nicer to make errors(_norm) a namedtuple (or namedlist if plt.errorbar yerr arg needs a list), s.t. it can be passed straight in, here
+    # plt.xlabel('True reward (normalised)')
+    # plt.ylabel('Modelled reward (normalised)')
 
     return r_xy, scatter_plots
 
@@ -293,4 +293,4 @@ def log_correlation(r_xy, plots, writer, round_num):
     writer.add_scalar('4.r_xy', r_xy, round_num)
     writer.add_figure('4.alignment/1-non-norm', plots['non-norm'], round_num) # we can have mutliple figures with the same tag and scroll through them!
     writer.add_figure('4.alignment/2-norm', plots['norm'], round_num)
-    writer.add_figure('4.alignment/3-norm_error_bars', plots['norm_error_bars'], round_num)
+    # writer.add_figure('4.alignment/3-norm_error_bars', plots['norm_error_bars'], round_num)
