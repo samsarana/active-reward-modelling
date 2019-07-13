@@ -309,7 +309,7 @@ def log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, args, rou
     plt.title('Label histogram, round {}'.format(round_num))
     plt.xlabel('mu')
     plt.ylabel('Frequency')
-    plt.yscale('log')
+    # plt.yscale('log')
     plt.hist(rand_mus, bins=11, range=(-0.05,1.05), color='tab:blue', alpha=0.7, label='Candidate')
     plt.hist(mus, bins=11, range=(-0.05,1.05), color='tab:orange', alpha=0.7, label='Acquired')
     plt.legend()
@@ -319,7 +319,7 @@ def log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, args, rou
     plt.title('Return histogram, round {}'.format(round_num))
     plt.xlabel('Return, averaged over both clips in pair')
     plt.ylabel('Frequency')
-    plt.yscale('log')
+    # plt.yscale('log')
     if len(rand_rews.shape) == 3: # v0 acq func => rand_rews paired
         mean_rand_rews = rand_rews.sum(-1).sum(-1) / 2
     elif len(rand_rews.shape) == 2: # v1 acq func => rand_rews not paired
@@ -327,10 +327,10 @@ def log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, args, rou
     else:
         raise RuntimeError('`rand_rews` is of the wrong shape.')
     rews_max = args.clip_length * 1
-    # as a approximation to the min reward, in CartPoleContinuous the agent never seems to do worse than ending the episode once per 3 steps
+    # as a approximation to the min reward, in CartPoleContinuous the agent never seems to do worse than ending the episode once per 4 steps
     # NB this is a very crude approximation and will definitely not transfer to other envs
     assert args.env_class == 'gym_barm:CartPoleContinuous-v0', "You ought to adjust the range of your histogram plots because your current values are tuned to CartPoleContinuous"
-    rews_min = args.ep_end_penalty * args.clip_length * 1/3  + 1 * args.clip_length * (1 - 1/3)
+    rews_min = args.ep_end_penalty * args.clip_length * 1/4  + 1 * args.clip_length * (1 - 1/4)
     rand_label = 'Candidate (paired)' if args.acq_search_strategy == 'v0' else 'Candidate (unpaired)'
     plt.hist(mean_rand_rews, bins=100, range=(rews_min, rews_max), # min possible value is -39*25 
         color='tab:blue', alpha=0.7, label=rand_label)
