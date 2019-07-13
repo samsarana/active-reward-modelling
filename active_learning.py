@@ -309,6 +309,7 @@ def log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, args, rou
     plt.title('Label histogram, round {}'.format(round_num))
     plt.xlabel('mu')
     plt.ylabel('Frequency')
+    plt.yscale('log')
     plt.hist(rand_mus, bins=11, range=(-0.05,1.05), color='tab:blue', alpha=0.7, label='Candidate')
     plt.hist(mus, bins=11, range=(-0.05,1.05), color='tab:orange', alpha=0.7, label='Acquired')
     plt.legend()
@@ -318,6 +319,7 @@ def log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, args, rou
     plt.title('Return histogram, round {}'.format(round_num))
     plt.xlabel('Return, averaged over both clips in pair')
     plt.ylabel('Frequency')
+    plt.yscale('log')
     if len(rand_rews.shape) == 3: # v0 acq func => rand_rews paired
         mean_rand_rews = rand_rews.sum(-1).sum(-1) / 2
     elif len(rand_rews.shape) == 2: # v1 acq func => rand_rews not paired
@@ -337,8 +339,8 @@ def log_acquisitions(mus, rand_mus, rews, rand_rews, writer1, writer2, args, rou
     plt.legend()
     writer1.add_figure('2.return histogram', mean_ret_hist, round_num)
 
-    # Old code: Tensorboard histograms are bad for discrete data...
-    # writer1.add_histogram('10.labels acquired and candidate', mus, round_num, bins=10)
-    # writer2.add_histogram('10.labels acquired and candidate', rand_mus, round_num, bins=10)
-    # writer1.add_histogram('11.mean return of clip pairs acquired and candidate', rews.sum(-1).sum(-1) / rews.shape[0], round_num, bins=1000)
-    # writer2.add_histogram('11.mean return of clip pairs acquired and candidate', rand_rews.sum(-1).sum(-1) / rand_rews.shape[0], round_num, bins=1000)
+    # Tensorboard histograms are bad for discrete data but can be dynamically adjusted so I'll print them anyway as a complementary thing
+    writer1.add_histogram('1.labels acquired and candidate', mus, round_num, bins='auto')
+    writer2.add_histogram('1.labels acquired and candidate', rand_mus, round_num, bins='auto')
+    writer1.add_histogram('2.mean return of clip pairs acquired and candidate', rews.sum(-1).sum(-1) / 2, round_num, bins='auto')
+    writer2.add_histogram('2.mean return of clip pairs acquired and candidate', mean_rand_rews, round_num, bins='auto')
