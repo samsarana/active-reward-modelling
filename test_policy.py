@@ -56,15 +56,15 @@ def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_ro
     mean_ret_true_norm = np.sum(np.array(returns['true_norm'])) / num_test_episodes
     returns_summary[i_run][('true', i_train_round)] = mean_ret_true # dict format that is friendly to creating a multiindex pd.DataFrame downstream
     returns_summary[i_run][('true_norm', i_train_round)] = mean_ret_true_norm
-    writer1.add_scalar('1a.mean ep return per training round', mean_ret_true, i_train_round)
-    writer1.add_scalar('1b.mean ep return per training round normalised', mean_ret_true_norm, i_train_round)
+    writer1.add_scalar('1a.mean_ep_return_per_training_round', mean_ret_true, i_train_round)
+    writer1.add_scalar('1b.mean_ep_return_per_training_round_normalised', mean_ret_true_norm, i_train_round)
     if not args.RL_baseline:
         mean_ret_pred = np.sum(np.array(returns['pred'])) / num_test_episodes
         mean_ret_pred_norm = np.sum(np.array(returns['pred_norm'])) / num_test_episodes
         returns_summary[i_run][('pred', i_train_round)] = mean_ret_pred
         returns_summary[i_run][('pred_norm', i_train_round)] = mean_ret_pred_norm
-        writer2.add_scalar('1a.mean ep return per training round', mean_ret_pred, i_train_round)
-        writer2.add_scalar('1b.mean ep return per training round normalised', mean_ret_pred_norm, i_train_round)
+        writer2.add_scalar('1a.mean_ep_return_per_training_round', mean_ret_pred, i_train_round)
+        writer2.add_scalar('1b.mean_ep_return_per_training_round_normalised', mean_ret_pred_norm, i_train_round)
 
 
 def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_round, render=False, num_episodes=100):
@@ -107,4 +107,4 @@ def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_ro
     writer1, writer2, _ = writers
     mean_ret_true = np.sum(np.array(returns['all'])) / num_episodes
     returns_summary[i_run][('true', i_train_round)] = mean_ret_true
-    writer1.add_scalar('1a.mean ep return per training round', mean_ret_true, i_train_round)
+    writer1.add_scalar('1a.mean_ep_return_per_training_round', mean_ret_true, i_train_round)

@@ -165,7 +165,7 @@ class AgentExperience():
             # self.clip_returns[i_clip] += reward
             self.i += 1 # increment pointer
         except IndexError:
-            print('Oopsie, agent_experience buffer (self.clips) is full!')
+            raise RuntimeError('Oopsie, agent_experience buffer (self.clips) is full!')
 
     def sample_singles(self, batch_size):
         """Samples, without replacement, batch_size *single* clips

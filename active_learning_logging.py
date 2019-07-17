@@ -19,7 +19,7 @@ def log_info_gain(info_per_clip_pair, idx, writers, round_num):
     plt.xlabel('Clip pairs')
     plt.ylabel('Metric of info gain')
     plt.bar(np.arange(num_pairs), info_per_clip_pair, color=colours)
-    writer1.add_figure('3.info gain per clip pair', info_bars, round_num)
+    writer1.add_figure('3.info gain_per_clip_pair', info_bars, round_num)
 
     total_info = info_per_clip_pair.sum()
     selected_info = info_per_clip_pair[idx].sum()
@@ -39,7 +39,7 @@ def log_acquisitions(mus, rand_mus, rews, rand_rews, writers, args, round_num):
     plt.hist(rand_mus, bins=11, range=(-0.05,1.05), color='tab:blue', alpha=0.7, label='Candidate')
     plt.hist(mus, bins=11, range=(-0.05,1.05), color='tab:orange', alpha=0.7, label='Acquired')
     plt.legend()
-    writer1.add_figure('1.label histogram', labels_hist, round_num)
+    writer1.add_figure('1.label_histogram', labels_hist, round_num)
 
     mean_ret_hist = plt.figure()
     plt.title('Return histogram, round {}'.format(round_num))
@@ -63,13 +63,13 @@ def log_acquisitions(mus, rand_mus, rews, rand_rews, writers, args, round_num):
     plt.hist(rews.sum(-1).sum(-1) / 2, bins=100, range=(rews_min, rews_max), 
         color='tab:orange', alpha=0.7, label='Acquired')
     plt.legend()
-    writer1.add_figure('2.return histogram', mean_ret_hist, round_num)
+    writer1.add_figure('2.return_histogram', mean_ret_hist, round_num)
 
     # Tensorboard histograms are bad for discrete data but can be dynamically adjusted so I'll print them anyway as a complementary thing
-    writer1.add_histogram('1.labels acquired and candidate', mus, round_num, bins='auto')
-    writer2.add_histogram('1.labels acquired and candidate', rand_mus, round_num, bins='auto')
-    writer1.add_histogram('2.mean return of clip pairs acquired and candidate', rews.sum(-1).sum(-1) / 2, round_num, bins='auto')
-    writer2.add_histogram('2.mean return of clip pairs acquired and candidate', mean_rand_rews, round_num, bins='auto')
+    writer1.add_histogram('1.labels_acquired_and_candidate', mus, round_num, bins='auto')
+    writer2.add_histogram('1.labels_acquired_and_candidate', rand_mus, round_num, bins='auto')
+    writer1.add_histogram('2.mean_return_of_clip_pairs_acquired_and_candidate', rews.sum(-1).sum(-1) / 2, round_num, bins='auto')
+    writer2.add_histogram('2.mean_return_of_clip_pairs_acquired_and_candidate', mean_rand_rews, round_num, bins='auto')
 
 
 def log_random_acquisitions(mus, rews, writers, args, round_num):
@@ -84,7 +84,7 @@ def log_random_acquisitions(mus, rews, writers, args, round_num):
     # plt.yscale('log')
     plt.hist(mus, bins=11, range=(-0.05,1.05), color='tab:orange', alpha=0.7, label='Acquired')
     plt.legend()
-    writer1.add_figure('1.label histogram', labels_hist, round_num)
+    writer1.add_figure('1.label_histogram', labels_hist, round_num)
 
     mean_ret_hist = plt.figure()
     plt.title('Return histogram, round {}'.format(round_num))
@@ -100,8 +100,8 @@ def log_random_acquisitions(mus, rews, writers, args, round_num):
     plt.hist(rews.sum(-1).sum(-1) / 2, bins=100, range=(rews_min, rews_max), 
         color='tab:orange', alpha=0.7, label='Acquired')
     plt.legend()
-    writer1.add_figure('2.return histogram', mean_ret_hist, round_num)
+    writer1.add_figure('2.return_histogram', mean_ret_hist, round_num)
 
     # Tensorboard histograms are bad for discrete data but can be dynamically adjusted so I'll print them anyway as a complementary thing
-    writer1.add_histogram('1.labels acquired and candidate', mus, round_num, bins='auto')
-    writer1.add_histogram('2.mean return of clip pairs acquired and candidate', rews.sum(-1).sum(-1) / 2, round_num, bins='auto')
+    writer1.add_histogram('1.labels_acquired_and_candidate', mus, round_num, bins='auto')
+    writer1.add_histogram('2.mean_return_of_clip_pairs_acquired_and_candidate', rews.sum(-1).sum(-1) / 2, round_num, bins='auto')

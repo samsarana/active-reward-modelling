@@ -1,6 +1,6 @@
 """Functions to do Active Learning"""
 
-import random
+import random, logging
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -20,7 +20,7 @@ def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, 
           rews.shape       == (num_labels_requested, 2, args.clip_length)
           mus.shape        == (num_labels_requested,)
     """
-    print('Doing Active Learning, so actually collect {} clip pairs and select the best 1/{} using {} method'.format(
+    logging.info('Doing Active Learning, so actually collect {} clip pairs and select the best 1/{} using {} method'.format(
         args.selection_factor * num_labels_requested, args.selection_factor, args.active_method))
     rand_clip_pairs, rand_rews, rand_mus = agent_experience.sample_pairs(args.selection_factor * num_labels_requested)
     if args.active_method == 'BALD':
@@ -64,9 +64,9 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
           each
     """
     # step 1
-    print('Doing Active Learning so actually collect {} clips and select the best 1/{} (put into pairs) using {} method.'.format(
+    logging.info('Doing Active Learning so actually collect {} clips and select the best 1/{} (put into pairs) using {} method.'.format(
         2 * args.selection_factor * num_labels_requested, args.selection_factor, args.active_method))
-    print("Also, we're using the new clip pair acquisition method.")
+    logging.info("Also, we're using the new clip pair acquisition method.")
     rand_clips, rand_rews = agent_experience.sample_singles(2 * args.selection_factor * num_labels_requested)
     # step 2
     sample_variance_per_clip = compute_sample_var_clip(rand_clips, reward_model, args)

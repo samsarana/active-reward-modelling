@@ -1,4 +1,4 @@
-import random, argparse
+import random, argparse, logging
 import numpy as np
 import pandas as pd
 import gym, gym_barm
@@ -13,6 +13,7 @@ from active_learning import *
 def parse_arguments():
     parser = argparse.ArgumentParser()
     # experiment settings
+    parser.add_argument('--info', type=str, default='', help='Tensorboard log is saved in ./logs/i_run/random_seed/[true|pred]/')
     parser.add_argument('--env_class', type=str, default='gym_barm:CartPoleContinuous-v0')
     parser.add_argument('--env_class_test', type=str, default='CartPole-v0', help='We use the standard, non-continuous version of the env for testing agent performance')
     parser.add_argument('--n_runs', type=int, default=20, help='number of runs to repeat the experiment')
@@ -20,7 +21,6 @@ def parse_arguments():
     parser.add_argument('--RL_baseline', action='store_true', help='Do RL baseline instead of reward learning?')
     parser.add_argument('--random_policy', action='store_true', help='Do the experiments with an entirely random policy, to benchmark performance')
     parser.add_argument('--ep_end_penalty', type=float, default=-29.0, help='How much reward does agent get when the (dummy) episode ends?')
-    parser.add_argument('--info', type=str, default='', help='Tensorboard log is saved in ./logs/*info*_pred/true')
     parser.add_argument('--random_seed', type=int, default=0)
     parser.add_argument('--test', action='store_true', help='Flag to make training procedure very short (to check for errors)')
     # agent hyperparams
@@ -118,7 +118,7 @@ def run_experiment(args, i_run, returns_summary):
         q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
         if args.size_rm_ensemble >= 2:
             reward_model = RewardModelEnsemble(obs_shape, act_shape, args)
-            print('Using a {}-ensemble of nets for our reward model'.format(args.size_rm_ensemble))
+            logging.info('Using a {}-ensemble of nets for our reward model'.format(args.size_rm_ensemble))
         else:
             reward_model = RewardModel(obs_shape, act_shape, args)
         prefs_buffer = PrefsBuffer(capacity=args.prefs_buffer_size, clip_shape=(args.clip_length, obs_shape+act_shape))
@@ -131,19 +131,19 @@ def run_experiment(args, i_run, returns_summary):
     writer3.close()
 
 def main():
-    # experiment settings
     args = parse_arguments()
-    print('\nRunning experiment with the following settings:')
+    logging.basicConfig(filename='./logs/{}.log'.format(args.info), level=logging.INFO)
+    logging.getLogger().addHandler(logging.StreamHandler()) # makes messages print to stderr, too
+    logging.info('\nRunning experiment with the following settings:')
     for arg in vars(args):
-        print(arg, getattr(args, arg))
+        logging.info('{}: {}'.format(arg, getattr(args, arg)))
     
-    # set up DataFrame for logging returns to .csv
-    # indices = pd.MultiIndex.from_product([['true', 'pred', 'true_norm', 'pred_norm'], range(args.n_rounds)])
-    # returns_df = pd.DataFrame(index=indices, columns=range(args.n_runs))
     returns_summary = {i: {} for i in range(args.n_runs)}
     for i_run in range(args.n_runs):
-        run_experiment(args, i_run, returns_summary)
-    
+        try:
+            run_experiment(args, i_run, returns_summary)
+        except:
+            logging.exception('Run {} of experiment {} failed')
     pd.DataFrame(returns_summary).to_csv('./logs/{}.csv'.format(args.info), index_label=['ep return type', 'round no.'])
 
 if __name__ == '__main__':
