@@ -103,6 +103,7 @@ def run_experiment(args, i_run, returns_summary):
 
     # make environment
     env = gym.make(args.env_class, ep_end_penalty=args.ep_end_penalty)
+    env.seed(random_seed)
     args.obs_shape = env.observation_space.shape[0] # env.observation_space is Box(4,) and calling .shape returns (4,) [gym can be ugly]
     assert isinstance(env.action_space, gym.spaces.Discrete), 'DQN requires discrete action space.'
     args.act_shape = 1 # [gym doesn't have a nice way to get shape of Discrete space... env.action_space.shape -> () ]

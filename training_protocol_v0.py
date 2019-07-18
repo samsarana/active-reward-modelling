@@ -207,7 +207,7 @@ def do_training(env, q_net, q_target, reward_model, prefs_buffer, args, writers,
         q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
                                                                  reward_model, prefs_buffer, reward_stats, args, writers, i_train_round)
         # Stage 1.1b: Evalulate RL agent performance
-        test_returns = test_policy(q_net, reward_model, reward_stats, args)
+        test_returns = test_policy(q_net, reward_model, reward_stats, args, random_seed=i_run)
         log_tested_policy(test_returns, writers, returns_summary, args, i_run, i_train_round)
 
         # Stage 1.2: Sample clip pairs without replacement from recent rollouts and label them (synthetically)

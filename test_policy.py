@@ -3,7 +3,7 @@
 import numpy as np
 import torch, gym, time
 
-def test_policy(q_net, reward_model, reward_stats, args, render=False, num_episodes=100):
+def test_policy(q_net, reward_model, reward_stats, args, random_seed, render=False, num_episodes=100):
     """Using the non-continuous version of the environment and q_net
        with argmax policy (deterministic), run the polcy for
        `num_episodes` and log mean episode return.
@@ -11,6 +11,7 @@ def test_policy(q_net, reward_model, reward_stats, args, render=False, num_episo
     """
     # set up testing
     env = gym.make(args.env_class_test)
+    env.seed(random_seed)
     state, n = env.reset(), 0
     returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
                'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
@@ -51,7 +52,6 @@ def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_ro
     """
     writer1, writer2 = writers
     num_test_episodes = len(returns['true'])
-
     mean_ret_true = np.sum(np.array(returns['true'])) / num_test_episodes
     mean_ret_true_norm = np.sum(np.array(returns['true_norm'])) / num_test_episodes
     returns_summary[i_run][('1.true', i_train_round)] = mean_ret_true # dict format that is friendly to creating a multiindex pd.DataFrame downstream
@@ -83,6 +83,7 @@ def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_ro
     """
     # set up testing
     env = gym.make(args.env_class_test)
+    env.seed(i_run)
     env.reset()
     n = 0
     returns = {'ep': 0, 'all': []}
