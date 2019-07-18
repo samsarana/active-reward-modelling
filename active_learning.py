@@ -36,8 +36,8 @@ def acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, 
     idx = np.argpartition(info_per_clip_pair, -num_labels_requested)[-num_labels_requested:] # see: tinyurl.com/ya7xr4kn
     clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx] # returned indices are not sorted
     log_info_gain(info_per_clip_pair, idx, writers, round_num=i_train_round)
-    log_acquisitions(mus, rand_mus, rews, rand_rews, writers, args, round_num=i_train_round)
-    return clip_pairs, rews, mus
+    mu_counts = log_acquisitions(mus, rand_mus, rews, rand_rews, writers, args, round_num=i_train_round)
+    return clip_pairs, rews, mus, mu_counts
 
 
 def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, args, writers, i_train_round):
@@ -111,8 +111,8 @@ def acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, 
 
     clip_pairs, rews, mus = rand_clips_paired_w_ref[idx], rand_clips_paired_w_ref_rews[idx], rand_mus[idx] # returned indices are not sorted
     log_info_gain(info_per_clip_pair, idx, writers, round_num=i_train_round)
-    log_acquisitions(mus, rand_mus, rews, rand_rews, writers, args, round_num=i_train_round)
-    return clip_pairs, rews, mus
+    mu_counts = log_acquisitions(mus, rand_mus, rews, rand_rews, writers, args, round_num=i_train_round)
+    return clip_pairs, rews, mus, mu_counts
 
 
 def sample_reward_model(reward_model, clips, args):

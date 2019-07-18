@@ -49,20 +49,20 @@ def test_policy(q_net, reward_model, reward_stats, args, render=False, num_episo
 def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_round):
     """Write test returns to Tensborboard and DataFrame
     """
-    writer1, writer2, _ = writers
+    writer1, writer2 = writers
     num_test_episodes = len(returns['true'])
 
     mean_ret_true = np.sum(np.array(returns['true'])) / num_test_episodes
     mean_ret_true_norm = np.sum(np.array(returns['true_norm'])) / num_test_episodes
-    returns_summary[i_run][('true', i_train_round)] = mean_ret_true # dict format that is friendly to creating a multiindex pd.DataFrame downstream
-    returns_summary[i_run][('true_norm', i_train_round)] = mean_ret_true_norm
+    returns_summary[i_run][('1.true', i_train_round)] = mean_ret_true # dict format that is friendly to creating a multiindex pd.DataFrame downstream
+    returns_summary[i_run][('3.true_norm', i_train_round)] = mean_ret_true_norm
     writer1.add_scalar('1a.mean_ep_return_per_training_round', mean_ret_true, i_train_round)
     writer1.add_scalar('1b.mean_ep_return_per_training_round_normalised', mean_ret_true_norm, i_train_round)
     if not args.RL_baseline:
         mean_ret_pred = np.sum(np.array(returns['pred'])) / num_test_episodes
         mean_ret_pred_norm = np.sum(np.array(returns['pred_norm'])) / num_test_episodes
-        returns_summary[i_run][('pred', i_train_round)] = mean_ret_pred
-        returns_summary[i_run][('pred_norm', i_train_round)] = mean_ret_pred_norm
+        returns_summary[i_run][('2.pred', i_train_round)] = mean_ret_pred
+        returns_summary[i_run][('4.pred_norm', i_train_round)] = mean_ret_pred_norm
         writer2.add_scalar('1a.mean_ep_return_per_training_round', mean_ret_pred, i_train_round)
         writer2.add_scalar('1b.mean_ep_return_per_training_round_normalised', mean_ret_pred_norm, i_train_round)
 
@@ -104,7 +104,7 @@ def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_ro
     
     # log mean return
     assert len(returns['all']) == num_episodes
-    writer1, writer2, _ = writers
+    writer1, writer2 = writers
     mean_ret_true = np.sum(np.array(returns['all'])) / num_episodes
     returns_summary[i_run][('true', i_train_round)] = mean_ret_true
     writer1.add_scalar('1a.mean_ep_return_per_training_round', mean_ret_true, i_train_round)

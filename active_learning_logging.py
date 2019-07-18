@@ -2,6 +2,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from collections import Counter
 
 def log_info_gain(info_per_clip_pair, idx, writers, round_num):
     """1. Plots a bar chart with the info of each clip pair
@@ -10,7 +11,7 @@ def log_info_gain(info_per_clip_pair, idx, writers, round_num):
                              info summed over selected clip pairs
        All plotting is done by logging to Tensorboard.
     """
-    writer1, writer2, _ = writers
+    writer1, writer2 = writers
     assert len(info_per_clip_pair.shape) == 1
     num_pairs = len(info_per_clip_pair)
     colours = ['tab:orange' if i in idx else 'tab:blue' for i in range(num_pairs)]
@@ -19,7 +20,7 @@ def log_info_gain(info_per_clip_pair, idx, writers, round_num):
     plt.xlabel('Clip pairs')
     plt.ylabel('Metric of info gain')
     plt.bar(np.arange(num_pairs), info_per_clip_pair, color=colours)
-    writer1.add_figure('3.info gain_per_clip_pair', info_bars, round_num)
+    writer1.add_figure('3.info_gain_per_clip_pair', info_bars, round_num)
 
     total_info = info_per_clip_pair.sum()
     selected_info = info_per_clip_pair[idx].sum()
@@ -30,7 +31,19 @@ def log_acquisitions(mus, rand_mus, rews, rand_rews, writers, args, round_num):
     """Plots two histograms: the labels and return
        for each clip pair candidate and acquisition.
     """
-    writer1, writer2, _ = writers
+    writer1, writer2 = writers
+
+    mu_counts = dict(Counter(mus))
+    rand_mu_counts = dict(Counter(rand_mus))
+    label_counts = np.array([[mu_counts.get(0, 0), mu_counts.get(0.5, 0), mu_counts.get(1, 0)],
+                          [rand_mu_counts.get(0, 0), rand_mu_counts.get(0.5, 0), rand_mu_counts.get(1, 0)]
+                         ]) # use 0 as default value from dict.get()
+    # mus_, mu_counts = np.unique(mus, return_counts=True) # essentially gives us a discrete histogram
+    # rand_mus_, rand_mu_counts = np.unique(rand_mus, return_counts=True)
+    # assert (mus_ == [0, 0.5, 1]).all() and len(mu_counts) == 3
+    # assert (rand_mus_ == [0, 0.5, 1]).all() and len(rand_mu_counts) == 3
+    # label_counts = np.stack((mu_counts, rand_mu_counts)) # acquired, candidate
+
     labels_hist = plt.figure()
     plt.title('Label histogram, round {}'.format(round_num))
     plt.xlabel('mu')
@@ -70,13 +83,23 @@ def log_acquisitions(mus, rand_mus, rews, rand_rews, writers, args, round_num):
     writer2.add_histogram('1.labels_acquired_and_candidate', rand_mus, round_num, bins='auto')
     writer1.add_histogram('2.mean_return_of_clip_pairs_acquired_and_candidate', rews.sum(-1).sum(-1) / 2, round_num, bins='auto')
     writer2.add_histogram('2.mean_return_of_clip_pairs_acquired_and_candidate', mean_rand_rews, round_num, bins='auto')
+    return label_counts
 
 
 def log_random_acquisitions(mus, rews, writers, args, round_num):
     """Plots two histograms: the labels and return
        for each clip pair acquired by random baseline.
     """
-    writer1, writer2, writer3 = writers
+    writer1, writer2 = writers
+    counts = dict(Counter(mus))
+    mu_counts = np.array([counts.get(0, 0), counts.get(0.5, 0), counts.get(1, 0)]) # use 0 as default value from dict.get()
+    assert mu_counts.sum() > 0
+    # mus_unique, mu_counts = np.unique(mus, return_counts=True) # essentially gives us a discrete histogram
+    # assert (mus_ == [0, 0.5, 1]).all() and len(mu_counts) == 3
+    # writer1.add_scalar('10.mu_counts', mu_counts[0], round_num)
+    # writer2.add_scalar('10.mu_counts', mu_counts[1], round_num)
+    # writer3.add_scalar('10.mu_counts', mu_counts[2], round_num)
+
     labels_hist = plt.figure()
     plt.title('Label histogram, round {}'.format(round_num))
     plt.xlabel('mu')
@@ -105,3 +128,20 @@ def log_random_acquisitions(mus, rews, writers, args, round_num):
     # Tensorboard histograms are bad for discrete data but can be dynamically adjusted so I'll print them anyway as a complementary thing
     writer1.add_histogram('1.labels_acquired_and_candidate', mus, round_num, bins='auto')
     writer1.add_histogram('2.mean_return_of_clip_pairs_acquired_and_candidate', rews.sum(-1).sum(-1) / 2, round_num, bins='auto')
+    return mu_counts
+
+
+def log_total_mu_counts(mu_counts, writers, args):
+    writer1, writer2 = writers
+    if args.active_method:
+        assert mu_counts.shape == (2,3)
+        acquired, candidate = mu_counts
+        writer2.add_scalar('10.total_mu_counts', candidate[0], 0)
+        writer2.add_scalar('10.total_mu_counts', candidate[1], 0.5) # TODO can global step be float?
+        writer2.add_scalar('10.total_mu_counts', candidate[2], 1)
+    else:
+        assert mu_counts.shape == (3,)
+        acquired = mu_counts
+    writer1.add_scalar('10.total_mu_counts', acquired[0], 0)
+    writer1.add_scalar('10.total_mu_counts', acquired[1], 0.5) # TODO can global step be float?
+    writer1.add_scalar('10.total_mu_counts', acquired[2], 1)

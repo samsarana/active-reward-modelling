@@ -1,6 +1,7 @@
-import random, argparse, logging
+import random, argparse, logging, os
 import numpy as np
 import pandas as pd
+from collections import OrderedDict
 import gym, gym_barm
 import torch
 from torch.utils.tensorboard import SummaryWriter
@@ -21,8 +22,8 @@ def parse_arguments():
     parser.add_argument('--RL_baseline', action='store_true', help='Do RL baseline instead of reward learning?')
     parser.add_argument('--random_policy', action='store_true', help='Do the experiments with an entirely random policy, to benchmark performance')
     parser.add_argument('--ep_end_penalty', type=float, default=-29.0, help='How much reward does agent get when the (dummy) episode ends?')
-    parser.add_argument('--random_seed', type=int, default=0)
     parser.add_argument('--test', action='store_true', help='Flag to make training procedure very short (to check for errors)')
+    
     # agent hyperparams
     parser.add_argument('--h1_agent', type=int, default=32)
     parser.add_argument('--h2_agent', type=int, default=64)
@@ -38,7 +39,7 @@ def parse_arguments():
     parser.add_argument('--epsilon_decay', type=float, default=0.999, help='`epsilon *= epsilon * epsilon_decay` every learning step, until `epsilon_stop`') 
     parser.add_argument('--epsilon_stop', type=float, default=0.01)
     parser.add_argument('--n_labels_pretraining', type=int, default=10, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining') # Ibarz: 25k
-    parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[5]*10, help='How many labels to acquire per round? (in main training loop). len should be same as n_rounds')
+    parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[5]*20, help='How many labels to acquire per round? (in main training loop). len should be same as n_rounds')
     parser.add_argument('--n_agent_steps', type=int, default=3000, help='No. of steps that agent takes in environment, per round (in main training loop)') # Ibarz: 100k
     parser.add_argument('--dummy_ep_length', type=int, default=200, help="After how many steps do we interpret an 'episode' as having elapsed and log performance? (This affects only result presentation not algo)")
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
@@ -68,13 +69,8 @@ def parse_arguments():
     # sample complexity rather than computational complexity (we assume it's cheap for the agent to do rollouts
     # and we want to find whether active learning using the same amount of *data from the human* beats the random baseline)
     args = parser.parse_args()
-    if args.RL_baseline:
-        args.n_epochs_pretrain_rm = 0
-        args.n_epochs_train_rm = 0
-    else:
-        assert len(args.n_labels_per_round) == args.n_rounds, "Experiment has {} rounds, but you specified the number labels to collect in {} rounds".format(args.n_rounds, len(args.n_labels_per_round))
     if args.test:
-        args.n_runs = 1
+        args.n_runs = 3
         args.n_rounds = 2
         # args.n_initial_agent_steps=3000
         # args.n_agent_steps=3000
@@ -82,6 +78,11 @@ def parse_arguments():
         args.n_epochs_train_rm = 10
     if args.uncert_method == 'ensemble':
         assert args.size_rm_ensemble >= 2
+    if args.RL_baseline:
+        args.n_epochs_pretrain_rm = 0
+        args.n_epochs_train_rm = 0
+    else:
+        assert len(args.n_labels_per_round) >= args.n_rounds, "Experiment has {} rounds, but you specified the number labels to collect in {} rounds".format(args.n_rounds, len(args.n_labels_per_round))
     return args
     
 
@@ -96,54 +97,44 @@ def run_experiment(args, i_run, returns_summary):
     logdir = './logs/{}/{}'.format(args.info, random_seed)
     writer1 = SummaryWriter(log_dir=logdir+'/true')
     writer2 = SummaryWriter(log_dir=logdir+'/pred')
-    writer3 = SummaryWriter(log_dir=logdir+'/other')
-    writers = [writer1, writer2, writer3]
+    writers = [writer1, writer2]
 
     # make environment
     env = gym.make(args.env_class, ep_end_penalty=args.ep_end_penalty)
-    obs_shape = env.observation_space.shape[0] # env.observation_space is Box(4,) and calling .shape returns (4,) [gym can be ugly]
+    args.obs_shape = env.observation_space.shape[0] # env.observation_space is Box(4,) and calling .shape returns (4,) [gym can be ugly]
     assert isinstance(env.action_space, gym.spaces.Discrete), 'DQN requires discrete action space.'
-    act_shape = 1 # [gym doesn't have a nice way to get shape of Discrete space... env.action_space.shape -> () ]
+    args.act_shape = 1 # [gym doesn't have a nice way to get shape of Discrete space... env.action_space.shape -> () ]
     n_actions = env.action_space.n # env.action_space is Discrete(2) and calling .n returns 2
-    args.obs_shape = obs_shape
-    args.act_shape = act_shape
-    args.obs_act_shape = obs_shape + act_shape
+    args.obs_act_shape = args.obs_shape + args.act_shape
 
     if args.random_policy:
         do_random_experiment(env, args, returns_summary, writers, i_run)
     else:
-        # instantiate neural nets and buffer for preferences
-        q_net = DQN(obs_shape, n_actions, args)
-        q_target = DQN(obs_shape, n_actions, args)
+        q_net = DQN(args.obs_shape, n_actions, args)
+        q_target = DQN(args.obs_shape, n_actions, args)
         q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
-        if args.size_rm_ensemble >= 2:
-            reward_model = RewardModelEnsemble(obs_shape, act_shape, args)
-            logging.info('Using a {}-ensemble of nets for our reward model'.format(args.size_rm_ensemble))
-        else:
-            reward_model = RewardModel(obs_shape, act_shape, args)
-        prefs_buffer = PrefsBuffer(capacity=args.prefs_buffer_size, clip_shape=(args.clip_length, obs_shape+act_shape))
         # fire away!
-        reward_model, prefs_buffer = do_pretraining(env, q_net, reward_model, prefs_buffer, args, writers)
-        do_training(env, q_net, q_target, reward_model, prefs_buffer, args, writers, returns_summary, i_run)
+        training_protocol(env, q_net, q_target, args, writers, returns_summary, i_run)
     
     writer1.close()
     writer2.close()
-    writer3.close()
 
 def main():
     args = parse_arguments()
+    os.makedirs('./logs/', exist_ok=True)
     logging.basicConfig(filename='./logs/{}.log'.format(args.info), level=logging.INFO)
     logging.getLogger().addHandler(logging.StreamHandler()) # makes messages print to stderr, too
-    logging.info('\nRunning experiment with the following settings:')
+    logging.info('Running experiment with the following settings:')
     for arg in vars(args):
         logging.info('{}: {}'.format(arg, getattr(args, arg)))
     
-    returns_summary = {i: {} for i in range(args.n_runs)}
+    returns_summary = OrderedDict({i: {} for i in range(args.n_runs)})
     for i_run in range(args.n_runs):
         try:
             run_experiment(args, i_run, returns_summary)
+            logging.info('Run {} succeeded\n'.format(i_run))
         except:
-            logging.exception('Run {} of experiment {} failed')
+            logging.exception('Run {} failed of experiment: {}\n'.format(i_run, args.info))
     pd.DataFrame(returns_summary).to_csv('./logs/{}.csv'.format(args.info), index_label=['ep return type', 'round no.'])
 
 if __name__ == '__main__':
