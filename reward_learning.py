@@ -206,7 +206,9 @@ class AgentExperience():
            **Assumption: when sampling, self.clips is full**
         """
         assert self.i == self.num_clips * self.clip_length # check Assumption
-        assert self.clips.shape[0] >= batch_size*2, "Trying to sample {} clips ({} labels/clip_pairs) but agent_experience only has {} clips!".format(batch_size*2, batch_size, self.clips.shape[0])
+        assert self.clips.shape[0] >= batch_size*2,\
+            "Trying to sample {} clips ({} labels/clip_pairs) but agent_experience only has {} clips!".format(
+            batch_size*2, batch_size, self.clips.shape[0])
         rows_i = np.random.choice(batch_size*2, size=(batch_size,2), replace=False)
         clip_pairs = self.clips[rows_i] # TODO fancy indexing is slow. is this a bottleneck?
         rewards = self.clip_rewards[rows_i]
