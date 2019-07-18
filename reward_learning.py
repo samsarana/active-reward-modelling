@@ -126,7 +126,7 @@ def compute_loss_rm_wchecks(r_hats_batch, mu_batch, args, obs_shape, act_shape):
 
 
 def compute_loss_rm(r_hats_batch, mu_batch):
-    """Clean, assert-free version of the above
+    """Clean, assert-free version of the above.
     """
     exp_sum_r_hats_batch = r_hats_batch.sum(dim=2).exp()
     p_hat_12_batch = exp_sum_r_hats_batch[:, 0] / exp_sum_r_hats_batch.sum(dim=1)
@@ -367,7 +367,7 @@ def eval_rm_correlation(reward_model, env, agent, args, obs_shape, act_shape, ro
 
 
 def log_correlation(r_xy, plots, writer, round_num):
-    writer.add_scalar('4.r_xy', r_xy, round_num)
+    writer.add_scalar('10.r_xy', r_xy, round_num)
     writer.add_figure('4.alignment/1-non-norm', plots['non-norm'], round_num) # we can have mutliple figures with the same tag and scroll through them!
     writer.add_figure('4.alignment/2-norm', plots['norm'], round_num)
     # writer.add_figure('4.alignment/3-norm_error_bars', plots['norm_error_bars'], round_num)

@@ -40,8 +40,9 @@ def parse_arguments():
     parser.add_argument('--epsilon_stop', type=float, default=0.01)
     parser.add_argument('--n_labels_pretraining', type=int, default=10, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining') # Ibarz: 25k
     parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[5]*20, help='How many labels to acquire per round? (in main training loop). len should be same as n_rounds')
-    parser.add_argument('--n_agent_steps', type=int, default=3000, help='No. of steps that agent takes in environment, per round (in main training loop)') # Ibarz: 100k
-    parser.add_argument('--dummy_ep_length', type=int, default=200, help="After how many steps do we interpret an 'episode' as having elapsed and log performance? (This affects only result presentation not algo)")
+    parser.add_argument('--n_agent_train_steps', type=int, default=3000, help='No. of steps that agent takes per round in environment, while training every agent_gdt_step_period steps') # Ibarz: 100k
+    parser.add_argument('--n_agent_total_steps', type=int, default=30000, help='Total no. of steps that agent takes in environment per round (if this is > n_agent_train_steps then agent collects extra experience w.o. training)')
+    parser.add_argument('--dummy_ep_length', type=int, default=200, help="After how many steps in the episode-less env do we interpret an 'episode' as having elapsed and log performance? (This affects only result presentation not algo)")
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
 
     # reward model hyperparamas
@@ -128,13 +129,14 @@ def main():
     for arg in vars(args):
         logging.info('{}: {}'.format(arg, getattr(args, arg)))
     
-    returns_summary = OrderedDict({i: {} for i in range(args.n_runs)})
+    returns_summary = OrderedDict({i: {} for i in range(args.n_runs - 1)})
     for i_run in range(args.n_runs):
         try:
+            logging.info('RUN {}/{} BEGIN\n'.format(i_run, args.n_runs - 1))
             run_experiment(args, i_run, returns_summary)
-            logging.info('Run {} succeeded\n'.format(i_run))
+            logging.info('RUN {}/{} SUCCEEDED\n'.format(i_run, args.n_runs - 1))
         except:
-            logging.exception('Run {} failed of experiment: {}\n'.format(i_run, args.info))
+            logging.exception('RUN {}/{} FAILED with the following traceback:\n'.format(i_run, args.n_runs))
     pd.DataFrame(returns_summary).to_csv('./logs/{}.csv'.format(args.info), index_label=['ep return type', 'round no.'])
 
 if __name__ == '__main__':
