@@ -1,5 +1,9 @@
-1. add VM's public ssh key to my github
+1. Create a new VM with ssh public key from your laptop
+2. ssh into it
+3. ssh-keygen -t rsa -b 4096 -C "samckclarke@gmail.com"
+4. Add VM's public ssh key to my github
 
-2. then your're good to go! bash install_conda.sh
+5. git clone git@github.com:sckclarke/barm.git
+6. Then your're good to go! bash setup_script.sh
 
 NB I haven't checked that the script in its entirely works, yet
