@@ -58,6 +58,9 @@ class RewardModelEnsemble(nn.Module):
                     )
         
     def forward(self, x):
+        """Returns the average output from forward pass
+           through each network in the ensemble.
+        """
         output = 0
         for ensemble_num in range(self.ensemble_size):
             net = getattr(self, 'layers{}'.format(ensemble_num))
@@ -77,18 +80,27 @@ class RewardModelEnsemble(nn.Module):
             outputs.append(net(x))
         return torch.cat(outputs, dim=-1)
 
-    def variance(self, x):
-        """Returns predictive variance of the networks
-           in the ensemble, on input x
+    def forward_single(self, x):
+        """Instead of averaging output across `ensemble_size`
+           networks, return output from just one of the forward
+           passes, selected u.a.r. from all nets in ensemble.
         """
-        batch_size, _, clip_length, _ = x.shape # only used for assert
-        outputs = []
-        for ensemble_num in range(self.ensemble_size):
-            net = getattr(self, 'layers{}'.format(ensemble_num))
-            outputs.append(net(x))
-        outputs_tensor = torch.cat(outputs, dim=-1)
-        assert outputs_tensor.shape == (batch_size, 2, clip_length, self.ensemble_size)
-        return outputs_tensor.var(dim=-1)
+        net_num = random.randrange(self.ensemble_size)
+        net = getattr(self, 'layers{}'.format(net_num))
+        return net(x)
+
+    # def variance(self, x):
+    #     """Returns predictive variance of the networks
+    #        in the ensemble, on input x
+    #     """
+    #     batch_size, _, clip_length, _ = x.shape # only used for assert
+    #     outputs = []
+    #     for ensemble_num in range(self.ensemble_size):
+    #         net = getattr(self, 'layers{}'.format(ensemble_num))
+    #         outputs.append(net(x))
+    #     outputs_tensor = torch.cat(outputs, dim=-1)
+    #     assert outputs_tensor.shape == (batch_size, 2, clip_length, self.ensemble_size)
+    #     return outputs_tensor.var(dim=-1)
 
     # def forward_no_ave(self, x):
     #     """Instead of averaging output across 3 networks, return

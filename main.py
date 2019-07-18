@@ -58,6 +58,7 @@ def parse_arguments():
     parser.add_argument('--force_label_choice', action='store_true', help='Does synthetic annotator label clips about which it is indifferent as 0.5? If `True`, label equally good clips randomly')
     parser.add_argument('--corr_rollout_steps', type=int, default=1000, help='When collecting rollouts to evaluate correlation of true and predicted reward, how many steps per rollout?')
     parser.add_argument('--corr_num_rollouts', type=int, default=5, help='When collecting rollouts to evaluate correlation of true and predicted reward, how many rollouts in total?')
+    parser.add_argument('--no_ensemble_for_reward_pred', action='store_true', help='If true, then use ensemble for uncertainty estimates but pick a random net to compute rewards sent to DQN')
 
     # active learning
     parser.add_argument('--active_method', type=str, default=None, help='Choice of: BALD, var_ratios, max_entropy, mean_std')
@@ -129,7 +130,7 @@ def main():
     for arg in vars(args):
         logging.info('{}: {}'.format(arg, getattr(args, arg)))
     
-    returns_summary = OrderedDict({i: {} for i in range(args.n_runs - 1)})
+    returns_summary = OrderedDict({i: {} for i in range(args.n_runs)})
     for i_run in range(args.n_runs):
         try:
             logging.info('RUN {}/{} BEGIN\n'.format(i_run, args.n_runs - 1))

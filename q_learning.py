@@ -80,7 +80,7 @@ class ReplayBuffer():
         return len(self.buffer)
 
 
-def q_learning_loss(q_net, q_target, replay_buffer,
+def q_learning_loss(q_net, q_target, replay_buffer, args,
                     mean_rew=None, var_rew=None, reward_model=None):
     """Defines the loss function above
        Help on interpreting variables:
@@ -102,7 +102,10 @@ def q_learning_loss(q_net, q_target, replay_buffer,
             sa_pair = torch.cat((state, action.unsqueeze(1).float()), dim=1)
             assert isinstance(reward_model, nn.Module)
             reward_model.eval() # turn off dropout at 'test' time i.e. when getting rewards to send to DQN
-            r_hat = reward_model(sa_pair)
+            if args.no_ensemble_for_reward_pred:
+                r_hat = reward_model.forward_single(sa_pair)
+            else:
+                r_hat = reward_model(sa_pair)
             norm_reward = (r_hat - mean_rew) / np.sqrt(var_rew + 1e-8)
         else:
             norm_reward = (reward - mean_rew) / np.sqrt(var_rew + 1e-8)

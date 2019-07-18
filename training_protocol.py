@@ -81,8 +81,6 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
         logging.info('Stage 1.1: RL using *true reward*')
     else:
         logging.info('Stage 1.1: RL using reward model')
-        if args.active_method:
-            logging.info('Acquiring clips using {} aquisition function and uncertainty estimates from {}'.format(args.active_method, args.uncert_method))
     logging.info('Training will last {} steps, of which in the first {} we make a learning update every {} step(s)'.format(
                 args.n_agent_total_steps, args.n_agent_train_steps, args.agent_gdt_step_period))
 
@@ -132,9 +130,9 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
         # q_net gradient step
         if step % args.agent_gdt_step_period == 0 and len(replay_buffer) >= 3*q_net.batch_size and step < args.n_agent_train_steps:
             if args.RL_baseline:
-                loss_agent = q_learning_loss(q_net, q_target, replay_buffer, rt_mean, rt_var)
+                loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, rt_mean, rt_var)
             else:
-                loss_agent = q_learning_loss(q_net, q_target, replay_buffer, rp_mean, rp_var, reward_model)
+                loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, rp_mean, rp_var, reward_model)
             optimizer_agent.zero_grad()
             loss_agent.backward()
             optimizer_agent.step()
@@ -223,11 +221,13 @@ def sample_and_annotate_clip_pairs(agent_experience, reward_model, num_labels_re
     writer1, _ = writers
     writer1.add_scalar('6.labels_requested_per_round', num_labels_requested, i_train_round)
     if args.active_method:
+        logging.info('Acquiring clips using {} acquisition function and uncertainty estimates from {}'.format(args.active_method, args.uncert_method))
         if args.acq_search_strategy == 'v0': # TODO refactor acquire_clip_pairs_v0/1
             clip_pairs, rews, mus, label_counts = acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, args, writers, i_train_round)
         elif args.acq_search_strategy == 'v1':
             clip_pairs, rews, mus, label_counts = acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, args, writers, i_train_round)
     else:
+        logging.info('Acquiring clips by random acquisition')
         clip_pairs, rews, mus = agent_experience.sample_pairs(num_labels_requested)
         label_counts = log_random_acquisitions(mus, rews, writers, args, i_train_round)
     return clip_pairs, rews, mus, label_counts
