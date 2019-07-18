@@ -5,3 +5,4 @@ gym
 torch
 tqdm
 tb-nightly
+image
