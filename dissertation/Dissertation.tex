@@ -1,0 +1,130 @@
+\documentclass[11pt, a4paper, bibliography=totoc]{report}
+\usepackage{amsmath,amsthm,amssymb, tabularx, listings, enumerate, cancel, bussproofs, tabto, wasysym, algpseudocode, algorithm, savesym, mathtools, physics, xcolor, setspace, appendix}
+\usepackage[margin=3.5cm]{geometry}
+\usepackage[font=footnotesize,labelfont=bf]{caption}
+\usepackage[nottoc]{tocbibind} % adds Bibliography to 
+\usepackage[linktocpage]{hyperref}
+
+\hypersetup{
+	colorlinks,
+	linkcolor={red!50!black},
+	citecolor={blue!50!black},
+	urlcolor={blue!80!black}
+}
+\doublespacing
+\pagestyle{headings}
+
+\newcommand{\nats}{\mathbb{N}}
+\renewcommand{\P}{\mathbb{P}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\V}{\mathbb{V}ar}
+\newcommand{\KLD}[2]{\mathrm{KL} \left[ \left. \left. #1 \right|\right| #2 \right] }
+\newcommand{\w}{\mathbf{w}}
+\newcommand{\data}{\mathcal{D}}
+\newcommand{\vfe}{\mathcal{F}(\data, \theta)}
+\newcommand{\F}{\mathcal{F}}
+\newcommand{\bepsilon}{\pmb{\epsilon}}
+\newcommand{\bmu}{\pmb{\mu}}
+\newcommand{\bsigma}{\pmb{\sigma}}
+\newcommand{\btheta}{\pmb{\theta}}
+\newcommand{\brho}{\pmb{\rho}}
+\newcommand{\normal}[3]{\mathcal{N}(#1 \vert #2, #3)}
+\newtheorem*{claim}{Claim}
+\newtheorem*{theorem}{Theorem}
+\newtheorem{lemma}{Lemma}
+\newtheorem*{corollary}{Corollary}
+\newtheorem{proposition}{Proposition}
+
+\begin{document}
+\title{Active Learning for Reward Modelling}
+\author{Sam Clarke}
+\date{September 2019}
+\renewcommand{\bibname}{References}
+\maketitle
+
+\begin{abstract} % ~200 words
+
+\end{abstract}
+
+\tableofcontents
+% say somewhere around here about collaboration with Zac and Angelos
+
+\chapter{Introduction}
+
+\chapter{Background} % Explain problem, give context
+\section{Reinforcement Learning}
+% MDPs etc (use S&B)
+% model-based v model-free
+\subsection{Deep Reinforcement Learning}
+% Throw a deep NN at the problem!
+% Current algos; SOTA on different tasks
+% perhaps explain in detail just one algo (DQN, or whichever algo ends up being most important for my experiments)
+% Question: do I need to describe neural networks too?
+
+\section{Reinforcement Learning without a reward function}
+For many domains in which we might want to use RL, states of the environment are not inherently associated with rewards.  Thus, we have the additional task of specifying a reward function, which maps states to rewards. Argue the case that directly specifying a reward function is hard, in order to motivate the next section: Reward Learning
+\subsection{Reward Learning}
+% We can use feedback of different modalities
+% There is both the standard and the deep case to consider
+\subsubsection{In Standard RL}
+% Active Preference-Based Learning of Reward Functions (ignore the active part here)
+% Learning Reward Functions by Integrating Human Demonstrations and Preferences (SAIL paper)
+\subsubsection{In the Deep Case}
+% SARM Agenda; Christiano; Ibarz
+
+\section{Uncertainty in Deep Learning}
+% Talk about Yarin's thesis, BNNs; maybe Ian Obsband paper for good measure (esp. if I end up using ensemble instead of MC-Dropout?)
+Standard deep learning models output point estimates. For example, a model trained to classify pictures of dogs according to their breed takes a picture of a dog and outputs its predicted breed. However, what will the model do if it is given a picture of a cat? \cite{Gal2017a}.
+
+We probably want the model to be able to recognise that this is an out of distribution example, and request more training data, or simply say that it doesn't know the answer. However, since standard deep learning models output only point estimates, the model will just go ahead and classify the cat as some breed of dog, just as confidently as any other input.
+
+Thus, the field of Bayesian Deep Learning aims to equip neural networks with the ability to output a point estimate along with its uncertainty in that estimate. Historically, many of the attempts to do so were not very practical. For example, one algorithm, Bayes by Backprop, requires doubling the number of model parameters, making training more computationally expensive, and is very sensitive to hyperparameter tuning. However, recent techniques allow almost any network trained with a stochastic regularisation technique, such as dropout, to, given an input, obtain a predictive mean and variance (uncertainty), without any complicated augmentation to the network \cite[p.~15]{Gal2017a}.
+
+\section{Active Learning}
+% BALD (Houlsby: Bayesian Active Learning for Classification and Preference Learning)
+% Adapting it to the deep case (Yarin's thesis/Image Data paper)
+\subsection{Applying Active Learning to RL without a reward function}
+% APRIL
+% Christiano: summarise what didn't work, and what might have gone wrong (how to frame this depends on the results that I eventually get to)
+% Active Preference-Based Learning of Reward Functions (emphasis on the active part)
+% Learning Reward Functions by Integrating Human Demonstrations and Preferences (they use the `Volume Removal Method' to do Active Learning)
+
+\section{Relation to Material Studied on the MSc Course}
+
+\chapter{Method}
+% Here I'll describe the training protocol I used (mostly Ibarz but without the demos)
+% I can leave gorey detail to Experiments/Appendix
+% I should have already summarised the high level approach in Background
+% And I'll describe the different methods of Active Learning/uncert estimates that I tried
+% Implementational matters: PyTorch and why I chose it
+
+\chapter{Experiments}
+% Here I'll give the experimental details
+% Gym. incl. why I chose it
+% Cartpole/the envs I use
+% Hyperparameter settings (and all the other args e.g. number of labels acquired per round, number of repetitions etc.) (maybe put these in appendix)
+% Links to code
+
+\chapter{Results}
+% Here I'll describe the results in a shiny way
+% Graphs and comments on whether I achieved the goal of applying active learning to increase the sample efficiency of reward modelling
+
+\chapter{Conclusions}
+\section{Summary}
+\section{Evaluation}
+% critical assessment of the work that has been done and the process of doing it
+% perhaps include subsections for approaches that were tried and did not work; and personal development
+\section{Future Work}
+
+% acknowledgements
+
+\bibliographystyle{plain}
+\bibliography{C:/Users/Sam/Documents/Bibtex/MSc}
+
+\appendix
+\appendixpage
+\noappendicestocpagenum
+\addappheadtotoc
+\chapter{Some Appendix Material}
+
+\end{document}
