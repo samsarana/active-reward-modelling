@@ -243,7 +243,7 @@ def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, 
         with torch.autograd.detect_anomaly():
             clip_pair_batch, mu_batch = prefs_buffer.sample(args.batch_size_rm)
             r_hats_batch = reward_model(clip_pair_batch).squeeze(-1) # squeeze the oa_pair dimension that was passed through reward_model
-            assert clip_pair_batch.shape == (args.batch_size_rm, 2, args.clip_length, args.obs_act_shape)
+            # assert clip_pair_batch.shape == (args.batch_size_rm, 2, args.clip_length, args.obs_act_shape)
             # loss_rm = compute_loss_rm_wchecks(r_hats_batch, mu_batch, args, args.obs_shape, args.act_shape)
             loss_rm = compute_loss_rm(r_hats_batch, mu_batch)
             optimizer_rm.zero_grad()
