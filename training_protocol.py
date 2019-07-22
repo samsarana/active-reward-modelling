@@ -226,6 +226,8 @@ def sample_and_annotate_clip_pairs(agent_experience, reward_model, num_labels_re
             clip_pairs, rews, mus, label_counts = acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, args, writers, i_train_round)
         elif args.acq_search_strategy == 'v1':
             clip_pairs, rews, mus, label_counts = acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, args, writers, i_train_round)
+        elif args.acq_search_strategy == 'v2':
+            clip_pairs, rews, mus, label_counts = acquire_clip_pairs_v2(agent_experience, reward_model, num_labels_requested, args, writers, i_train_round)
     else:
         logging.info('Acquiring clips by random acquisition')
         clip_pairs, rews, mus = agent_experience.sample_pairs(num_labels_requested)

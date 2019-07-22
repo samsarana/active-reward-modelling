@@ -222,6 +222,12 @@ class AgentExperience():
             mus = np.where(returns[:, 0] > returns[:, 1], 1, 
                            np.where(returns[:, 0] == returns[:, 1], 0.5, 0))
         return clip_pairs, rewards, mus
+
+    def sample_all_pairs(self):
+        """Returns batch of pairs (shape=batch_size, 2, clip_length, obs_act_length)
+           where batch_size = self.num_clips ** 2 since we are sampling all pairs
+        """
+        pass
         
 
 class PrefsBuffer():
