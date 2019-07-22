@@ -1,6 +1,7 @@
 """Components of Deep RL from Human Preferences training protocol"""
 
-import logging
+import math, logging
+from collections import Counter
 from q_learning import *
 from reward_learning import *
 from active_learning import *
@@ -34,7 +35,7 @@ def training_protocol(env, q_net, q_target, args, writers, returns_summary, i_ru
     
     # Stage 0.3 Intialise and pretrain reward model
     logging.info('Stage 0.3: Intialise and pretrain reward model for {} batches on those preferences'.format(args.n_epochs_pretrain_rm))
-    reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers[0], i_train_round=-1)
+    reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_train_round=-1)
 
     # evaluate reward model correlation after pretraining
     # if not args.RL_baseline:
@@ -62,7 +63,7 @@ def training_protocol(env, q_net, q_target, args, writers, returns_summary, i_ru
         
         # Stage 1.3: Train reward model for some epochs on preferences collected to date
         logging.info('Stage 1.3: Train reward model for {} batches on those preferences'.format(args.n_epochs_train_rm))
-        reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers[0], i_train_round)
+        reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_train_round)
 
         # Evaluate reward model correlation (currently not interested in this)
         # if not args.RL_baseline:
@@ -232,7 +233,8 @@ def sample_and_annotate_clip_pairs(agent_experience, reward_model, num_labels_re
     return clip_pairs, rews, mus, label_counts
 
 
-def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writer1, i_train_round):
+def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_train_round):
+    writer1, writer2 = writers
     epochs = args.n_epochs_pretrain_rm if i_train_round == -1 else args.n_epochs_train_rm
     reward_model.train() # dropout on
     for epoch in range(epochs):
@@ -246,6 +248,10 @@ def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writer1, 
             loss_rm.backward()
             optimizer_rm.step()
             writer1.add_scalar('7.reward_model_loss/round_{}'.format(i_train_round), loss_rm, epoch)
+            # compute lower bound for loss_rm and plot this too. TODO check this is bug free
+            # n_indifferent_labels = Counter(mu_batch).get(0.5, default=0)
+            # loss_lower_bound = n_indifferent_labels * math.log(2)
+            # writer2.add_scalar('7.reward_model_loss/round_{}'.format(i_train_round), loss_lower_bound, epoch)
     return reward_model
             
 
