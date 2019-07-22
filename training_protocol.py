@@ -44,7 +44,7 @@ def training_protocol(env, q_net, q_target, args, writers, returns_summary, i_ru
     for i_train_round in range(args.n_rounds):
         logging.info('[Start Round {}]'.format(i_train_round))
         # Compute mean and variance of true and predicted reward (for normalising rewards sent to agent)
-        reward_stats = compute_reward_stats(reward_model, prefs_buffer)
+        reward_stats = compute_reward_stats(reward_model, prefs_buffer) # TODO make an attribute of reward model for its mean and variance across the current prefs buffer
         # Stage 1.1a: Reinforcement learning with (normalised) rewards from current reward model
         q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
                                                                  reward_model, prefs_buffer, reward_stats, args, writers, i_train_round)
@@ -53,11 +53,10 @@ def training_protocol(env, q_net, q_target, args, writers, returns_summary, i_ru
         log_tested_policy(test_returns, writers, returns_summary, args, i_run, i_train_round)
 
         # Stage 1.2: Sample clip pairs without replacement from recent rollouts and label them (synthetically)
-        num_labels_requested = args.n_labels_per_round[i_train_round]
-        logging.info('Stage 1.2: Sample without replacement from those rollouts to collect {} labels/preference tuples'.format(num_labels_requested))
-        clip_pairs, rews, mus, mu_counts_round = sample_and_annotate_clip_pairs(agent_experience, reward_model, num_labels_requested, args, writers, i_train_round)
+        logging.info('Stage 1.2: Sample without replacement from those rollouts to collect {} labels/preference tuples'.format(args.n_labels_per_round))
+        clip_pairs, rews, mus, mu_counts_round = sample_and_annotate_clip_pairs(agent_experience, reward_model, args.n_labels_per_round, args, writers, i_train_round)
         # put labelled clip_pairs into prefs_buffer and accumulate count of each label acquired
-        assert len(clip_pairs) == num_labels_requested
+        assert len(clip_pairs) == args.n_labels_per_round
         prefs_buffer.push(clip_pairs, rews, mus)
         mu_counts += mu_counts_round
         

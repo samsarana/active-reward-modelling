@@ -38,8 +38,9 @@ def parse_arguments():
     parser.add_argument('--epsilon_start', type=float, default=1.0, help='exploration probability for agent at start')
     parser.add_argument('--epsilon_decay', type=float, default=0.999, help='`epsilon *= epsilon * epsilon_decay` every learning step, until `epsilon_stop`') 
     parser.add_argument('--epsilon_stop', type=float, default=0.01)
-    parser.add_argument('--n_labels_pretraining', type=int, default=10, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining') # Ibarz: 25k
-    parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[5]*20, help='How many labels to acquire per round? (in main training loop). len should be same as n_rounds')
+    parser.add_argument('--n_labels_per_round', type=int, default=5, help='How many labels to acquire per round? (in main training loop)')
+    # parser.add_argument('--n_labels_pretraining', type=int, default=10, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining') # Ibarz: 25k
+    # parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[5]*20, help='How many labels to acquire per round? (in main training loop). len should be same as n_rounds')
     parser.add_argument('--n_agent_train_steps', type=int, default=3000, help='No. of steps that agent takes per round in environment, while training every agent_gdt_step_period steps') # Ibarz: 100k
     parser.add_argument('--n_agent_total_steps', type=int, default=30000, help='Total no. of steps that agent takes in environment per round (if this is > n_agent_train_steps then agent collects extra experience w.o. training)')
     parser.add_argument('--dummy_ep_length', type=int, default=200, help="After how many steps in the episode-less env do we interpret an 'episode' as having elapsed and log performance? (This affects only result presentation not algo)")
@@ -71,6 +72,7 @@ def parse_arguments():
     # sample complexity rather than computational complexity (we assume it's cheap for the agent to do rollouts
     # and we want to find whether active learning using the same amount of *data from the human* beats the random baseline)
     args = parser.parse_args()
+    args.n_labels_pretraining = args.n_labels_per_round
     if args.test:
         args.n_runs = 3
         args.n_rounds = 2
@@ -83,8 +85,6 @@ def parse_arguments():
     if args.RL_baseline:
         args.n_epochs_pretrain_rm = 0
         args.n_epochs_train_rm = 0
-    else:
-        assert len(args.n_labels_per_round) >= args.n_rounds, "Experiment has {} rounds, but you specified the number labels to collect in {} rounds".format(args.n_rounds, len(args.n_labels_per_round))
     return args
     
 
