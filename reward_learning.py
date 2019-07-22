@@ -253,7 +253,7 @@ class PrefsBuffer():
         if self.current_length < self.capacity:
             self.current_length += len_new_pairs
 
-    def sample(self, batch_size):
+    def sample(self, desired_batch_size):
         """Returns *tensors* (clip_pair_batch, mu_batch) where
            clip_pair_batch.shape == (batch_size, 2, clip_len, obs_size+act_size)
            mu_batch.shape        == (batch_size, [1])
@@ -264,7 +264,8 @@ class PrefsBuffer():
            to push to buffers/index/sample, but rather do forward pass through NN
            and computation of loss (for which we need to track gradients)
         """
-        idx = np.random.choice(self.current_length, size=batch_size)
+        batch_size = min(desired_batch_size, self.current_length)
+        idx = np.random.choice(self.current_length, size=batch_size, replace=False)
         clip_pair_batch, mu_batch = self.clip_pairs[idx], self.mus[idx] # TODO fancy indexing is slow. is this a bottleneck?
         assert clip_pair_batch.shape == (batch_size, 2, self.clip_length, self.obs_act_length) # asinine assert statement
         assert mu_batch.shape == (batch_size, )

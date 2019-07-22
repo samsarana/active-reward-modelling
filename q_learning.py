@@ -69,7 +69,7 @@ class ReplayBuffer():
         # TODO is next line a bottleneck? if so, can speed up sampling
         # by implementing buffer with numpy ringbuffer?
         # from numpy_ringbuffer import RingBuffer
-        state, action, reward, next_state, done = zip(*random.sample(self.buffer, batch_size))
+        state, action, reward, next_state, done = zip(*random.sample(self.buffer, batch_size)) # samples without replacement
         return (torch.FloatTensor(state),
                 torch.LongTensor(action),
                 torch.FloatTensor(reward),
