@@ -43,6 +43,7 @@ def parse_arguments():
     # parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[5]*20, help='How many labels to acquire per round? (in main training loop). len should be same as n_rounds')
     parser.add_argument('--n_agent_train_steps', type=int, default=3000, help='No. of steps that agent takes per round in environment, while training every agent_gdt_step_period steps') # Ibarz: 100k
     parser.add_argument('--n_agent_total_steps', type=int, default=30000, help='Total no. of steps that agent takes in environment per round (if this is > n_agent_train_steps then agent collects extra experience w.o. training)')
+    parser.add_argument('--reinit_agent', action='store_true', help='Flag to reinitialise the agent with fresh parameters before every training round')
     parser.add_argument('--dummy_ep_length', type=int, default=200, help="After how many steps in the episode-less env do we interpret an 'episode' as having elapsed and log performance? (This affects only result presentation not algo)")
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
 

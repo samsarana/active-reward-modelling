@@ -47,6 +47,11 @@ def training_protocol(env, q_net, q_target, args, writers, returns_summary, i_ru
         # Compute mean and variance of true and predicted reward (for normalising rewards sent to agent)
         reward_stats = compute_reward_stats(reward_model, prefs_buffer) # TODO make an attribute of reward model for its mean and variance across the current prefs buffer
         # Stage 1.1a: Reinforcement learning with (normalised) rewards from current reward model
+        if args.reinit_agent:
+            q_net = DQN(args.obs_shape, env.action_space.n, args)
+            q_target = DQN(args.obs_shape, env.action_space.n, args)
+            q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
+            optimizer_agent = optim.Adam(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent)
         q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
                                                                  reward_model, prefs_buffer, reward_stats, args, writers, i_train_round)
         # Stage 1.1b: Evalulate RL agent performance
