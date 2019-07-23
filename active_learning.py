@@ -168,7 +168,7 @@ def sample_reward_model(reward_model, clips, args):
     assert r_preds_per_oa_pair.shape[-1] == check_num_samples
     if len(r_preds_per_oa_pair.shape) == 4:
         r_preds_per_oa_pair.shape[1] == 2
-    return r_preds_per_oa_pair
+    return r_preds_per_oa_pair.double() # all entropy calculations now done to double precision (Andreas' advice)
 
 
 def compute_sample_var_clip(rand_clips, reward_model, args):
