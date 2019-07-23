@@ -109,29 +109,27 @@ def run_experiment(args, i_run, returns_summary):
     args.obs_shape = env.observation_space.shape[0] # env.observation_space is Box(4,) and calling .shape returns (4,) [gym can be ugly]
     assert isinstance(env.action_space, gym.spaces.Discrete), 'DQN requires discrete action space.'
     args.act_shape = 1 # [gym doesn't have a nice way to get shape of Discrete space... env.action_space.shape -> () ]
-    n_actions = env.action_space.n # env.action_space is Discrete(2) and calling .n returns 2
     args.obs_act_shape = args.obs_shape + args.act_shape
 
-    if args.random_policy:
-        do_random_experiment(env, args, returns_summary, writers, i_run)
-    else:
-        q_net = DQN(args.obs_shape, n_actions, args)
-        q_target = DQN(args.obs_shape, n_actions, args)
-        q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
-        active_methods_to_acq_funcs = {
+    # setup acquistion function based on args
+    active_methods_to_acq_funcs = {
             'BALD': compute_info_gain,
             'mean_std': compute_sample_var_clip_pair,
             'max_entropy': compute_pred_entropy,
             'var_ratios': compute_var_ratio,
             None: None # random acquisition
         }
-        try:
-            args.acq_func = active_methods_to_acq_funcs[args.active_method]
-        except KeyError:
-            logging.exception("You specified {} as the active_method type, but I don't know what that is!".format(args.active_method))
-            raise
+    try:
+        args.acq_func = active_methods_to_acq_funcs[args.active_method]
+    except KeyError:
+        logging.exception("You specified {} as the active_method type, but I don't know what that is!".format(args.active_method))
+        raise
+
+    if args.random_policy:
+        do_random_experiment(env, args, returns_summary, writers, i_run)
+    else:      
         # fire away!
-        training_protocol(env, q_net, q_target, args, writers, returns_summary, i_run)
+        training_protocol(env, args, writers, returns_summary, i_run)
     
     writer1.close()
     writer2.close()

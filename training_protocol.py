@@ -7,10 +7,10 @@ from reward_learning import *
 from active_learning import *
 from test_policy import *
 
-def training_protocol(env, q_net, q_target, args, writers, returns_summary, i_run):
+def training_protocol(env, args, writers, returns_summary, i_run):
     """Implements Algorithm 1 in Ibarz et al. (2018)
     """
-    # SET UP: instantiate reward model + buffers and optimizers for training DQN and reward model
+    # SET UP: instantiate reward model and agent + buffers and optimizers for training them
     if args.size_rm_ensemble >= 2:
         reward_model = RewardModelEnsemble(args.obs_shape, args.act_shape, args)
         logging.info('Using a {}-ensemble of nets for our reward model'.format(args.size_rm_ensemble))
@@ -19,6 +19,9 @@ def training_protocol(env, q_net, q_target, args, writers, returns_summary, i_ru
     optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm)
     prefs_buffer = PrefsBuffer(capacity=args.prefs_buffer_size, clip_shape=(args.clip_length, args.obs_act_shape))
 
+    q_net = DQN(args.obs_shape, env.action_space.n, args)
+    q_target = DQN(args.obs_shape, env.action_space.n, args)
+    q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
     optimizer_agent = optim.Adam(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent)
     replay_buffer = ReplayBuffer(args.replay_buffer_size) # TODO change this (and several other things) s.t. we can use different RL agents
     
