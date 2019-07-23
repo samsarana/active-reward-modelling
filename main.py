@@ -117,6 +117,18 @@ def run_experiment(args, i_run, returns_summary):
         q_net = DQN(args.obs_shape, n_actions, args)
         q_target = DQN(args.obs_shape, n_actions, args)
         q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
+        active_methods_to_acq_funcs = {
+            'BALD': compute_info_gain,
+            'mean_std': compute_sample_var_clip_pair,
+            'max_entropy': compute_pred_entropy,
+            'var_ratios': compute_var_ratio,
+            None: None # random acquisition
+        }
+        try:
+            args.acq_func = active_methods_to_acq_funcs[args.active_method]
+        except KeyError:
+            logging.exception("You specified {} as the active_method type, but I don't know what that is!".format(args.active_method))
+            raise
         # fire away!
         training_protocol(env, q_net, q_target, args, writers, returns_summary, i_run)
     

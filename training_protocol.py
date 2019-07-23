@@ -73,6 +73,79 @@ def training_protocol(env, q_net, q_target, args, writers, returns_summary, i_ru
     log_total_mu_counts(mu_counts, writers, args)
 
 
+def training_protocol_sequential(env, q_net, q_target, args, writers, returns_summary, i_run):
+    """Implements Algorithm 1 in Ibarz et al. (2018)
+       with the modification that labels on clip pairs
+       are acquired sequentially i.e. reward model is retrained
+       after each new label is acquired, then that retrained
+       model is used to select the next clip pair for labelling.
+    """
+    # SET UP: instantiate reward model + buffers and optimizers for training DQN and reward model
+    if args.size_rm_ensemble >= 2:
+        reward_model = RewardModelEnsemble(args.obs_shape, args.act_shape, args)
+        logging.info('Using a {}-ensemble of nets for our reward model'.format(args.size_rm_ensemble))
+    else:
+        reward_model = RewardModel(args.obs_shape, args.act_shape, args)
+    optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm)
+    prefs_buffer = PrefsBuffer(capacity=args.prefs_buffer_size, clip_shape=(args.clip_length, args.obs_act_shape))
+
+    optimizer_agent = optim.Adam(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent)
+    replay_buffer = ReplayBuffer(args.replay_buffer_size) # TODO change this (and several other things) s.t. we can use different RL agents
+    
+    # BEGIN PRETRAINING
+    # Stage 0.1 Do some rollouts from the randomly initialised policy
+    agent_experience = do_pretraining_rollouts(q_net, env, args)
+
+    # Stage 0.2 Sample without replacement from those rollouts and label them (synthetically)
+    logging.info('Stage 0.2: Sample without replacement from those rollouts to collect {} labels'.format(args.n_labels_pretraining))
+    logging.info('Each label is on a pair of clips of length {}'.format(args.clip_length))
+    clip_pairs, rews, mus, mu_counts = sample_and_annotate_clip_pairs(agent_experience, reward_model, args.n_labels_pretraining, args, writers, i_train_round=-1)
+    # put labelled clip_pairs into prefs_buffer (also true rewards, just to compute mean/var of true reward across prefs_buffer)
+    prefs_buffer.push(clip_pairs, rews, mus)    
+    
+    # Stage 0.3 Intialise and pretrain reward model
+    logging.info('Stage 0.3: Intialise and pretrain reward model for {} batches on those preferences'.format(args.n_epochs_pretrain_rm))
+    reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_train_round=-1)
+
+    # evaluate reward model correlation after pretraining
+    # if not args.RL_baseline:
+    #     test_correlation(reward_model, env, q_net, args, writers[0], i_train_round=-1)
+
+    # BEGIN TRAINING
+    for i_train_round in range(args.n_rounds):
+        logging.info('[Start Round {}]'.format(i_train_round))
+        # Compute mean and variance of true and predicted reward (for normalising rewards sent to agent)
+        reward_stats = compute_reward_stats(reward_model, prefs_buffer) # TODO make an attribute of reward model for its mean and variance across the current prefs buffer
+        # Stage 1.1a: Reinforcement learning with (normalised) rewards from current reward model
+        q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
+                                                                 reward_model, prefs_buffer, reward_stats, args, writers, i_train_round)
+        # Stage 1.1b: Evalulate RL agent performance
+        test_returns = test_policy(q_net, reward_model, reward_stats, args, random_seed=i_run) # convention: seed with the run number
+        log_tested_policy(test_returns, writers, returns_summary, args, i_run, i_train_round)
+
+        logging.info('Stage 1.2: Sample without replacement from those rollouts to collect {} labels/preference tuples'.format(args.n_labels_per_round))
+        logging.info('The reward model will be retrained after every label acquisition')
+        for i_label in range(args.n_labels_per_round):
+            # TODO write this part
+            # Stage 1.2: Sample clip pairs without replacement from recent rollouts and label them (synthetically)
+            clip_pair, rew, mu, mu_count_round = sample_and_annotate_clip_pairs(agent_experience, reward_model, 1, args, writers, i_train_round)
+            # put labelled clip_pairs into prefs_buffer and accumulate count of each label acquired
+            assert len(clip_pairs) == args.n_labels_per_round
+            prefs_buffer.push(clip_pairs, rews, mus)
+            # mu_counts += mu_counts_round
+            
+            # Stage 1.3: Train reward model for some epochs on preferences collected to date
+            logging.info('Stage 1.3: Train reward model for {} batches on those preferences'.format(args.n_epochs_train_rm))
+            reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_train_round)
+
+        # Evaluate reward model correlation (currently not interested in this)
+        # if not args.RL_baseline:
+        #     test_correlation(reward_model, env, q_net, args, writers[0], i_train_round)
+
+    # log mu_counts for this run
+    log_total_mu_counts(mu_counts, writers, args)
+
+
 def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, prefs_buffer, reward_stats, args, writers, i_train_round):
     writer1, writer2 = writers
     rt_mean, rt_var, rp_mean, rp_var = reward_stats
@@ -222,17 +295,26 @@ def sample_and_annotate_clip_pairs(agent_experience, reward_model, num_labels_re
     writer1.add_scalar('6.labels_requested_per_round', num_labels_requested, i_train_round)
     if args.active_method:
         logging.info('Acquiring clips using {} acquisition function and uncertainty estimates from {}'.format(args.active_method, args.uncert_method))
-        if args.acq_search_strategy == 'v0': # TODO refactor acquire_clip_pairs_v0/1
-            clip_pairs, rews, mus, label_counts = acquire_clip_pairs_v0(agent_experience, reward_model, num_labels_requested, args, writers, i_train_round)
-        elif args.acq_search_strategy == 'v1':
-            clip_pairs, rews, mus, label_counts = acquire_clip_pairs_v1(agent_experience, reward_model, num_labels_requested, args, writers, i_train_round)
+        if args.acq_search_strategy == 'v0':
+            logging.info('Doing Active Learning, so actually collect {} clip pairs and select the best 1/{} using {} method'.format(
+                        args.selection_factor * num_labels_requested, args.selection_factor, args.active_method))
+            rand_clip_data = agent_experience.sample_pairs(args.selection_factor * num_labels_requested) # rand_clip_data = (rand_clip_pairs, rand_rews, rand_mus)
         elif args.acq_search_strategy == 'v2':
-            clip_pairs, rews, mus, label_counts = acquire_clip_pairs_v2(agent_experience, reward_model, num_labels_requested, args, writers, i_train_round)
+            logging.info('Doing Active Learning, and collecting all possible clip pairs. Selecting the best {} using {} method'.format(
+                            num_labels_requested, args.active_method))
+            rand_clip_data = agent_experience.sample_all_pairs()
+        clip_pairs, rews, mus, label_counts = acquire_clip_pairs(rand_clip_data, reward_model, num_labels_requested, args, writers, i_train_round)
     else:
         logging.info('Acquiring clips by random acquisition')
         clip_pairs, rews, mus = agent_experience.sample_pairs(num_labels_requested)
         label_counts = log_random_acquisitions(mus, rews, writers, args, i_train_round)
     return clip_pairs, rews, mus, label_counts
+
+
+def acquire_single_label(all_clip_pairs, reward_model, args, writers, i_train_round):
+    pass # TODO write this function or refactor code better s.t. you don't have to
+    # i.e. just pass num_labels_requested=1 to sample_and_annotate_clip_pairs instead
+    # current bottleneck is ensuring logging still works correctly
 
 
 def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_train_round):
