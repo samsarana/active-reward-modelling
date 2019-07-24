@@ -109,21 +109,21 @@ def log_random_acquisitions(mus, rews, writers, args, round_num):
     plt.legend()
     writer1.add_figure('1.label_histogram', labels_hist, round_num)
 
-    mean_ret_hist = plt.figure()
-    plt.title('Return histogram, round {}'.format(round_num))
-    plt.xlabel('Return, averaged over both clips in pair')
-    plt.ylabel('Frequency')
-    # plt.yscale('log')
-    rews_max = args.clip_length * 1
-    # as a approximation to the min reward, in CartPoleContinuous the agent never seems to do worse than ending the episode once per 4 steps
-    # NB this is a very crude approximation and will definitely not transfer to other envs
-    assert args.env_class == 'gym_barm:CartPoleContinuous-v0', "You ought to adjust the range of your histogram plots because your current values are tuned to CartPoleContinuous"
-    rews_min = args.ep_end_penalty * args.clip_length * 1/4  + 1 * args.clip_length * (1 - 1/4)
-    rand_label = 'Candidate (paired)' if args.acq_search_strategy == 'v0' else 'Candidate (unpaired)'
-    plt.hist(rews.sum(-1).sum(-1) / 2, bins=100, range=(rews_min, rews_max), 
-        color='tab:orange', alpha=0.7, label='Acquired')
-    plt.legend()
-    writer1.add_figure('2.return_histogram', mean_ret_hist, round_num)
+    # mean_ret_hist = plt.figure()
+    # plt.title('Return histogram, round {}'.format(round_num))
+    # plt.xlabel('Return, averaged over both clips in pair')
+    # plt.ylabel('Frequency')
+    # # plt.yscale('log')
+    # rews_max = args.clip_length * 1
+    # # as a approximation to the min reward, in CartPoleContinuous the agent never seems to do worse than ending the episode once per 4 steps
+    # # NB this is a very crude approximation and will definitely not transfer to other envs
+    # assert args.env_class == 'gym_barm:CartPoleContinuous-v0', "You ought to adjust the range of your histogram plots because your current values are tuned to CartPoleContinuous"
+    # rews_min = args.ep_end_penalty * args.clip_length * 1/4  + 1 * args.clip_length * (1 - 1/4)
+    # rand_label = 'Candidate (paired)' if args.acq_search_strategy == 'v0' else 'Candidate (unpaired)'
+    # plt.hist(rews.sum(-1).sum(-1) / 2, bins=100, range=(rews_min, rews_max), 
+    #     color='tab:orange', alpha=0.7, label='Acquired')
+    # plt.legend()
+    # writer1.add_figure('2.return_histogram', mean_ret_hist, round_num)
 
     # Tensorboard histograms are bad for discrete data but can be dynamically adjusted so I'll print them anyway as a complementary thing
     writer1.add_histogram('1.labels_acquired_and_candidate', mus, round_num, bins='auto')

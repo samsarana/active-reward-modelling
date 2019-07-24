@@ -15,14 +15,16 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     # experiment settings
     parser.add_argument('--info', type=str, default='', help='Tensorboard log is saved in ./logs/i_run/random_seed/[true|pred]/')
-    parser.add_argument('--env_class', type=str, default='gym_barm:CartPoleContinuous-v0')
+    parser.add_argument('--env_class', type=str, default='gym_barm:CartPole_Cont-v0')
     parser.add_argument('--env_class_test', type=str, default='CartPole-v0', help='We use the standard, non-continuous version of the env for testing agent performance')
+    parser.add_argument('--enrich_reward', action='store_true')
     parser.add_argument('--n_runs', type=int, default=20, help='number of runs to repeat the experiment')
     parser.add_argument('--n_rounds', type=int, default=20, help='number of rounds to repeat main training loop')
     parser.add_argument('--RL_baseline', action='store_true', help='Do RL baseline instead of reward learning?')
     parser.add_argument('--random_policy', action='store_true', help='Do the experiments with an entirely random policy, to benchmark performance')
     parser.add_argument('--ep_end_penalty', type=float, default=-29.0, help='How much reward does agent get when the (dummy) episode ends?')
     parser.add_argument('--test', action='store_true', help='Flag to make training procedure very short (to check for errors)')
+    parser.add_argument('--render_policy_test', action='store_true', help='Flag to render 3 episodes of policy test')
     
     # agent hyperparams
     parser.add_argument('--h1_agent', type=int, default=32)
@@ -89,6 +91,10 @@ def parse_arguments():
     if args.RL_baseline:
         args.n_epochs_pretrain_rm = 0
         args.n_epochs_train_rm = 0
+    if args.enrich_reward:
+        assert args.env_class == 'gym_barm:CartPole_Cont-v0', "You haven't implemented enriched reward for envs other than CartPole!"
+        args.env_class = 'gym_barm:CartPole_EnrichedCont-v0'
+        args.env_class_test = 'gym_barm:CartPole_Enriched-v0'
     return args
     
 

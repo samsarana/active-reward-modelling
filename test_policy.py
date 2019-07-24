@@ -17,7 +17,7 @@ def test_policy(q_net, reward_model, reward_stats, args, random_seed, render=Fal
                'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
     rt_mean, rt_var, rp_mean, rp_var = reward_stats
     while n < num_episodes:
-        if render:
+        if render and n < 3: # if render, watch 3 episodes
             env.render()
             time.sleep(1e-3)
         # agent interact with env
@@ -43,6 +43,8 @@ def test_policy(q_net, reward_model, reward_stats, args, random_seed, render=Fal
                 returns['ep'][key] = 0
             state = env.reset()
             n += 1
+            if render and n == 3:
+                env.close()
     
     assert len(returns['all']['true']) == num_episodes
     return returns['all']

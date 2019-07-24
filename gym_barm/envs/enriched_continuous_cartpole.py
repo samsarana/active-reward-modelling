@@ -10,7 +10,7 @@ from gym import spaces, logger
 from gym.utils import seeding
 import numpy as np
 
-class Continuous_CartPoleEnv(gym.Env):
+class EnrichedContinuousCartPoleEnv(gym.Env):
     """
     Description:
         A pole is attached by an un-actuated joint to a cart, which moves along a frictionless track. The pendulum starts upright, and the goal is to prevent it from falling over by increasing and reducing the cart's velocity.
@@ -36,6 +36,7 @@ class Continuous_CartPoleEnv(gym.Env):
 
     Reward:
         Reward is 1 for every step taken, including the termination step
+        TODO update this
 
     Starting State:
         All observations are assigned a uniform random value in [-0.05..0.05]
@@ -121,12 +122,27 @@ class Continuous_CartPoleEnv(gym.Env):
         done = bool(done)
 
         if not done: # done is now no longer a flag to end the episode, but to give negative reward
-            reward = 1.0
+            reward = self.enriched_reward() # 1.0
         else: # done. Pole just fell! Give penalty and reset environment.
             reward = self.ep_end_penalty
             self.reset()
 
         return np.array(self.state), reward, False, {}
+
+    def enriched_reward(self):
+        """x_rew \in [-1,1], linear interpolation (tinyurl.com/y3gsbwcj)
+           theta_rew \in [-1,1], linear interpolation
+           Thus rew \in [-2,2]
+           So scale is a bit bigger than original, but hopefully this'll be close enough
+           s.t. I don't have to make many adjustments to DQN hyperparams
+           (though I normalise reward anyway, so really we should be fine)
+        """
+        x, _, theta, _ = self.state # decided not to use x_dot and theta_dot to compute enriched reward
+        x_rew = (self.x_threshold - abs(x)) / self.x_threshold
+        theta_rew = (self.theta_threshold_radians - abs(theta)) / self.theta_threshold_radians
+        rew = x_rew + theta_rew
+        assert -2 <= rew <= 2, "You've done something wrong with the enriched reward calculation!"
+        return rew
 
     def reset(self):
         self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
