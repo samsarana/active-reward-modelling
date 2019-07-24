@@ -54,35 +54,35 @@ def log_acquisitions(mus, rand_mus, rews, rand_rews, writers, args, round_num):
     plt.legend()
     writer1.add_figure('1.label_histogram', labels_hist, round_num)
 
-    mean_ret_hist = plt.figure()
-    plt.title('Return histogram, round {}'.format(round_num))
-    plt.xlabel('Return, averaged over both clips in pair')
-    plt.ylabel('Frequency')
-    # plt.yscale('log')
-    if len(rand_rews.shape) == 3: # v0 acq func => rand_rews paired
-        mean_rand_rews = rand_rews.sum(-1).sum(-1) / 2
-    elif len(rand_rews.shape) == 2: # v1 acq func => rand_rews not paired
-        mean_rand_rews = rand_rews.sum(-1)
-    else:
-        raise RuntimeError('`rand_rews` is of the wrong shape.')
-    rews_max = args.clip_length * 1
-    # as a approximation to the min reward, in CartPoleContinuous the agent never seems to do worse than ending the episode once per 4 steps
-    # NB this is a very crude approximation and will definitely not transfer to other envs
-    assert args.env_class == 'gym_barm:CartPoleContinuous-v0', "You ought to adjust the range of your histogram plots because your current values are tuned to CartPoleContinuous"
-    rews_min = args.ep_end_penalty * args.clip_length * 1/4  + 1 * args.clip_length * (1 - 1/4)
-    rand_label = 'Candidate (paired)' if args.acq_search_strategy == 'v0' else 'Candidate (unpaired)'
-    plt.hist(mean_rand_rews, bins=100, range=(rews_min, rews_max), # min possible value is -39*25 
-        color='tab:blue', alpha=0.7, label=rand_label)
-    plt.hist(rews.sum(-1).sum(-1) / 2, bins=100, range=(rews_min, rews_max), 
-        color='tab:orange', alpha=0.7, label='Acquired')
-    plt.legend()
-    writer1.add_figure('2.return_histogram', mean_ret_hist, round_num)
+    # mean_ret_hist = plt.figure()
+    # plt.title('Return histogram, round {}'.format(round_num))
+    # plt.xlabel('Return, averaged over both clips in pair')
+    # plt.ylabel('Frequency')
+    # # plt.yscale('log')
+    # if len(rand_rews.shape) == 3: # v0 acq func => rand_rews paired
+    #     mean_rand_rews = rand_rews.sum(-1).sum(-1) / 2
+    # elif len(rand_rews.shape) == 2: # v1 acq func => rand_rews not paired
+    #     mean_rand_rews = rand_rews.sum(-1)
+    # else:
+    #     raise RuntimeError('`rand_rews` is of the wrong shape.')
+    # rews_max = args.clip_length * 1
+    # # as a approximation to the min reward, in CartPoleContinuous the agent never seems to do worse than ending the episode once per 4 steps
+    # # NB this is a very crude approximation and will definitely not transfer to other envs
+    # assert args.env_class == 'gym_barm:CartPoleContinuous-v0', "You ought to adjust the range of your histogram plots because your current values are tuned to CartPoleContinuous"
+    # rews_min = args.ep_end_penalty * args.clip_length * 1/4  + 1 * args.clip_length * (1 - 1/4)
+    # rand_label = 'Candidate (paired)' if args.acq_search_strategy == 'v0' else 'Candidate (unpaired)'
+    # plt.hist(mean_rand_rews, bins=100, range=(rews_min, rews_max), # min possible value is -39*25 
+    #     color='tab:blue', alpha=0.7, label=rand_label)
+    # plt.hist(rews.sum(-1).sum(-1) / 2, bins=100, range=(rews_min, rews_max), 
+    #     color='tab:orange', alpha=0.7, label='Acquired')
+    # plt.legend()
+    # writer1.add_figure('2.return_histogram', mean_ret_hist, round_num)
 
     # Tensorboard histograms are bad for discrete data but can be dynamically adjusted so I'll print them anyway as a complementary thing
     writer1.add_histogram('1.labels_acquired_and_candidate', mus, round_num, bins='auto')
     writer2.add_histogram('1.labels_acquired_and_candidate', rand_mus, round_num, bins='auto')
-    writer1.add_histogram('2.mean_return_of_clip_pairs_acquired_and_candidate', rews.sum(-1).sum(-1) / 2, round_num, bins='auto')
-    writer2.add_histogram('2.mean_return_of_clip_pairs_acquired_and_candidate', mean_rand_rews, round_num, bins='auto')
+    # writer1.add_histogram('2.mean_return_of_clip_pairs_acquired_and_candidate', rews.sum(-1).sum(-1) / 2, round_num, bins='auto')
+    # writer2.add_histogram('2.mean_return_of_clip_pairs_acquired_and_candidate', mean_rand_rews, round_num, bins='auto')
     return label_counts
 
 
@@ -127,7 +127,7 @@ def log_random_acquisitions(mus, rews, writers, args, round_num):
 
     # Tensorboard histograms are bad for discrete data but can be dynamically adjusted so I'll print them anyway as a complementary thing
     writer1.add_histogram('1.labels_acquired_and_candidate', mus, round_num, bins='auto')
-    writer1.add_histogram('2.mean_return_of_clip_pairs_acquired_and_candidate', rews.sum(-1).sum(-1) / 2, round_num, bins='auto')
+    # writer1.add_histogram('2.mean_return_of_clip_pairs_acquired_and_candidate', rews.sum(-1).sum(-1) / 2, round_num, bins='auto')
     return mu_counts
 
 
