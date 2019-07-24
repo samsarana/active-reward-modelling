@@ -296,3 +296,14 @@ def compute_var_ratio(clip_pairs, reward_model, args):
     max_p_12_p21 = np.maximum(E_p_hat_12_per_batch, 1 - E_p_hat_12_per_batch) # element-wise max of 2 arrays
     assert max_p_12_p21.shape == (batch_size,)
     return 1 - max_p_12_p21
+
+
+def make_random_acquisition(clip_pairs, num_labels, reward_model, args):
+    """TODO implement this function and clean up/eliminate acquire_labels_by_index()
+       Takes reward_model and args to have a type
+       signature consistent with the other acquisition
+       functions.
+    """
+    n_clip_pairs, _, _, _ = clip_pairs.shape
+    idx = np.random.choice(n_clip_pairs, size=num_labels, replace=False)
+    info_per_clip_pair = None

@@ -1,11 +1,34 @@
 """Classes and functions to do reward learning"""
 
-import math, random
+import math, random, logging
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
+
+def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_train_round, i_label=None):
+    writer1, writer2 = writers
+    epochs = args.n_epochs_pretrain_rm if i_train_round == -1 else args.n_epochs_train_rm
+    reward_model.train() # dropout on
+    for epoch in range(epochs):
+        with torch.autograd.detect_anomaly():
+            clip_pair_batch, mu_batch = prefs_buffer.sample(args.batch_size_rm)
+            r_hats_batch = reward_model(clip_pair_batch).squeeze(-1) # squeeze the oa_pair dimension that was passed through reward_model
+            # assert clip_pair_batch.shape == (args.batch_size_rm, 2, args.clip_length, args.obs_act_shape)
+            # loss_rm = compute_loss_rm_wchecks(r_hats_batch, mu_batch, args, args.obs_shape, args.act_shape)
+            loss_rm = compute_loss_rm(r_hats_batch, mu_batch)
+            optimizer_rm.zero_grad()
+            loss_rm.backward()
+            optimizer_rm.step()
+            rm_train_round = i_label if i_label else i_train_round
+            writer1.add_scalar('7.reward_model_loss/round_{}'.format(rm_train_round), loss_rm, epoch)
+            # compute lower bound for loss_rm and plot this too. TODO check this is bug free
+            # n_indifferent_labels = Counter(mu_batch).get(0.5, default=0)
+            # loss_lower_bound = n_indifferent_labels * math.log(2)
+            # writer2.add_scalar('7.reward_model_loss/round_{}'.format(rm_train_round), loss_lower_bound, epoch)
+    return reward_model
+    
 
 class RewardModel(nn.Module):
     """Parameterises r_hat : states x actions -> real rewards
@@ -143,91 +166,6 @@ def compute_loss_rm(r_hats_batch, mu_batch):
     exp_sum_r_hats_batch = r_hats_batch.sum(dim=2).exp()
     p_hat_12_batch = exp_sum_r_hats_batch[:, 0] / exp_sum_r_hats_batch.sum(dim=1)
     return F.binary_cross_entropy(input=p_hat_12_batch, target=mu_batch, reduction='sum')
-
-
-class AgentExperience():
-    """For collecting experience from rollouts in a way that is
-       friendly to downstream processes.
-       add(sa_pair): 
-       In particular, AgentExperience() instances are tensors
-       with size of dim 1 that can be spe
-    """
-    def __init__(self, experience_shape, force_label_choice=False):
-        self.num_clips, self.clip_length, self.obs_act_size = experience_shape
-        self.force_label_choice = force_label_choice
-        self.clips = np.zeros(shape=experience_shape) # default dtype=np.float64. OK for torching later?
-        self.clip_rewards = np.zeros(shape=(self.num_clips, self.clip_length))
-        # self.clip_returns = np.zeros(shape=self.num_clips) # TODO remove as it's unused, apart from as a check
-        self.i = 0 # maintain pointer to where to add next clip
-
-    def add(self, oa_pair, reward):
-        """Takes oa_pair of type torch.tensor(dtype=torch.float)
-           and adds it to the current clip
-           (or the next clip if the current clip is full)
-           Also adds corresponding reward to return of current clip
-           self.clips.shape = num_clips, clip_length, obs_act_size
-           self.clip_returns.shape = num_clips
-        """
-        assert len(oa_pair) == self.obs_act_size
-        i_clip = self.i // self.clip_length
-        i_step = self.i % self.clip_length
-        try:
-            self.clips[i_clip, i_step] = oa_pair
-            self.clip_rewards[i_clip, i_step] = reward
-            # self.clip_returns[i_clip] += reward
-            self.i += 1 # increment pointer
-        except IndexError:
-            raise RuntimeError('Oopsie, agent_experience buffer (self.clips) is full!')
-
-    def sample_singles(self, batch_size):
-        """Samples, without replacement, batch_size *single* clips
-           Returns batch of clips (shape=batch_size, clip_length, obs_act_length)
-           and rewards (shape=batch_size, clip_length)
-           Rewards are returned in order to (i) compute mu later on
-           once clips are paired together, and (ii) compute mean and variance
-           of reward functions over prefs buffer to normalise rewards sent to agent
-           **Assumption: when sampling, self.clips is full**
-        """
-        assert self.i == self.num_clips * self.clip_length, "Whoops, self.clips must be full when sampling otherwise your algo is incorrect!"
-        assert self.clips.shape[0] >= batch_size, "Trying to sample {} clips but agent_experience only has {} clips!".format(batch_size, self.clips.shape[0])
-        rows_i = np.random.choice(batch_size, size=(batch_size,), replace=False)
-        clip_pairs = self.clips[rows_i]
-        rewards = self.clip_rewards[rows_i]
-        return clip_pairs, rewards
-
-    def sample_pairs(self, batch_size):
-        """Samples, without replacement, batch_size *pairs* of clips
-           i.e. 2 * `batch_size` clips in total
-           Returns batch of pairs (shape=batch_size, 2, clip_length, obs_act_length)
-           and mu in {0,1} where mu=1 if R(clip1) > R(clip2) else 0.
-           If we were learning from human preferences, we wouldn't have access to R,
-           but we are instead synthetically generating the preference mu from
-           our access to GT reward (which is hidden from the agent).
-           **Assumption: when sampling, self.clips is full**
-        """
-        assert self.i == self.num_clips * self.clip_length # check Assumption
-        assert self.clips.shape[0] >= batch_size*2,\
-            "Trying to sample {} clips ({} labels/clip_pairs) but agent_experience only has {} clips!".format(
-            batch_size*2, batch_size, self.clips.shape[0])
-        rows_i = np.random.choice(batch_size*2, size=(batch_size,2), replace=False)
-        clip_pairs = self.clips[rows_i] # TODO fancy indexing is slow. is this a bottleneck?
-        rewards = self.clip_rewards[rows_i]
-        returns = self.clip_rewards[rows_i].sum(axis=-1)
-        # returns2 = self.clip_returns[rows_i] # TODO remove clip_returns as an attr of AgentExperience; it's just wasting computation
-        # assert (returns == returns2).all()
-        if self.force_label_choice:
-            mus = np.where(returns[:, 0] > returns[:, 1], 1, 
-                            np.where(returns[:, 0] == returns[:, 1], random.choice([0, 1]), 0))
-        else: # allow clips to be labeled as 0.5
-            mus = np.where(returns[:, 0] > returns[:, 1], 1, 
-                           np.where(returns[:, 0] == returns[:, 1], 0.5, 0))
-        return clip_pairs, rewards, mus
-
-    def sample_all_pairs(self):
-        """Returns batch of pairs (shape=batch_size, 2, clip_length, obs_act_length)
-           where batch_size = self.num_clips ** 2 since we are sampling all pairs
-        """
-        pass
         
 
 class PrefsBuffer():
@@ -297,6 +235,43 @@ class PrefsBuffer():
         """
         all_rewards_flat = self.rewards[:self.current_length].reshape(-1)
         return all_rewards_flat.mean(), all_rewards_flat.var()
+
+
+def compute_reward_stats(reward_model, prefs_buffer):
+    """Returns mean and variance of true and predicted reward
+       (for normalising rewards sent to agent)
+    """
+    rt_mean, rt_var = prefs_buffer.compute_mean_var_GT()
+    rp_mean, rp_var = compute_mean_var(reward_model, prefs_buffer)
+    return rt_mean, rt_var, rp_mean, rp_var
+
+
+def compute_mean_var(r, prefs_buffer):
+    """Given reward function r and an instance of PrefsBuffer,
+       returns E[r(s,a)] and Var[r(s,a)]
+       where the expectation and variance are over all the (s,a) pairs
+       currently in the buffer (prefs_buffer.clip_pairs).
+       The returned scalars are python numbers
+    """
+    assert isinstance(r, nn.Module)
+    # flatten the clip_pairs and chuck them through the reward function
+    sa_pairs = prefs_buffer.all_flat_sa_pairs()
+    r.eval() # turn off dropout
+    rews = r(sa_pairs).squeeze()
+    assert rews.shape == (prefs_buffer.current_length * 2 * prefs_buffer.clip_length,)
+    return rews.mean().item(), rews.var().item()
+
+
+def test_correlation(reward_model, env, q_net, args, writer1, i_train_round):
+    """TODO Work out what dataset we should eval correlation on... currently
+       I use the current q_net to generate rollouts and eval on those.
+       But this seems bad b/c the dataset changes every round. And indeed,
+       correlation seems to go down as training continues, which seems wrong.
+    """
+    logging.info('Reward model training complete... Evaluating reward model correlation on {} state-action pairs, accumulated on {} rollouts of length {}'.format(
+        args.corr_rollout_steps * args.corr_num_rollouts, args.corr_num_rollouts, args.corr_rollout_steps))
+    r_xy, plots = eval_rm_correlation(reward_model, env, q_net, args, args.obs_shape, args.act_shape, rollout_steps=args.corr_rollout_steps, num_rollouts=args.corr_num_rollouts)
+    log_correlation(r_xy, plots, writer1, round_num=i_train_round)
 
 
 def eval_rm_correlation(reward_model, env, agent, args, obs_shape, act_shape, rollout_steps, num_rollouts):

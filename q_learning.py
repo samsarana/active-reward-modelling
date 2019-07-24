@@ -121,19 +121,3 @@ def q_learning_loss(q_net, q_target, replay_buffer, args,
 
     loss = (q_value - expected_q_value).pow(2).mean() # mean is across batch dimension
     return loss
-
-
-def compute_mean_var(r, prefs_buffer):
-    """Given reward function r and an instance of PrefsBuffer,
-       returns E[r(s,a)] and Var[r(s,a)]
-       where the expectation and variance are over all the (s,a) pairs
-       currently in the buffer (prefs_buffer.clip_pairs).
-       The returned scalars are python numbers
-    """
-    assert isinstance(r, nn.Module)
-    # flatten the clip_pairs and chuck them through the reward function
-    sa_pairs = prefs_buffer.all_flat_sa_pairs()
-    r.eval() # turn off dropout
-    rews = r(sa_pairs).squeeze()
-    assert rews.shape == (prefs_buffer.current_length * 2 * prefs_buffer.clip_length,)
-    return rews.mean().item(), rews.var().item()

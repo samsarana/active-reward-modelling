@@ -61,12 +61,13 @@ def parse_arguments():
     parser.add_argument('--corr_rollout_steps', type=int, default=1000, help='When collecting rollouts to evaluate correlation of true and predicted reward, how many steps per rollout?')
     parser.add_argument('--corr_num_rollouts', type=int, default=5, help='When collecting rollouts to evaluate correlation of true and predicted reward, how many rollouts in total?')
     parser.add_argument('--no_ensemble_for_reward_pred', action='store_true', help='If true, then use ensemble for uncertainty estimates but pick a random net to compute rewards sent to DQN')
+    parser.add_argument('--sequential_acq', action='store_true')
 
     # active learning
     parser.add_argument('--active_method', type=str, default=None, help='Choice of: BALD, var_ratios, max_entropy, mean_std')
     parser.add_argument('--uncert_method', type=str, default=None, help='Choice of: MC, ensemble')
     parser.add_argument('--num_MC_samples', type=int, default=10)
-    parser.add_argument('--acq_search_strategy', type=str, default='v0', help='Whether to use Christiano (v0) or Angelos (v1) strategy to search for clip pairs')
+    parser.add_argument('--acq_search_strategy', type=str, default='christiano', help='Whether to use Christiano, Angelos or all_pairs strategy to search for clip pairs')
     parser.add_argument('--size_rm_ensemble', type=int, default=1, help='If active_method == ensemble then this must be >= 2')
     parser.add_argument('--selection_factor', type=int, default=10, help='when doing active learning, 1/selection_factor of the randomly sampled clip pairs are sent to human for evaluation')
     # if doing active learning n_steps_(pre)train is automatically increased by this factor bc we consider
@@ -76,12 +77,13 @@ def parse_arguments():
     if args.n_labels_pretraining == -1:
         args.n_labels_pretraining = args.n_labels_per_round
     if args.test:
-        args.n_runs = 3
-        args.n_rounds = 2
-        # args.n_initial_agent_steps=3000
-        # args.n_agent_steps=3000
+        args.n_runs = 1
+        args.n_rounds = 1
+        args.n_agent_train_steps = 10
+        args.n_agent_total_steps = 600
         args.n_epochs_pretrain_rm = 10
         args.n_epochs_train_rm = 10
+        args.selection_factor = 2
     if args.uncert_method == 'ensemble':
         assert args.size_rm_ensemble >= 2
     if args.RL_baseline:
@@ -117,7 +119,7 @@ def run_experiment(args, i_run, returns_summary):
             'mean_std': compute_sample_var_clip_pair,
             'max_entropy': compute_pred_entropy,
             'var_ratios': compute_var_ratio,
-            None: None # random acquisition
+            None: 'random' # TODO also make a function for this and clean up acquire_labels_by_index() so as not to use an if-statement
         }
     try:
         args.acq_func = active_methods_to_acq_funcs[args.active_method]
@@ -129,7 +131,10 @@ def run_experiment(args, i_run, returns_summary):
         do_random_experiment(env, args, returns_summary, writers, i_run)
     else:      
         # fire away!
-        training_protocol(env, args, writers, returns_summary, i_run)
+        if args.sequential_acq:
+            training_protocol_sequential_acq(env, args, writers, returns_summary, i_run)
+        else:
+            training_protocol(env, args, writers, returns_summary, i_run)
     
     writer1.close()
     writer2.close()

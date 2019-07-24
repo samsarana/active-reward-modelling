@@ -131,17 +131,30 @@ def log_random_acquisitions(mus, rews, writers, args, round_num):
     return mu_counts
 
 
-def log_total_mu_counts(mu_counts, writers, args):
+def log_total_mu_counts_v0(mu_counts, writers, args):
     writer1, writer2 = writers
     if args.active_method:
         assert mu_counts.shape == (2,3)
         acquired, candidate = mu_counts
-        writer2.add_scalar('10.total_mu_counts', candidate[0], 0)
-        writer2.add_scalar('10.total_mu_counts', candidate[1], 1) # global step cannot be float so make 0.5 -> 1 and 1 -> 2
-        writer2.add_scalar('10.total_mu_counts', candidate[2], 2)
+        writer2.add_scalar('4.total_mu_counts', candidate[0], 0)
+        writer2.add_scalar('4.total_mu_counts', candidate[1], 1) # global step cannot be float so make 0.5 -> 1 and 1 -> 2
+        writer2.add_scalar('4.total_mu_counts', candidate[2], 2)
     else:
         assert mu_counts.shape == (3,)
         acquired = mu_counts
     writer1.add_scalar('4.total_mu_counts', acquired[0], 0)
     writer1.add_scalar('4.total_mu_counts', acquired[1], 1)
     writer1.add_scalar('4.total_mu_counts', acquired[2], 2)
+
+
+def log_total_mu_counts(mu_counts, writers, args):
+    writer1, writer2 = writers
+    assert mu_counts.shape == (2,3)
+    acquired, candidate = mu_counts
+    writer1.add_scalar('4.total_mu_counts', acquired[0], 0)
+    writer1.add_scalar('4.total_mu_counts', acquired[1], 1)
+    writer1.add_scalar('4.total_mu_counts', acquired[2], 2)
+    
+    writer2.add_scalar('4.total_mu_counts', candidate[0], 0)
+    writer2.add_scalar('4.total_mu_counts', candidate[1], 1) # global step cannot be float so make 0.5 -> 1 and 1 -> 2
+    writer2.add_scalar('4.total_mu_counts', candidate[2], 2)
