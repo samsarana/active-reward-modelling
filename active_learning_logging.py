@@ -36,7 +36,7 @@ def log_acquisitions(mus, rand_mus, rews, rand_rews, writers, args, round_num):
     mu_counts = dict(Counter(mus))
     rand_mu_counts = dict(Counter(rand_mus))
     label_counts = np.array([[mu_counts.get(0, 0), mu_counts.get(0.5, 0), mu_counts.get(1, 0)],
-                          [rand_mu_counts.get(0, 0), rand_mu_counts.get(0.5, 0), rand_mu_counts.get(1, 0)]
+                          [rand_mu_counts.get(0, 0), rand_mu_counts.get(0.5, 0), rand_mu_counts.get(1, 0)] # TODO fix this line. it doesn't seem to be counting 0.5 labels at the moment
                          ]) # use 0 as default value from dict.get()
     # mus_, mu_counts = np.unique(mus, return_counts=True) # essentially gives us a discrete histogram
     # rand_mus_, rand_mu_counts = np.unique(rand_mus, return_counts=True)

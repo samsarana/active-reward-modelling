@@ -71,6 +71,14 @@ def training_protocol(env, args, writers, returns_summary, i_run):
         mu_counts += mu_counts_round
         
         # Stage 1.3: Train reward model for some epochs on preferences collected to date
+        if args.reinit_rm:
+            logging.info('Reinitialising reward model before training')
+            if args.size_rm_ensemble >= 2:
+                reward_model = RewardModelEnsemble(args.obs_shape, args.act_shape, args)
+                logging.info('Using a {}-ensemble of nets for our reward model'.format(args.size_rm_ensemble))
+            else:
+                reward_model = RewardModel(args.obs_shape, args.act_shape, args)
+            optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm)
         logging.info('Stage 1.3: Train reward model for {} batches on those preferences'.format(args.n_epochs_train_rm))
         reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_train_round)
 
@@ -128,6 +136,14 @@ def training_protocol_sequential_acq(env, args, writers, returns_summary, i_run)
         rand_clip_pairs = np.delete(rand_clip_pairs, idx, axis=0)
         rand_rews = np.delete(rand_rews, idx, axis=0)
         rand_mus = np.delete(rand_mus, idx, axis=0)
+        if args.reinit_rm:
+            logging.info('Reinitialising reward model before training')
+            if args.size_rm_ensemble >= 2:
+                reward_model = RewardModelEnsemble(args.obs_shape, args.act_shape, args)
+                logging.info('Using a {}-ensemble of nets for our reward model'.format(args.size_rm_ensemble))
+            else:
+                reward_model = RewardModel(args.obs_shape, args.act_shape, args)
+            optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm)
         # Stage 0.3: Train reward model for some epochs on preferences collected to date
         reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_train_round=-1, i_label=i_label)
         i_label += 1
@@ -172,6 +188,14 @@ def training_protocol_sequential_acq(env, args, writers, returns_summary, i_run)
             rand_mus = np.delete(rand_mus, idx, axis=0)
             # Stage 1.3: Train reward model for some epochs on preferences collected to date
             # TODO should we trained for a reduced number of epochs since we train many args.n_labels_per_round times more?
+            if args.reinit_rm:
+                logging.info('Reinitialising reward model before training')
+                if args.size_rm_ensemble >= 2:
+                    reward_model = RewardModelEnsemble(args.obs_shape, args.act_shape, args)
+                    logging.info('Using a {}-ensemble of nets for our reward model'.format(args.size_rm_ensemble))
+                else:
+                    reward_model = RewardModel(args.obs_shape, args.act_shape, args)
+                optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm)
             reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_train_round, i_label)
             i_label += 1
         logging.info('Stage 1.3: Trained reward model for {}*{} batches on those preferences'.format(args.n_labels_per_round, args.n_epochs_train_rm))

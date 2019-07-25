@@ -18,8 +18,8 @@ def parse_arguments():
     parser.add_argument('--env_class', type=str, default='gym_barm:CartPole_Cont-v0')
     parser.add_argument('--env_class_test', type=str, default='CartPole-v0', help='We use the standard, non-continuous version of the env for testing agent performance')
     parser.add_argument('--enrich_reward', action='store_true')
-    parser.add_argument('--n_runs', type=int, default=20, help='number of runs to repeat the experiment')
-    parser.add_argument('--n_rounds', type=int, default=20, help='number of rounds to repeat main training loop')
+    parser.add_argument('--n_runs', type=int, default=40, help='number of runs to repeat the experiment')
+    parser.add_argument('--n_rounds', type=int, default=40, help='number of rounds to repeat main training loop')
     parser.add_argument('--RL_baseline', action='store_true', help='Do RL baseline instead of reward learning?')
     parser.add_argument('--random_policy', action='store_true', help='Do the experiments with an entirely random policy, to benchmark performance')
     parser.add_argument('--ep_end_penalty', type=float, default=-29.0, help='How much reward does agent get when the (dummy) episode ends?')
@@ -40,7 +40,7 @@ def parse_arguments():
     parser.add_argument('--epsilon_start', type=float, default=1.0, help='exploration probability for agent at start')
     parser.add_argument('--epsilon_decay', type=float, default=0.999, help='`epsilon *= epsilon * epsilon_decay` every learning step, until `epsilon_stop`') 
     parser.add_argument('--epsilon_stop', type=float, default=0.01)
-    parser.add_argument('--n_labels_per_round', type=int, default=5, help='How many labels to acquire per round? (in main training loop)')
+    parser.add_argument('--n_labels_per_round', type=int, default=10, help='How many labels to acquire per round? (in main training loop)')
     parser.add_argument('--n_labels_pretraining', type=int, default=-1, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining. If -1 (default), it will be set to n_labels_per_round') # Ibarz: 25k
     # parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[5]*20, help='How many labels to acquire per round? (in main training loop). len should be same as n_rounds')
     parser.add_argument('--n_agent_train_steps', type=int, default=3000, help='No. of steps that agent takes per round in environment, while training every agent_gdt_step_period steps') # Ibarz: 100k
@@ -64,6 +64,7 @@ def parse_arguments():
     parser.add_argument('--corr_num_rollouts', type=int, default=5, help='When collecting rollouts to evaluate correlation of true and predicted reward, how many rollouts in total?')
     parser.add_argument('--no_ensemble_for_reward_pred', action='store_true', help='If true, then use ensemble for uncertainty estimates but pick a random net to compute rewards sent to DQN')
     parser.add_argument('--sequential_acq', action='store_true')
+    parser.add_argument('--reinit_rm', action='store_true')
 
     # active learning
     parser.add_argument('--active_method', type=str, default=None, help='Choice of: BALD, var_ratios, max_entropy, mean_std')
