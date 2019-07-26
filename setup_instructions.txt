@@ -8,3 +8,5 @@
 7. bash ./barm/setup1.sh
 8. source ~/.bashrc
 9. bash ./barm/setup2.sh
+10. conda activate gym
+11. bash ./barm/setup3.sh
