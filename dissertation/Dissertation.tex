@@ -15,6 +15,7 @@
 \pagestyle{headings}
 
 \newcommand{\nats}{\mathbb{N}}
+\newcommand{\reals}{\mathbb{R}}
 \renewcommand{\P}{\mathbb{P}}
 \newcommand{\E}{\mathbb{E}}
 \newcommand{\V}{\mathbb{V}ar}
@@ -48,14 +49,46 @@
 
 \tableofcontents
 % say somewhere around here about collaboration with Zac and Angelos
+% and where do I say who my supervisor is?
 
 \chapter{Introduction}
 
 \chapter{Background} % Explain problem, give context
 \section{Reinforcement Learning}
-% MDPs etc (use S&B)
+Reinforcement learning (RL) refers simultaneously to a problem, methods for solving that problem, and the field that studies the problem and its solution methods. The problem of RL is to learn what to do---how to map situations to actions---so as to maximise some numerical reward signal \cite[pp.~1-2]{Sutton2018}.
+
+In this section we first introduce the elements of RL informally. We then formalise the RL Problem as the optimal control of incompletely-known Markov decision processes (finite? do I talk about PO?). We give a taxonomy of different RL solution methods and conclude with a description of one such method, Deep Q-Learning (DQN) that is of particular importance in this dissertation.
+
+\subsection{Elements of Reinforcement Learning}
+This subsection will introduce agent, environment, policy, reward signal, value function and [model] informally, similar to S\&B 1.3. Is this necessary or should I skip straight to the formalism?
+
+\subsection{Finite Markov Decision Processes}
+Finite Markov Decision Processes (finite MDPs) are a way of mathematically formalising the RL problem: they capture the most important aspects of the problem faced by an agent interacting with its environment to achieve a goal. We introduce the elements of this formalism: the agent-environment interface, goals and rewards, returns and episodes. Then...
+
+\subsubsection{The Agent-Environment Interface}
+MDPs consist firstly of the continual interaction between an agent selecting actions, and an environment responding by changing state, and presenting the new state to the agent, along with an associated scalar reward. Recall that the agent seeks to maximise this reward over time through its choice of actions. More formally, consider a sequence of discrete time steps, $t = 1,2,3, \dots$. At each time step $t$, the agent receives some representation of the environment's \textit{state}, $ S_t \in \mathcal{S} $, and chooses an \textit{action}, $ A_t \in \mathcal{A} $. On the next time step, the agent receives reward $ R_{t+1} \in \mathcal{R} \subset \reals $, and finds itself in a new state, $ S_{t+1} $. These interactions repeat over time, giving rise to a \textit{trajectory}:
+\begin{align*}
+S_0, A_0, R_1, S_1, A_1, R_2, S_2, A_2, R_3, \dots
+\end{align*}
+% TODO insert Figure 3.1-like figure from S&B
+% TODO ask best practices for figures
+% TODO ask best practices for latex commands
+
+A \textit{finite} MDP is one where the sets of states, actions and rewards are finite. In this case, the random variables $ S_t $ and $ R_t $ have well-defined discrete probability distributions which depend only on the preceding state and action. This allows us to define the \textit{dynamics} of the MDP, a probability mass function $ p : \mathcal{S} \times \mathcal{R} \times \mathcal{S} \times \mathcal{A} \mapsto [0,1] $, as follows. For any particular values $ s' \in \mathcal{S} $ and $ r \in \mathcal{R} $ of the random variables $ S_t $ and $ R_t $, there is a probability of these values occurring at time $ t $, given any values of the previous state $ s \in \mathcal{S} $ and action $ a \in \mathcal{A} $:
+\begin{align*}
+p(s', r \mid s, a) := \P(S_t = s', R_t = r \mid S_{t-1} = s , A_{t-1} = a ).
+\end{align*}
+
+A \textit{Markov} Decision Process is one where all states satisfy the Markov property. A state $ s_t $ satisfies this property iff:
+\begin{align*}
+\P(s_{t+1} \mid s_t, s_{t-1}, s_{t-2}, \dots, s_t ) = \P(s_t).
+\end{align*}
+This implies that in the MDP, the immediately preceding state $ s_t $ and action $ a_t $ are sufficient statistics for predicting the next state $ s_{t+1} $ and reward $ r_{t+1} $.
+% I'm still slightly confused about Markov property being a restriction on states, and if I can write the equation \P(s_{t+1} \mid s_t, s_{t-1}, s_{t-2}, \dots, s_t ) = \P(s_t) given that I have only previously said that there is a well-defined probability function from state-action pairs to states and rewards
+% TODO continue from 1/3 of the way down p. 49 in S&B
+
+\subsection{Reinforcement Learning Solution Methods}
 % model-based v model-free
-\subsection{Deep Reinforcement Learning}
 % Throw a deep NN at the problem!
 % Current algos; SOTA on different tasks
 % perhaps explain in detail just one algo (DQN, or whichever algo ends up being most important for my experiments)

@@ -1,14 +1,14 @@
 \begin{thebibliography}{1}
 
-\bibitem{Christiano2017}
-Paul Christiano, Jan Leike, Tom~B. Brown, Miljan Martic, Shane Legg, and Dario
-  Amodei.
-\newblock {Deep reinforcement learning from human preferences}.
-\newblock 2017.
-
 \bibitem{Gal2017a}
 Yarin Gal.
 \newblock {Uncertainty in Deep Learning}.
 \newblock {\em Phd Thesis}, 1(1):1--11, 2017.
+
+\bibitem{Sutton2018}
+R.~S. Sutton and A.~G. Barto.
+\newblock {\em {Reinforcement Learning: An Introduction (2nd Edition, in
+  preparation)}}.
+\newblock 2018.
 
 \end{thebibliography}
