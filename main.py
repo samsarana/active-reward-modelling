@@ -161,9 +161,9 @@ def main():
             logging.info('RUN {}/{} BEGIN\n'.format(i_run, args.n_runs - 1))
             run_experiment(args, i_run, returns_summary)
             logging.info('RUN {}/{} SUCCEEDED\n'.format(i_run, args.n_runs - 1))
+            pd.DataFrame(returns_summary).to_csv('./logs/{}.csv'.format(args.info), index_label=['ep return type', 'round no.'])
         except:
             logging.exception('RUN {}/{} FAILED with the following traceback:\n'.format(i_run, args.n_runs))
-    pd.DataFrame(returns_summary).to_csv('./logs/{}.csv'.format(args.info), index_label=['ep return type', 'round no.'])
 
 if __name__ == '__main__':
     main()
