@@ -1,5 +1,11 @@
 \begin{thebibliography}{1}
 
+\bibitem{Amodei2016}
+Dario Amodei, Chris Olah, Jacob Steinhardt, Paul Christiano, John Schulman, and
+  Dan Man{\'{e}}.
+\newblock {Concrete Problems in AI Safety}.
+\newblock pages 1--29, 2016.
+
 \bibitem{Gal2017a}
 Yarin Gal.
 \newblock {Uncertainty in Deep Learning}.

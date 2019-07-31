@@ -1,21 +1,25 @@
 \BOOKMARK [0][-]{chapter.1}{Introduction}{}% 1
-\BOOKMARK [0][-]{chapter.2}{Background}{}% 2
-\BOOKMARK [1][-]{section.2.1}{Reinforcement Learning}{chapter.2}% 3
-\BOOKMARK [2][-]{subsection.2.1.1}{Elements of Reinforcement Learning}{section.2.1}% 4
-\BOOKMARK [2][-]{subsection.2.1.2}{Finite Markov Decision Processes}{section.2.1}% 5
-\BOOKMARK [2][-]{subsection.2.1.3}{Reinforcement Learning Solution Methods}{section.2.1}% 6
-\BOOKMARK [1][-]{section.2.2}{Reinforcement Learning from Unknown Reward Functions}{chapter.2}% 7
-\BOOKMARK [2][-]{subsection.2.2.1}{Reward Learning}{section.2.2}% 8
-\BOOKMARK [1][-]{section.2.3}{Uncertainty in Deep Learning}{chapter.2}% 9
-\BOOKMARK [1][-]{section.2.4}{Active Learning}{chapter.2}% 10
-\BOOKMARK [2][-]{subsection.2.4.1}{Applying Active Learning to RL without a reward function}{section.2.4}% 11
-\BOOKMARK [1][-]{section.2.5}{Relation to Material Studied on the MSc Course}{chapter.2}% 12
-\BOOKMARK [0][-]{chapter.3}{Method}{}% 13
-\BOOKMARK [0][-]{chapter.4}{Experiments}{}% 14
-\BOOKMARK [0][-]{chapter.5}{Results}{}% 15
-\BOOKMARK [0][-]{chapter.6}{Conclusions}{}% 16
-\BOOKMARK [1][-]{section.6.1}{Summary}{chapter.6}% 17
-\BOOKMARK [1][-]{section.6.2}{Evaluation}{chapter.6}% 18
-\BOOKMARK [1][-]{section.6.3}{Future Work}{chapter.6}% 19
-\BOOKMARK [0][-]{chapter*.5}{References}{}% 20
-\BOOKMARK [0][-]{appendix.A}{Some Appendix Material}{}% 21
+\BOOKMARK [1][-]{section.1.1}{Relation to Material Studied on the MSc Course}{chapter.1}% 2
+\BOOKMARK [0][-]{chapter.2}{Reinforcement Learning}{}% 3
+\BOOKMARK [1][-]{section.2.1}{Elements of Reinforcement Learning}{chapter.2}% 4
+\BOOKMARK [1][-]{section.2.2}{Finite Markov Decision Processes}{chapter.2}% 5
+\BOOKMARK [2][-]{subsection.2.2.1}{The Agent-Environment Interface}{section.2.2}% 6
+\BOOKMARK [2][-]{subsection.2.2.2}{Goals and Rewards}{section.2.2}% 7
+\BOOKMARK [2][-]{subsection.2.2.3}{Returns and Episodes}{section.2.2}% 8
+\BOOKMARK [2][-]{subsection.2.2.4}{Policies and Value Functions}{section.2.2}% 9
+\BOOKMARK [2][-]{subsection.2.2.5}{Optimal Policies and Optimal Value Functions}{section.2.2}% 10
+\BOOKMARK [2][-]{subsection.2.2.6}{Reinforcement Learning Solution Methods}{section.2.2}% 11
+\BOOKMARK [1][-]{section.2.3}{Reinforcement Learning from Unknown Reward Functions}{chapter.2}% 12
+\BOOKMARK [2][-]{subsection.2.3.1}{Reward Learning}{section.2.3}% 13
+\BOOKMARK [0][-]{chapter.3}{Uncertainty in Deep Learning}{}% 14
+\BOOKMARK [0][-]{chapter.4}{Active Learning}{}% 15
+\BOOKMARK [1][-]{subsection.4.0.1}{Applying Active Learning to RL without a reward function}{chapter.4}% 16
+\BOOKMARK [0][-]{chapter.5}{Method}{}% 17
+\BOOKMARK [0][-]{chapter.6}{Experiments}{}% 18
+\BOOKMARK [0][-]{chapter.7}{Results}{}% 19
+\BOOKMARK [0][-]{chapter.8}{Conclusions}{}% 20
+\BOOKMARK [1][-]{section.8.1}{Summary}{chapter.8}% 21
+\BOOKMARK [1][-]{section.8.2}{Evaluation}{chapter.8}% 22
+\BOOKMARK [1][-]{section.8.3}{Future Work}{chapter.8}% 23
+\BOOKMARK [0][-]{chapter*.5}{References}{}% 24
+\BOOKMARK [0][-]{appendix.A}{Some Appendix Material}{}% 25
