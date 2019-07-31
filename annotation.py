@@ -48,15 +48,14 @@ def log_acquisition(idx, info_per_clip_pair, clip_pairs, rews, mus, rand_clip_pa
         selected_info = info_per_clip_pair[idx].sum()
         writer1.add_scalar('5.info_gain_per_label', selected_info, i_label)
         writer2.add_scalar('5.info_gain_per_label', total_info, i_label)
-
-        num_pairs = len(info_per_clip_pair)
-        colours = ['tab:orange' if i in idx else 'tab:blue' for i in range(num_pairs)]
-        info_bars = plt.figure()
-        plt.title('Information gain per clip pair')
-        plt.xlabel('Clip pairs')
-        plt.ylabel('Metric of info gain')
-        plt.bar(np.arange(num_pairs), info_per_clip_pair, color=colours)
-        writer1.add_figure('3.info_gain_per_clip_pair', info_bars, i_label)
+        # num_pairs = len(info_per_clip_pair)
+        # colours = ['tab:orange' if i in idx else 'tab:blue' for i in range(num_pairs)]
+        # info_bars = plt.figure()
+        # plt.title('Information gain per clip pair')
+        # plt.xlabel('Clip pairs')
+        # plt.ylabel('Metric of info gain')
+        # plt.bar(np.arange(num_pairs), info_per_clip_pair, color=colours)
+        # writer1.add_figure('3.info_gain_per_clip_pair', info_bars, i_label)
 
     # TODO dump pairs (candidate and selected) into csv s.t. we can view what clips are chosen
     # as well as their labels and rewards
@@ -66,6 +65,10 @@ def log_acquisition(idx, info_per_clip_pair, clip_pairs, rews, mus, rand_clip_pa
     label_counts = np.array([[mu_counts.get(0, 0), mu_counts.get(0.5, 0), mu_counts.get(1, 0)],
                           [rand_mu_counts.get(0, 0), rand_mu_counts.get(0.5, 0), rand_mu_counts.get(1, 0)]
                          ])
+    # log no. labels of each type acquired
+    writer1.add_scalar('5b.0_labels', mu_counts.get(0, 0), i_label)
+    writer1.add_scalar('5b.0.5_labels', mu_counts.get(0.5, 0), i_label)
+    writer1.add_scalar('5b.1_labels', mu_counts.get(1, 0), i_label)
     return label_counts
 
 class AgentExperience():

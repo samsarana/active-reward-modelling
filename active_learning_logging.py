@@ -12,15 +12,15 @@ def log_info_gain(info_per_clip_pair, idx, writers, round_num):
        All plotting is done by logging to Tensorboard.
     """
     writer1, writer2 = writers
-    assert len(info_per_clip_pair.shape) == 1
-    num_pairs = len(info_per_clip_pair)
-    colours = ['tab:orange' if i in idx else 'tab:blue' for i in range(num_pairs)]
-    info_bars = plt.figure()
-    plt.title('Information gain per clip pair')
-    plt.xlabel('Clip pairs')
-    plt.ylabel('Metric of info gain')
-    plt.bar(np.arange(num_pairs), info_per_clip_pair, color=colours)
-    writer1.add_figure('3.info_gain_per_clip_pair', info_bars, round_num)
+    # assert len(info_per_clip_pair.shape) == 1
+    # num_pairs = len(info_per_clip_pair)
+    # colours = ['tab:orange' if i in idx else 'tab:blue' for i in range(num_pairs)]
+    # info_bars = plt.figure()
+    # plt.title('Information gain per clip pair')
+    # plt.xlabel('Clip pairs')
+    # plt.ylabel('Metric of info gain')
+    # plt.bar(np.arange(num_pairs), info_per_clip_pair, color=colours)
+    # writer1.add_figure('3.info_gain_per_clip_pair', info_bars, round_num)
 
     total_info = info_per_clip_pair.sum()
     selected_info = info_per_clip_pair[idx].sum()
@@ -36,23 +36,29 @@ def log_acquisitions(mus, rand_mus, rews, rand_rews, writers, args, round_num):
     mu_counts = dict(Counter(mus))
     rand_mu_counts = dict(Counter(rand_mus))
     label_counts = np.array([[mu_counts.get(0, 0), mu_counts.get(0.5, 0), mu_counts.get(1, 0)],
-                          [rand_mu_counts.get(0, 0), rand_mu_counts.get(0.5, 0), rand_mu_counts.get(1, 0)] # TODO fix this line. it doesn't seem to be counting 0.5 labels at the moment
+                          [rand_mu_counts.get(0, 0), rand_mu_counts.get(0.5, 0), rand_mu_counts.get(1, 0)]
                          ]) # use 0 as default value from dict.get()
+
+    # log no. labels of each type acquired
+    writer1.add_scalar('5b.0_labels', mu_counts.get(0, 0), round_num)
+    writer1.add_scalar('5b.0.5_labels', mu_counts.get(0.5, 0), round_num)
+    writer1.add_scalar('5b.1_labels', mu_counts.get(1, 0), round_num)
+
     # mus_, mu_counts = np.unique(mus, return_counts=True) # essentially gives us a discrete histogram
     # rand_mus_, rand_mu_counts = np.unique(rand_mus, return_counts=True)
     # assert (mus_ == [0, 0.5, 1]).all() and len(mu_counts) == 3
     # assert (rand_mus_ == [0, 0.5, 1]).all() and len(rand_mu_counts) == 3
     # label_counts = np.stack((mu_counts, rand_mu_counts)) # acquired, candidate
 
-    labels_hist = plt.figure()
-    plt.title('Label histogram, round {}'.format(round_num))
-    plt.xlabel('mu')
-    plt.ylabel('Frequency')
-    # plt.yscale('log')
-    plt.hist(rand_mus, bins=11, range=(-0.05,1.05), color='tab:blue', alpha=0.7, label='Candidate')
-    plt.hist(mus, bins=11, range=(-0.05,1.05), color='tab:orange', alpha=0.7, label='Acquired')
-    plt.legend()
-    writer1.add_figure('1.label_histogram', labels_hist, round_num)
+    # labels_hist = plt.figure()
+    # plt.title('Label histogram, round {}'.format(round_num))
+    # plt.xlabel('mu')
+    # plt.ylabel('Frequency')
+    # # plt.yscale('log')
+    # plt.hist(rand_mus, bins=11, range=(-0.05,1.05), color='tab:blue', alpha=0.7, label='Candidate')
+    # plt.hist(mus, bins=11, range=(-0.05,1.05), color='tab:orange', alpha=0.7, label='Acquired')
+    # plt.legend()
+    # writer1.add_figure('1.label_histogram', labels_hist, round_num)
 
     # mean_ret_hist = plt.figure()
     # plt.title('Return histogram, round {}'.format(round_num))
@@ -79,8 +85,8 @@ def log_acquisitions(mus, rand_mus, rews, rand_rews, writers, args, round_num):
     # writer1.add_figure('2.return_histogram', mean_ret_hist, round_num)
 
     # Tensorboard histograms are bad for discrete data but can be dynamically adjusted so I'll print them anyway as a complementary thing
-    writer1.add_histogram('1.labels_acquired_and_candidate', mus, round_num, bins='auto')
-    writer2.add_histogram('1.labels_acquired_and_candidate', rand_mus, round_num, bins='auto')
+    # writer1.add_histogram('1.labels_acquired_and_candidate', mus, round_num, bins='auto')
+    # writer2.add_histogram('1.labels_acquired_and_candidate', rand_mus, round_num, bins='auto')
     # writer1.add_histogram('2.mean_return_of_clip_pairs_acquired_and_candidate', rews.sum(-1).sum(-1) / 2, round_num, bins='auto')
     # writer2.add_histogram('2.mean_return_of_clip_pairs_acquired_and_candidate', mean_rand_rews, round_num, bins='auto')
     return label_counts
@@ -94,20 +100,26 @@ def log_random_acquisitions(mus, rews, writers, args, round_num):
     counts = dict(Counter(mus))
     mu_counts = np.array([counts.get(0, 0), counts.get(0.5, 0), counts.get(1, 0)]) # use 0 as default value from dict.get()
     assert mu_counts.sum() > 0
+
+    # log no. labels of each type acquired
+    writer1.add_scalar('5b.0_labels', counts.get(0, 0), round_num)
+    writer1.add_scalar('5b.0.5_labels', counts.get(0.5, 0), round_num)
+    writer1.add_scalar('5b.1_labels', counts.get(1, 0), round_num)
+
     # mus_unique, mu_counts = np.unique(mus, return_counts=True) # essentially gives us a discrete histogram
     # assert (mus_ == [0, 0.5, 1]).all() and len(mu_counts) == 3
     # writer1.add_scalar('10.mu_counts', mu_counts[0], round_num)
     # writer2.add_scalar('10.mu_counts', mu_counts[1], round_num)
     # writer3.add_scalar('10.mu_counts', mu_counts[2], round_num)
 
-    labels_hist = plt.figure()
-    plt.title('Label histogram, round {}'.format(round_num))
-    plt.xlabel('mu')
-    plt.ylabel('Frequency')
-    # plt.yscale('log')
-    plt.hist(mus, bins=11, range=(-0.05,1.05), color='tab:orange', alpha=0.7, label='Acquired')
-    plt.legend()
-    writer1.add_figure('1.label_histogram', labels_hist, round_num)
+    # labels_hist = plt.figure()
+    # plt.title('Label histogram, round {}'.format(round_num))
+    # plt.xlabel('mu')
+    # plt.ylabel('Frequency')
+    # # plt.yscale('log')
+    # plt.hist(mus, bins=11, range=(-0.05,1.05), color='tab:orange', alpha=0.7, label='Acquired')
+    # plt.legend()
+    # writer1.add_figure('1.label_histogram', labels_hist, round_num)
 
     # mean_ret_hist = plt.figure()
     # plt.title('Return histogram, round {}'.format(round_num))
@@ -126,7 +138,7 @@ def log_random_acquisitions(mus, rews, writers, args, round_num):
     # writer1.add_figure('2.return_histogram', mean_ret_hist, round_num)
 
     # Tensorboard histograms are bad for discrete data but can be dynamically adjusted so I'll print them anyway as a complementary thing
-    writer1.add_histogram('1.labels_acquired_and_candidate', mus, round_num, bins='auto')
+    # writer1.add_histogram('1.labels_acquired_and_candidate', mus, round_num, bins='auto')
     # writer1.add_histogram('2.mean_return_of_clip_pairs_acquired_and_candidate', rews.sum(-1).sum(-1) / 2, round_num, bins='auto')
     return mu_counts
 

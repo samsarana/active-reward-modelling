@@ -2,6 +2,7 @@
 
 import math, random, logging
 import numpy as np
+from collections import Counter
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -24,9 +25,9 @@ def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, 
             rm_train_round = i_label if i_label else i_train_round
             writer1.add_scalar('7.reward_model_loss/round_{}'.format(rm_train_round), loss_rm, epoch)
             # compute lower bound for loss_rm and plot this too. TODO check this is bug free
-            # n_indifferent_labels = Counter(mu_batch).get(0.5, default=0)
-            # loss_lower_bound = n_indifferent_labels * math.log(2)
-            # writer2.add_scalar('7.reward_model_loss/round_{}'.format(rm_train_round), loss_lower_bound, epoch)
+            n_indifferent_labels = Counter(mu_batch).get(0.5, default=0)
+            loss_lower_bound = n_indifferent_labels * math.log(2)
+            writer2.add_scalar('7.reward_model_loss/round_{}'.format(rm_train_round), loss_lower_bound, epoch)
     return reward_model
     
 
