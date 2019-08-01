@@ -1,5 +1,5 @@
 \documentclass[11pt, a4paper, bibliography=totoc]{report}
-\usepackage{amsmath,amsthm,amssymb, tabularx, listings, enumerate, cancel, bussproofs, tabto, wasysym, algpseudocode, algorithm, savesym, mathtools, physics, xcolor, setspace, appendix}
+\usepackage{amsmath,amsthm,amssymb, tabularx, listings, enumerate, cancel, bussproofs, tabto, wasysym, algpseudocode, algorithm, savesym, mathtools, physics, xcolor, setspace, appendix, dirtree}
 \usepackage[margin=3.5cm]{geometry}
 \usepackage[font=footnotesize,labelfont=bf]{caption}
 \usepackage[nottoc]{tocbibind} % adds Bibliography to 
@@ -32,11 +32,11 @@
 \newcommand{\btheta}{\pmb{\theta}}
 \newcommand{\brho}{\pmb{\rho}}
 \newcommand{\normal}[3]{\mathcal{N}(#1 \vert #2, #3)}
-\newtheorem*{claim}{Claim}
-\newtheorem*{theorem}{Theorem}
+\newtheorem{claim}{Claim}
+\newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma}
 \newtheorem{hypothesis}{Hypothesis}
-\newtheorem*{corollary}{Corollary}
+\newtheorem{corollary}{Corollary}
 \newtheorem{proposition}{Proposition}
 \newtheorem{definition}{Definition}
 
@@ -86,12 +86,11 @@ A \textit{finite} MDP is one where the sets of states, actions and rewards are f
 p(s', r \mid s, a) := \P{S_t = s', R_t = r \mid S_{t-1} = s , A_{t-1} = a }.
 \end{align*}
 
-A \textit{Markov} Decision Process is one where all states satisfy the Markov property. A state $ s_t $ satisfies this property iff:
+A \textit{Markov} Decision Process is one where all states satisfy the Markov property. A state $ s_t $ of an MDP satisfies this property iff:
 \begin{align*}
-\P{s_{t+1} \mid s_t, s_{t-1}, s_{t-2}, \dots, s_t } = \P{s_t}.
+\P{s_{t+1}, r_{t+1} \mid s_t, a_t, s_{t-1}, a_{t-1}, \dots, s_0, a_0 } = \P{s_{t+1} \mid s_t, a_t}.
 \end{align*}
-This implies that in the MDP, the immediately preceding state $ s_t $ and action $ a_t $ are sufficient statistics for predicting the next state $ s_{t+1} $ and reward $ r_{t+1} $.
-% I'm still slightly confused about Markov property being a restriction on states, and if I can write the equation \P(s_{t+1} \mid s_t, s_{t-1}, s_{t-2}, \dots, s_t ) = \P(s_t) given that I have only previously said that there is a well-defined probability function from state-action pairs to states and rewards
+This implies that the immediately preceding state $ s_t $ and action $ a_t $ are sufficient statistics for predicting the next state $ s_{t+1} $ and reward $ r_{t+1} $.
 
 \subsection{Goals and Rewards}
 The reader may have noticed that we first introduced MDPs as a formalism for an agent interacting with its environment to achieve a goal, yet have since spoken instead of maximising a reward signal $ R_t \in \reals $ over time. Our implicit assumption is the following hypothesis:
@@ -103,55 +102,145 @@ However, this hypothesis gives no information about how to construct such a scal
 \subsection{Returns and Episodes}
 Having asserted that we can express the objective of reinforcement learning in terms of scalar reward, we now formally define this objective. Consider the following objective:
 \begin{definition}[(Future discounted) return]
-Let a sequence of rewards between time step $ t + 1 $ and $ T $ (inclusive) be $ R_{t+1}, R_{t+1}, \dots, R_T $. Let $ \gamma \in [0, 1] $ be a discount factor of future rewards. Then we define the (future discounted) return of this sequence of rewards \cite[p.~57]{Sutton2018},
+Let a sequence of rewards between time step $ t + 1 $ and $ T $ (inclusive) be $ R_{t+1}, R_{t+1}, \dots, R_T $. Let $ \gamma \in [0, 1] $ be a discount factor of future rewards. Then we define the (future discounted) return of this sequence of rewards \cite[p.~57]{Sutton2018}:
 \begin{equation} \label{G_t}
-G_t := \sum_{k=t+1}^{T} \gamma^{k-t-1} R_k.
+G_t := \sum_{k=0}^{\infty} \gamma^k R_{t+k+1}.
 \end{equation}
 \end{definition}
-This definition is convenient because it allows us to describe two kinds of reinforcement learning tasks, episodic and continuing, with the same notation. In episodic tasks, interactions between the agent and environment occur in well-defined subsequences, each of which ends in a special \textit{terminal state}. The environment then resets to a starting state, which may be fixed or sampled from a distribution. In continuing tasks, on the other hand, agent-environment interaction does not naturally divide into episodes.
 
-For episodic tasks, it makes sense to consider (\ref{G_t}) in case $ T $ is the time step at which the episode ends, because we typically analyse either a single episode or something that holds across all episodes \cite[p.~57]{Sutton2018}. We call this \textit{episode} return. In this case, (\ref{G_t}) is well-defined regardless of the discount factor $ \gamma $. For continuous tasks, $ T = \infty $ thus (\ref{G_t}) may be infinite. However, if $ \gamma < 1 $ then the infinite sum (\ref{G_t}) will be finite in more cases. For example, if reward is a constant $ +r $, then the return is:
-\begin{equation}
-	G_t = \sum_{k=0}^{\infty} \gamma^k r = \frac{r}{1-\gamma},
-\end{equation}
-whereas the return would have been infinite if we did not use discounting.
+One reason for introducing a discount factor is because we would like this infinite sum to converge. Accordingly, we impose the condition that $ \gamma < 1 $ whenever the reinforcement learning task is \textit{continuous}, that is to say, there may be an infinite number of non-zero terms in the sequence of rewards $ \{R_{t+1}, R_{t+2}, R_{t+3}, \dots \} $.
 
-\subsection{Policies and Value Functions}
+The other kind of task is called \textit{episodic}. Here, interactions between the agent and environment occur in well-defined subsequences, each of which ends in a special \textit{terminal state}. The environment then resets to a starting state, which may be fixed or sampled from a distribution. To adapt the definition in (\ref{G_t}) to this case, we introduce the convention that zero reward is given after reaching the terminal state. This is because we typically analyse such tasks by considering a single episode---either because we care about that episode in particular, or something that holds across all episodes \cite[p.~57]{Sutton2018}. Observe that summing to infinity in (\ref{G_t}) is then identical to summing over the episode, and that the sum is well-defined regardless of the discount factor $ \gamma $.
+
+\subsection{Policies and Value Functions} \label{policy_value_functions}
 \textit{Policy} determines the behaviour of the agent. Formally, a policy $ \pi : \mathcal{S} \times \mathcal{A} \mapsto [0,1] $ defines a probability distribution over actions, given a state. That is to say, $ \pi(a \mid s) $ is the probability of selecting action $ a $ if an agent is following policy $ \pi $ and in state $ s $.
 
 The \textit{state-value function} $ v_\pi : \mathcal{S} \mapsto \reals $ for a policy $ \pi $ gives the expected return of starting in a state and following that policy. More formally,
 \begin{definition}[State-value function]
-	Let $ \pi $ be a policy and $ s \in \mathcal{S} $ be any state. We write $ \E{\pi}{.}$ to denote the expected value of the random variable $ G_t $ as defined in (\ref{G_t}). Then,
+	Let $ \pi $ be a policy and $ s \in \mathcal{S} $ be any state. We write $ \E{\pi}{.}$ to denote the expected value of the random variable $ G_t $ as defined in (\ref{G_t}). Then the state-value function (or simply, value function) for policy $ \pi $ is:
 	\begin{equation} \label{v_pi}
 	v_\pi(s) := \E{\pi}{G_t \mid S_t = s} = \E{\pi}{\sum_{k=0}^{\infty} \gamma^k R_{t+k+1} \mid S_t = s}.
 	\end{equation}
 \end{definition}
-% TODO work out how $\infty$ at the top of the summation jives with having T before... need to say that reward of terminal state is zero?
 
 The \textit{action-value function} $ q_\pi : \mathcal{S} \times \mathcal{A} \mapsto \reals $ for a policy $ \pi $ is defined similarly. It gives the expected return of starting in a state, taking a given action, and following policy $ \pi $ thereafter.
 \begin{definition}[Action-value function]
-	Let $ \pi $ be a policy, $ s \in \mathcal{S} $ be any state and $ a \in \mathcal{A} $ any action. Then,
+	Let $ \pi $ be a policy, $ s \in \mathcal{S} $ be any state and $ a \in \mathcal{A} $ any action. Then the action-value function (or, Q-function) for policy $ \pi $ is:
 	\begin{equation} \label{v_pi}
 	q_\pi(s, a) := \E{\pi}{G_t \mid S_t = s, A_t = a} = \E{\pi}{\sum_{k=0}^{\infty} \gamma^k R_{t+k+1} \mid S_t = s, A_t = a}.
 	\end{equation}
 \end{definition}
 
-%TODO recommence from p.59 SB
+\subsection{Optimal Policies and Optimal Value Functions} \label{optimal_policy_value_functions}
+%TODO I'm confused about optimal policy. On Spinningup it seems to be defined as the policy that maximises the v_\pi(s_0). But S&B say it's the policy that maximises v_\pi(s) for all s \in S. These two defs are inconsistent bc consider an unreachable state? Spinningup def could say that some policy is optimal despite being bad in unreachable state; S&B def would not...
+% http://spinningup.openai.com/en/latest/spinningup/rl_intro.html#the-rl-problem
+% p.64 S&B
+The problem of Reinforcement Learning is thus to find an optimal policy.
 
-\subsection{Optimal Policies and Optimal Value Functions}
+All optimal policies share the same value functions. We call these the \textit{optimal state-value function}, $ v_* $, and the \textit{optimal action-value function} $ q_* $:
+\begin{definition}[Optimal state-value function (from {\cite[p.~62]{Sutton2018}})]
+	$$ v_*  := \max_\pi v_\pi(s) ~~ \forall s \in \mathcal{S} .$$
+\end{definition}
+\begin{definition}[Optimal action-value function (from {\cite[p.~63]{Sutton2018}})]
+	$$ q_*  := \max_\pi q_\pi(s,a) ~~ \forall s \in \mathcal{S} ~~ \forall a \in \mathcal{A} .$$
+\end{definition}
 
+There is a simple connection between optimal Q-function and optimal policy that will be used in Section \ref{RL_solution_methods}:
+\begin{claim} \label{Q_claim}
+	If an agent has $ q_* $, then acting according to the optimal policy when in some state $ s $ is as simple as finding the action $ a $ that maximises $ q_*(s,a) $ \cite[p.~64]{Sutton2018}.
+\end{claim}
 
-\subsection{Reinforcement Learning Solution Methods}
-Reinforcement learning methods specify how an agent should use its experience update its policy $ \pi $.
+\subsection{Bellman Equations}
+These value functions obey special recursive relationships called Bellman equations. The equations are proved by formalising the simple idea that the value of being in a state is the expected reward of that state, plus the value of the next state you move to. Each of the four value functions defined in Sections \ref{policy_value_functions} and \ref{optimal_policy_value_functions} satisfy slightly different equations. We prove the Bellman equation for the value function and state the remaining three for completeness.
+
+\begin{proposition}[Bellman equation for $ v_\pi $ {\cite[p.~59]{Sutton2018}}]
+	Let $ \pi $ be a policy, $ p $ the dynamics of an MDP, $ \gamma $ a discount factor and $ v_\pi $ a state-value function. Then:
+	\begin{align}
+		v_\pi(s) = \underset{\substack{a \sim \pi(. \mid s) \\ s', r \sim p(., . \mid s, a) }}{\mathbb{E}} \left[ r + \gamma v_\pi(s') \right]
+	\end{align}
+\end{proposition}
+\begin{proof}
+	\begin{align*}
+		v_\pi(s) &:= \E{\pi}{G_t \mid S_t = s} \\
+		         &= \E{\pi}{\sum_{k=0}^{\infty} \gamma^k R_{t+k+1} \mid S_t = s} \\
+		         &= \E{\pi}{R_{t+1} + \gamma G_{t+1}} \\
+		         &= \sum_{a \in \mathcal{A}} \pi(a \mid s) \sum_{\substack{s' \in \mathcal{S} \\ r \in \mathcal{R}}} p(s', r \mid s, a) \left[ r + \gamma \E{\pi}{G_{t+1} \mid S_{t+1} = s'} \right] \\
+		         &= \sum_{a \in \mathcal{A}} \pi(a \mid s) \sum_{\substack{s' \in \mathcal{S} \\ r \in \mathcal{R}}} p(s', r \mid s, a) \left[ r + \gamma  v_\pi(s') \right] \\
+		         &= \underset{\substack{a \sim \pi(. \mid s) \\ s', r \sim p(., . \mid s, a) }}{\mathbb{E}} \left[ r + \gamma v_\pi(s') \right]
+	\end{align*}
+\end{proof}
+
+\begin{proposition}[Bellman equation for $ q_\pi $]
+	Let $ \pi $ be a policy, $ p $ the dynamics of an MDP, $ \gamma $ a discount factor and $ q_\pi $ an action-value function. Then:
+	\begin{align}
+	q_\pi(s, a) = \underset{s', r \sim p(., . \mid s, a)}{\mathbb{E}} \left[ r + \gamma \underset{a' \sim \pi(.\mid s')}{\mathbb{E}}\left[q_\pi(s', a')\right] \right]
+	\end{align}
+\end{proposition}
+
+\begin{proposition}[Bellman equation for $ v_* $ {\cite[p.~63]{Sutton2018}}]
+	Let $ p $ be the dynamics of an MDP, $ \gamma $ a discount factor and $ v_* $ an optimal value function. Then:
+	\begin{align}
+	v_*(s) = \max_{a \in \mathcal{A}} ~ \underset{s', r \sim p(., . \mid s, a)}{\mathbb{E}} \left[ r + \gamma v_*(s') \right]
+	\end{align}
+\end{proposition}
+
+\begin{proposition}[Bellman equation for $ q_* $ {\cite[p.~63]{Sutton2018}}]
+	Let $ p $ be the dynamics of an MDP, $ \gamma $ a discount factor and $ q_* $ an optimal Q-function. Then:
+	\begin{align}
+	q_*(s, a) = \underset{s', r \sim p(., . \mid s, a)}{\mathbb{E}} \left[ r + \gamma ~ \underset{a' \in \mathcal{A}}{\max}\left[q_*(s', a')\right] \right]
+	\end{align}
+\end{proposition}
+
+\section{Reinforcement Learning Solution Methods} \label{RL_solution_methods}
+One method of solving the reinforcement learning problem is to explicitly solve a set of Bellman optimality equations. For example, in a finite MDP with $ n $ states and $ m $ actions, the Bellman equations for $ q_* $ are a set of $ n\cdot m $ equations in $ n\cdot m $ unknowns\footnote{This assumes that the agent can take any action in any state.}. Given the dynamics $ p $ of the MDP, standard techniques for solving systems of equations can be applied. Then, via Claim (\ref{Q_claim}), the agent has an optimal policy \cite[p.~64]{Sutton2018}.
+
+However, in reality, we rarely have access to $ p $, or sufficient computational resources to solve this system of equations exactly \cite[p.~66]{Sutton2018}. Thus, the literature on RL solution methods focuses on finding approximate solutions.
+
+In this section, we give a brief and incomplete taxonomy of RL solution methods, most of which give approximate solutions. Then, we focus on one such method, Deep Q-Learning, which is important for the rest of this thesis.
+
+\subsection{Taxonomy of RL Solution Methods}
+The following taxonomy draws on those given in \cite{Sutton2018} and \cite{Achiam2019}.
+
+\dirtree{%
+	.1 RL Solution Methods.
+	.2 Tabular Solution Methods.
+	.3 Dynamic Programming.
+	.4 Policy Iteration.
+	.4 Value Iteration.
+	.3 Monte Carlo Methods.
+	.4 MC Prediction.
+	.4 MC Control.
+	.3 Temporal-Difference Learning.
+	.4 Sarsa.
+	.4 Q-Learning.
+	.2 Approximate Solution Methods.
+	.3 Deep RL.
+	.4 Model-Free.
+	.5 Policy Optimisation.
+	.6 Policy Gradient.
+	.6 A2C / A3C.
+	.6 PPO.
+	.6 TPRO.
+	.5 Q-Learning.
+	.6 \textbf{DQN}.
+	.6 C51.
+	.5 Policy Optimisation + Q-Learning.
+	.6 DDPG.
+	.6 TD3.
+	.6 SAC.
+	.4 Model-Based.	
+	.5 Given the Model.
+	.6 AlphaZero.
+	.5 Learn the Model.
+	.6 I2A.
+}
 % design choices; trade-offs?
 % model-based v model-free
-% Throw a deep NN at the problem!
-% Current algos; SOTA on different tasks
 
-\subsubsection{Deep Q-Learning}
+\subsection{Deep Q-Learning} \label{DQN}
 
 % perhaps explain in detail just one algo (DQN, or whichever algo ends up being most important for my experiments)
-% Question: do I need to describe neural networks too?
+%TODO do I need to describe neural networks too?
 
 \section{Reinforcement Learning from Unknown Reward Functions}
 For many domains in which we might want to use RL, states of the environment are not inherently associated with rewards.  Thus, we have the additional task of specifying a reward function, which maps states to rewards. Argue the case that directly specifying a reward function is hard, in order to motivate the next section: Reward Learning

@@ -1,5 +1,9 @@
 \begin{thebibliography}{1}
 
+\bibitem{Achiam2019}
+Joshua Achiam.
+\newblock {Spinning Up in Deep RL}, 2019.
+
 \bibitem{Amodei2016}
 Dario Amodei, Chris Olah, Jacob Steinhardt, Paul Christiano, John Schulman, and
   Dan Man{\'{e}}.

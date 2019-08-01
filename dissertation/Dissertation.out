@@ -8,18 +8,21 @@
 \BOOKMARK [2][-]{subsection.2.2.3}{Returns and Episodes}{section.2.2}% 8
 \BOOKMARK [2][-]{subsection.2.2.4}{Policies and Value Functions}{section.2.2}% 9
 \BOOKMARK [2][-]{subsection.2.2.5}{Optimal Policies and Optimal Value Functions}{section.2.2}% 10
-\BOOKMARK [2][-]{subsection.2.2.6}{Reinforcement Learning Solution Methods}{section.2.2}% 11
-\BOOKMARK [1][-]{section.2.3}{Reinforcement Learning from Unknown Reward Functions}{chapter.2}% 12
-\BOOKMARK [2][-]{subsection.2.3.1}{Reward Learning}{section.2.3}% 13
-\BOOKMARK [0][-]{chapter.3}{Uncertainty in Deep Learning}{}% 14
-\BOOKMARK [0][-]{chapter.4}{Active Learning}{}% 15
-\BOOKMARK [1][-]{subsection.4.0.1}{Applying Active Learning to RL without a reward function}{chapter.4}% 16
-\BOOKMARK [0][-]{chapter.5}{Method}{}% 17
-\BOOKMARK [0][-]{chapter.6}{Experiments}{}% 18
-\BOOKMARK [0][-]{chapter.7}{Results}{}% 19
-\BOOKMARK [0][-]{chapter.8}{Conclusions}{}% 20
-\BOOKMARK [1][-]{section.8.1}{Summary}{chapter.8}% 21
-\BOOKMARK [1][-]{section.8.2}{Evaluation}{chapter.8}% 22
-\BOOKMARK [1][-]{section.8.3}{Future Work}{chapter.8}% 23
-\BOOKMARK [0][-]{chapter*.5}{References}{}% 24
-\BOOKMARK [0][-]{appendix.A}{Some Appendix Material}{}% 25
+\BOOKMARK [2][-]{subsection.2.2.6}{Bellman Equations}{section.2.2}% 11
+\BOOKMARK [1][-]{section.2.3}{Reinforcement Learning Solution Methods}{chapter.2}% 12
+\BOOKMARK [2][-]{subsection.2.3.1}{Taxonomy of RL Solution Methods}{section.2.3}% 13
+\BOOKMARK [2][-]{subsection.2.3.2}{Deep Q-Learning}{section.2.3}% 14
+\BOOKMARK [1][-]{section.2.4}{Reinforcement Learning from Unknown Reward Functions}{chapter.2}% 15
+\BOOKMARK [2][-]{subsection.2.4.1}{Reward Learning}{section.2.4}% 16
+\BOOKMARK [0][-]{chapter.3}{Uncertainty in Deep Learning}{}% 17
+\BOOKMARK [0][-]{chapter.4}{Active Learning}{}% 18
+\BOOKMARK [1][-]{subsection.4.0.1}{Applying Active Learning to RL without a reward function}{chapter.4}% 19
+\BOOKMARK [0][-]{chapter.5}{Method}{}% 20
+\BOOKMARK [0][-]{chapter.6}{Experiments}{}% 21
+\BOOKMARK [0][-]{chapter.7}{Results}{}% 22
+\BOOKMARK [0][-]{chapter.8}{Conclusions}{}% 23
+\BOOKMARK [1][-]{section.8.1}{Summary}{chapter.8}% 24
+\BOOKMARK [1][-]{section.8.2}{Evaluation}{chapter.8}% 25
+\BOOKMARK [1][-]{section.8.3}{Future Work}{chapter.8}% 26
+\BOOKMARK [0][-]{chapter*.4}{References}{}% 27
+\BOOKMARK [0][-]{appendix.A}{Some Appendix Material}{}% 28
