@@ -247,10 +247,10 @@ For many domains in which we might want to use RL, states of the environment are
 \subsection{Reward Learning}
 % We can use feedback of different modalities
 % There is both the standard and the deep case to consider
-\subsubsection{In Standard RL}
+\subsubsection{In Classical RL}
 % Active Preference-Based Learning of Reward Functions (ignore the active part here)
 % Learning Reward Functions by Integrating Human Demonstrations and Preferences (SAIL paper)
-\subsubsection{In the Deep Case}
+\subsubsection{In Deep RL}
 % SARM Agenda; Christiano; Ibarz
 
 \chapter{Uncertainty in Deep Learning}
@@ -264,7 +264,8 @@ Thus, the field of Bayesian Deep Learning aims to equip neural networks with the
 \chapter{Active Learning}
 % BALD (Houlsby: Bayesian Active Learning for Classification and Preference Learning)
 % Adapting it to the deep case (Yarin's thesis/Image Data paper)
-\subsection{Applying Active Learning to RL without a reward function}
+
+\section{Applying Active Learning to RL without a reward function}
 % APRIL
 % Christiano: summarise what didn't work, and what might have gone wrong (how to frame this depends on the results that I eventually get to)
 % Active Preference-Based Learning of Reward Functions (emphasis on the active part)
@@ -276,6 +277,13 @@ Thus, the field of Bayesian Deep Learning aims to equip neural networks with the
 % I should have already summarised the high level approach in Background
 % And I'll describe the different methods of Active Learning/uncert estimates that I tried
 % Implementational matters: PyTorch and why I chose it
+\section{Training Protocol}
+
+\section{Acquisition Functions}
+
+\section{Uncertainty Estimates}
+
+\section{Implementation Details}
 
 \chapter{Experiments}
 % Here I'll give the experimental details
@@ -283,6 +291,9 @@ Thus, the field of Bayesian Deep Learning aims to equip neural networks with the
 % Cartpole/the envs I use
 % Hyperparameter settings (and all the other args e.g. number of labels acquired per round, number of repetitions etc.) (maybe put these in appendix)
 % Links to code
+We used the environments provided by OpenAI Gym to run our experiments.
+
+\section{CartPole-v0}
 
 \chapter{Results}
 % Here I'll describe the results in a shiny way
