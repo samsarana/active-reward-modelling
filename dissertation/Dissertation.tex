@@ -261,15 +261,37 @@ We probably want the model to be able to recognise that this is an out of distri
 
 Thus, the field of Bayesian Deep Learning aims to equip neural networks with the ability to output a point estimate along with its uncertainty in that estimate. Historically, many of the attempts to do so were not very practical. For example, one algorithm, Bayes by Backprop, requires doubling the number of model parameters, making training more computationally expensive, and is very sensitive to hyperparameter tuning. However, recent techniques allow almost any network trained with a stochastic regularisation technique, such as dropout, to, given an input, obtain a predictive mean and variance (uncertainty), without any complicated augmentation to the network \cite[p.~15]{Gal2017a}.
 
+\section{Bayesian Neural Networks}
+
+\section{Model Uncertainty in BNNs}
+
 \chapter{Active Learning}
 % BALD (Houlsby: Bayesian Active Learning for Classification and Preference Learning)
 % Adapting it to the deep case (Yarin's thesis/Image Data paper)
+\section{Acquisition Functions}
+
+\subsection{Max Entropy}
+
+\subsection{Variation Ratios}
+
+\subsection{Mean STD}
+
+\subsection{BALD}
 
 \section{Applying Active Learning to RL without a reward function}
+Discussion of previous work.
+
+\subsection{APRIL}
 % APRIL
-% Christiano: summarise what didn't work, and what might have gone wrong (how to frame this depends on the results that I eventually get to)
+
+\subsection{Batch active preference-based learning}
 % Active Preference-Based Learning of Reward Functions (emphasis on the active part)
-% Learning Reward Functions by Integrating Human Demonstrations and Preferences (they use the `Volume Removal Method' to do Active Learning)
+
+\subsection{DemPref}
+% Learning Reward Functions by Integrating Human Demonstrations and Preferences (DemPref) (they use the `Volume Removal Method' to do Active Learning)
+
+\subsection{Deep RL from Human Preferences}
+% Christiano: summarise what didn't work, and what might have gone wrong (how to frame this depends on the results that I eventually get to)
 
 \chapter{Method}
 % Here I'll describe the training protocol I used (mostly Ibarz but without the demos)
@@ -286,6 +308,7 @@ Thus, the field of Bayesian Deep Learning aims to equip neural networks with the
 \section{Implementation Details}
 
 \chapter{Experiments}
+%TODO does it make sense to separate experiment details from method? I think so.
 % Here I'll give the experimental details
 % Gym. incl. why I chose it
 % Cartpole/the envs I use
@@ -296,8 +319,11 @@ We used the environments provided by OpenAI Gym to run our experiments.
 \section{CartPole-v0}
 
 \chapter{Results}
+%TODO does it make sense to separate experiment details from results? I'm less certain.
 % Here I'll describe the results in a shiny way
 % Graphs and comments on whether I achieved the goal of applying active learning to increase the sample efficiency of reward modelling
+\section{CartPole-v0}
+
 
 \chapter{Conclusions}
 \section{Summary}
