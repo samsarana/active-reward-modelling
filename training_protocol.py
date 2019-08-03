@@ -8,88 +8,6 @@ from active_learning import *
 from test_policy import *
 from annotation import *
 
-def training_protocol_deprecated(env, args, writers, returns_summary, i_run):
-    """Implements Algorithm 1 in Ibarz et al. (2018)
-    """
-    # SET UP: instantiate reward model and agent + buffers and optimizers for training them
-    if args.size_rm_ensemble >= 2:
-        reward_model = RewardModelEnsemble(args.obs_shape, args.act_shape, args)
-        logging.info('Using a {}-ensemble of nets for our reward model'.format(args.size_rm_ensemble))
-    else:
-        reward_model = RewardModel(args.obs_shape, args.act_shape, args)
-    optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm)
-    prefs_buffer = PrefsBuffer(capacity=args.prefs_buffer_size, clip_shape=(args.clip_length, args.obs_act_shape))
-
-    q_net = DQN(args.obs_shape, env.action_space.n, args)
-    q_target = DQN(args.obs_shape, env.action_space.n, args)
-    q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
-    optimizer_agent = optim.Adam(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent)
-    replay_buffer = ReplayBuffer(args.replay_buffer_size) # TODO change this (and several other things) s.t. we can use different RL agents
-    
-    # BEGIN PRETRAINING
-    # Stage 0.1 Do some rollouts from the randomly initialised policy
-    agent_experience = do_pretraining_rollouts(q_net, env, args)
-
-    # Stage 0.2 Sample without replacement from those rollouts and label them (synthetically)
-    logging.info('Stage 0.2: Sample without replacement from those rollouts to collect {} labels'.format(args.n_labels_per_round)) # NB used to be args.n_labels_pretraining
-    logging.info('Each label is on a pair of clips of length {}'.format(args.clip_length))
-    clip_pairs, rews, mus, mu_counts = sample_and_annotate_clip_pairs(agent_experience, reward_model, args.n_labels_per_round, args, writers, i_train_round=-1) # NB used to be args.n_labels_pretraining
-    # put labelled clip_pairs into prefs_buffer (also true rewards, just to compute mean/var of true reward across prefs_buffer)
-    prefs_buffer.push(clip_pairs, rews, mus)    
-    
-    # Stage 0.3 Intialise and pretrain reward model
-    logging.info('Stage 0.3: Intialise and pretrain reward model for {} batches on those preferences'.format(args.n_epochs_pretrain_rm))
-    reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_train_round=-1)
-
-    # evaluate reward model correlation after pretraining
-    # if not args.RL_baseline:
-    #     test_correlation(reward_model, env, q_net, args, writers[0], i_train_round=-1)
-
-    # BEGIN TRAINING
-    for i_train_round in range(args.n_rounds):
-        logging.info('[Start Round {}]'.format(i_train_round))
-        # Compute mean and variance of true and predicted reward (for normalising rewards sent to agent)
-        reward_stats = compute_reward_stats(reward_model, prefs_buffer) # TODO make an attribute of reward model for its mean and variance across the current prefs buffer
-        # Stage 1.1a: Reinforcement learning with (normalised) rewards from current reward model
-        if args.reinit_agent:
-            q_net = DQN(args.obs_shape, env.action_space.n, args)
-            q_target = DQN(args.obs_shape, env.action_space.n, args)
-            q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
-            optimizer_agent = optim.Adam(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent)
-        q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
-                                                                 reward_model, prefs_buffer, reward_stats, args, writers, i_train_round)
-        # Stage 1.1b: Evalulate RL agent performance
-        test_returns = test_policy(q_net, reward_model, reward_stats, args, random_seed=i_run, render=args.render_policy_test) # convention: seed with the run number
-        log_tested_policy(test_returns, writers, returns_summary, args, i_run, i_train_round)
-
-        # Stage 1.2: Sample clip pairs without replacement from recent rollouts and label them (synthetically)
-        logging.info('Stage 1.2: Sample without replacement from those rollouts to collect {} labels/preference tuples'.format(args.n_labels_per_round))
-        clip_pairs, rews, mus, mu_counts_round = sample_and_annotate_clip_pairs(agent_experience, reward_model, args.n_labels_per_round, args, writers, i_train_round)
-        # put labelled clip_pairs into prefs_buffer and accumulate count of each label acquired
-        assert len(clip_pairs) == args.n_labels_per_round
-        prefs_buffer.push(clip_pairs, rews, mus)
-        mu_counts += mu_counts_round
-        
-        # Stage 1.3: Train reward model for some epochs on preferences collected to date
-        if args.reinit_rm:
-            logging.info('Reinitialising reward model before training')
-            if args.size_rm_ensemble >= 2:
-                reward_model = RewardModelEnsemble(args.obs_shape, args.act_shape, args)
-                logging.info('Using a {}-ensemble of nets for our reward model'.format(args.size_rm_ensemble))
-            else:
-                reward_model = RewardModel(args.obs_shape, args.act_shape, args)
-            optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm)
-        logging.info('Stage 1.3: Train reward model for {} batches on those preferences'.format(args.n_epochs_train_rm))
-        reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_train_round)
-
-        # Evaluate reward model correlation (currently not interested in this)
-        # if not args.RL_baseline:
-        #     test_correlation(reward_model, env, q_net, args, writers[0], i_train_round)
-
-    # log mu_counts for this run
-    log_total_mu_counts_v0(mu_counts, writers, args)
-
-
 def training_protocol(env, args, writers, returns_summary, i_run):
     """Implements Algorithm 1 in Ibarz et al. (2018)
        with the modification that labels on clip pairs
@@ -98,30 +16,19 @@ def training_protocol(env, args, writers, returns_summary, i_run):
        model is used to select the next clip pair for labelling.
     """
     # SET UP: instantiate reward model + buffers and optimizers for training DQN and reward model
-    if args.size_rm_ensemble >= 2:
-        reward_model = RewardModelEnsemble(args.obs_shape, args.act_shape, args)
-        logging.info('Using a {}-ensemble of nets for our reward model'.format(args.size_rm_ensemble))
-    else:
-        reward_model = RewardModel(args.obs_shape, args.act_shape, args)
-    optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm)
+    reward_model, optimizer_rm = init_rm(args)
     prefs_buffer = PrefsBuffer(capacity=args.prefs_buffer_size, clip_shape=(args.clip_length, args.obs_act_shape))
-
-    q_net = DQN(args.obs_shape, env.action_space.n, args)
-    q_target = DQN(args.obs_shape, env.action_space.n, args)
-    q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
-    optimizer_agent = optim.Adam(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent)
-    replay_buffer = ReplayBuffer(args.replay_buffer_size) # TODO change this (and several other things) s.t. we can use different RL agents
+    q_net, q_target, replay_buffer, optimizer_agent = init_agent(args)
     
     # BEGIN PRETRAINING
     # Stage 0.1 Do some rollouts from the randomly initialised policy
     agent_experience = do_pretraining_rollouts(q_net, env, args)
-
     # Stage 0.2 Sample without replacement from those rollouts and label them (synthetically)
     mu_counts_total = np.zeros((2,3))
     reward_model, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
-            agent_experience, reward_model, prefs_buffer, args, writers, mu_counts_total, i_train_round=-1)
+            agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round=-1)
 
-    # evaluate reward model correlation after pretraining
+    # evaluate reward model correlation after pretraining (currently not interested)
     # if not args.RL_baseline:
     #     test_correlation(reward_model, env, q_net, args, writers[0], i_train_round=-1)
 
@@ -132,10 +39,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
         reward_stats = compute_reward_stats(reward_model, prefs_buffer) # TODO make an attribute of reward model for its mean and variance across the current prefs buffer
         # Stage 1.1a: Reinforcement learning with (normalised) rewards from current reward model
         if args.reinit_agent:
-            q_net = DQN(args.obs_shape, env.action_space.n, args)
-            q_target = DQN(args.obs_shape, env.action_space.n, args)
-            q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
-            optimizer_agent = optim.Adam(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent)
+            q_net, q_target, replay_buffer, optimizer_agent = init_agent(args)
         q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
                                                                  reward_model, prefs_buffer, reward_stats, args, writers, i_train_round)
         # Stage 1.1b: Evalulate RL agent performance
@@ -144,9 +48,9 @@ def training_protocol(env, args, writers, returns_summary, i_run):
 
         # Stage 1.2 - 1.3: acquire labels from recent rollouts and train reward model on current dataset
         reward_model, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
-            agent_experience, reward_model, prefs_buffer, args, writers, mu_counts_total, i_train_round)
+            agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round)
         
-        # Evaluate reward model correlation (currently not interested in this)
+        # Evaluate reward model correlation (currently not interested)
         # if not args.RL_baseline:
         #     test_correlation(reward_model, env, q_net, args, writers[0], i_train_round)
 
@@ -154,49 +58,20 @@ def training_protocol(env, args, writers, returns_summary, i_run):
     log_total_mu_counts(mu_counts_total, writers, args)
 
 
-def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, args, writers, mu_counts_total, i_train_round):
+def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round):
     logging.info('Stage 1.2: Sample without replacement from those rollouts to collect {} labels/preference tuples'.format(args.n_labels_per_round))
     logging.info('The reward model will be retrained after every batch of label acquisitions')
     logging.info('Making {} acquisitions, consisting of {} batches of acquisitions of size {}'.format(
         args.n_labels_per_round, args.n_acq_batches_per_round, args.batch_size_acq))
+    logging.info('Stage 1.3: Training reward model for {}*{} batches on those preferences'.format(args.n_acq_batches_per_round, args.n_epochs_train_rm))
     rand_clip_data = generate_rand_clip_pairing(agent_experience, args.n_labels_per_round, args)
     for i_acq_batch in range(args.n_acq_batches_per_round):
         i_label = args.n_acq_batches_per_round * i_train_round + i_acq_batch
         prefs_buffer, rand_clip_data, mu_counts_total = make_acquisitions(rand_clip_data, reward_model, prefs_buffer, args, writers, mu_counts_total, i_label)
-        logging.info('Stage 1.3: Training reward model for {}*{} batches on those preferences'.format(args.n_acq_batches_per_round, args.n_epochs_train_rm))
         if args.reinit_rm:
             reward_model, optimizer_rm = init_rm(args)
         reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_label)
     return reward_model, prefs_buffer, mu_counts_total
-
-
-def init_rm(args):
-    reward_model, optimizer_rm = init_rm(args)
-    logging.info('Initialising reward model')
-    if args.size_rm_ensemble >= 2:
-        reward_model = RewardModelEnsemble(args.obs_shape, args.act_shape, args)
-    else:
-        reward_model = RewardModel(args.obs_shape, args.act_shape, args)
-    optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm)
-    return reward_model, optimizer_rm
-
-
-def make_acquisitions(rand_clip_data, reward_model, prefs_buffer, args, writers, mu_counts_total, i_label):
-    # Stage 1.2: Sample `batch_size_acq` clip pairs without replacement from recent rollouts and label them (synthetically)
-    rand_clip_pairs, rand_rews, rand_mus = rand_clip_data
-    idx, info_per_clip_pair = acquire_labels_by_index(rand_clip_pairs, args.batch_size_acq, args, reward_model)
-    # put labelled clip_pairs into prefs_buffer and accumulate count of each label acquired
-    clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx]
-    prefs_buffer.push(clip_pairs, rews, mus)
-    # log this acquistion
-    mu_counts_acq = log_acquisition(idx, info_per_clip_pair, clip_pairs, rews, mus, rand_clip_pairs, rand_rews, rand_mus, i_label, args, writers)
-    mu_counts_total += mu_counts_acq
-    # remove sampled clip pairs
-    rand_clip_pairs = np.delete(rand_clip_pairs, idx, axis=0)
-    rand_rews = np.delete(rand_rews, idx, axis=0)
-    rand_mus = np.delete(rand_mus, idx, axis=0)
-    rand_clip_data = rand_clip_pairs, rand_rews, rand_mus
-    return prefs_buffer, rand_clip_data, mu_counts_total
 
 
 def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, prefs_buffer, reward_stats, args, writers, i_train_round):

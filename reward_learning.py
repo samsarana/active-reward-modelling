@@ -6,11 +6,12 @@ from collections import Counter
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 import matplotlib.pyplot as plt
 
 def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_label):
     writer1, writer2 = writers
-    epochs = args.n_epochs_pretrain_rm if i_train_round == -1 else args.n_epochs_train_rm
+    epochs = args.n_epochs_pretrain_rm if i_label <= -1 else args.n_epochs_train_rm
     reward_model.train() # dropout on
     for epoch in range(epochs):
         with torch.autograd.detect_anomaly():
@@ -29,6 +30,19 @@ def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, 
             writer2.add_scalar('7.reward_model_loss/label_{}'.format(i_label), loss_lower_bound, epoch)
     return reward_model
     
+
+def init_rm(args):
+    """Intitialises and returns the necessary objects for
+       reward learning: reward model and optimizer.
+    """
+    logging.info('Initialising reward model')
+    if args.size_rm_ensemble >= 2:
+        reward_model = RewardModelEnsemble(args.obs_shape, args.act_shape, args)
+    else:
+        reward_model = RewardModel(args.obs_shape, args.act_shape, args)
+    optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm)
+    return reward_model, optimizer_rm
+
 
 class RewardModel(nn.Module):
     """Parameterises r_hat : states x actions -> real rewards

@@ -6,70 +6,40 @@ import numpy as np
 import logging
 from itertools import combinations
 from active_learning import *
-
-def acquire_labels_by_index(rand_clip_pairs, num_labels, args, reward_model):
-    if args.acq_func == 'random':
-        n_clip_pairs, _, _, _ = rand_clip_pairs.shape
-        idx = np.random.choice(n_clip_pairs, size=num_labels, replace=False)
-        info_per_clip_pair = None
-    else:
-        info_per_clip_pair = args.acq_func(rand_clip_pairs, reward_model, args)
-        idx = np.argpartition(info_per_clip_pair, -num_labels)[-num_labels:].numpy() # see: tinyurl.com/ya7xr4kn
-    return idx, info_per_clip_pair
-
+from active_learning_logging import *
 
 def generate_rand_clip_pairing(agent_experience, num_labels_requested, args):
     if args.acq_search_strategy == 'christiano':
         logging.info('Collecting {} clip pairs and selecting the best 1/{} using {} acquisition func'.format(
-                    args.selection_factor * num_labels_requested, args.selection_factor, args.acq_func))
+                    args.selection_factor * num_labels_requested, args.selection_factor, args.acquistion_func.__name__))
         rand_clip_data = agent_experience.sample_pairs(args.selection_factor * num_labels_requested) # rand_clip_data = (rand_clip_pairs, rand_rews, rand_mus)
     elif args.acq_search_strategy == 'all_pairs':
         logging.info('Collecting all possible clip pairs. We will later select the best {} using {} acquisition func'.format(
-                        num_labels_requested, args.acq_func))
+                        num_labels_requested, args.acquistion_func.__name__))
         rand_clip_data = agent_experience.sample_all_pairs()
     else:
         raise NotImplementedError('You specified {} as the acq_search_strategy but I don"t know what that is!'.format(args.acq_search_strategy))
     return rand_clip_data
 
 
-def log_acquisition(idx, info_per_clip_pair, clip_pairs, rews, mus, rand_clip_pairs, rand_rews, rand_mus, i_label, args, writers):
-    """1. Scalar plot information gain against i_label
-       2. Histogram plot informativeness of each clip pair (candidate and selected)
-       3. Dumps clip pairs (candidate and selected) into csv s.t. we can view what clips are chosen
-          as well as their labels and rewards
-       4. Returns array [no. 0-labels, no. 1/2 labels, no. 1 labels] s.t. we can
-          accumulate the frequency with which each label is acquired.
-    """
-    writer1, writer2 = writers
-    if args.active_method:
-        assert info_per_clip_pair is not None
-        assert len(info_per_clip_pair.shape) == 1
-        total_info = info_per_clip_pair.sum()
-        selected_info = info_per_clip_pair[idx].sum()
-        writer1.add_scalar('5.info_gain_per_label', selected_info, i_label)
-        writer2.add_scalar('5.info_gain_per_label', total_info, i_label)
-        # num_pairs = len(info_per_clip_pair)
-        # colours = ['tab:orange' if i in idx else 'tab:blue' for i in range(num_pairs)]
-        # info_bars = plt.figure()
-        # plt.title('Information gain per clip pair')
-        # plt.xlabel('Clip pairs')
-        # plt.ylabel('Metric of info gain')
-        # plt.bar(np.arange(num_pairs), info_per_clip_pair, color=colours)
-        # writer1.add_figure('3.info_gain_per_clip_pair', info_bars, i_label)
+def make_acquisitions(rand_clip_data, reward_model, prefs_buffer, args, writers, mu_counts_total, i_label):
+    # Stage 1.2: Sample `batch_size_acq` clip pairs without replacement from recent rollouts and label them (synthetically)
+    rand_clip_pairs, rand_rews, rand_mus = rand_clip_data
+    idx, info_per_clip_pair = args.acquistion_func(rand_clip_pairs, args.batch_size_acq, args, reward_model)
+    # idx, info_per_clip_pair = acquire_labels_by_index(rand_clip_pairs, args.batch_size_acq, args, reward_model)
+    # put labelled clip_pairs into prefs_buffer and accumulate count of each label acquired
+    clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx]
+    prefs_buffer.push(clip_pairs, rews, mus)
+    # log this acquistion
+    mu_counts_acq = log_acquisition(idx, info_per_clip_pair, clip_pairs, rews, mus, rand_clip_pairs, rand_rews, rand_mus, i_label, args, writers)
+    mu_counts_total += mu_counts_acq
+    # remove sampled clip pairs
+    rand_clip_pairs = np.delete(rand_clip_pairs, idx, axis=0)
+    rand_rews = np.delete(rand_rews, idx, axis=0)
+    rand_mus = np.delete(rand_mus, idx, axis=0)
+    rand_clip_data = rand_clip_pairs, rand_rews, rand_mus
+    return prefs_buffer, rand_clip_data, mu_counts_total
 
-    # TODO dump pairs (candidate and selected) into csv s.t. we can view what clips are chosen
-    # as well as their labels and rewards
-
-    mu_counts = dict(Counter(mus))
-    rand_mu_counts = dict(Counter(rand_mus))
-    label_counts = np.array([[mu_counts.get(0, 0), mu_counts.get(0.5, 0), mu_counts.get(1, 0)],
-                          [rand_mu_counts.get(0, 0), rand_mu_counts.get(0.5, 0), rand_mu_counts.get(1, 0)]
-                         ])
-    # log no. labels of each type acquired
-    writer1.add_scalar('5b.0_labels', mu_counts.get(0, 0), i_label)
-    writer1.add_scalar('5b.0.5_labels', mu_counts.get(0.5, 0), i_label)
-    writer1.add_scalar('5b.1_labels', mu_counts.get(1, 0), i_label)
-    return label_counts
 
 class AgentExperience():
     """For collecting experience from rollouts in a way that is
@@ -183,28 +153,3 @@ class AgentExperience():
             mus = np.where(returns[:, 0] > returns[:, 1], 1, 
                                 np.where(returns[:, 0] == returns[:, 1], 0.5, 0))
         return all_clips_paired, rewards, mus
-        
-
-# OLD FUNCTION, though I'm still using it b/c I haven't refactored training_protocol() to use my new functions yet
-
-def sample_and_annotate_clip_pairs(agent_experience, reward_model, num_labels_requested, args, writers, i_train_round):
-    writer1, _ = writers
-    writer1.add_scalar('6.labels_requested_per_round', num_labels_requested, i_train_round)
-    if args.active_method:
-        logging.info('Acquiring clips using {} acquisition function and uncertainty estimates from {}'.format(args.active_method, args.uncert_method))
-        if args.acq_search_strategy == 'christiano':
-            logging.info('Doing Active Learning, so actually collect {} clip pairs and select the best 1/{} using {} method'.format(
-                        args.selection_factor * num_labels_requested, args.selection_factor, args.active_method))
-            rand_clip_data = agent_experience.sample_pairs(args.selection_factor * num_labels_requested) # rand_clip_data = (rand_clip_pairs, rand_rews, rand_mus)
-        elif args.acq_search_strategy == 'all_pairs':
-            logging.info('Doing Active Learning, and collecting all possible clip pairs. Selecting the best {} using {} method'.format(
-                            num_labels_requested, args.active_method))
-            rand_clip_data = agent_experience.sample_all_pairs()
-        else:
-            raise NotImplementedError('You specified {} as the acq_search_strategy but I don"t know what that is!'.format(args.acq_search_strategy))
-        clip_pairs, rews, mus, label_counts = acquire_clip_pairs(rand_clip_data, reward_model, num_labels_requested, args, writers, i_train_round)
-    else:
-        logging.info('Acquiring clips by random acquisition')
-        clip_pairs, rews, mus = agent_experience.sample_pairs(num_labels_requested)
-        label_counts = log_random_acquisitions(mus, rews, writers, args, i_train_round)
-    return clip_pairs, rews, mus, label_counts

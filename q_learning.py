@@ -121,3 +121,16 @@ def q_learning_loss(q_net, q_target, replay_buffer, args,
 
     loss = (q_value - expected_q_value).pow(2).mean() # mean is across batch dimension
     return loss
+
+
+def init_agent(args):
+    """Intitialises and returns the necessary objects for
+       Deep Q-learning:
+       Q-network, target network, replay buffer and optimizer.
+    """
+    q_net = DQN(args.obs_shape, args.n_actions, args)
+    q_target = DQN(args.obs_shape, args.n_actions, args)
+    q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
+    replay_buffer = ReplayBuffer(args.replay_buffer_size) # TODO should I use old replay_buffer with reinitialised agent?
+    optimizer_agent = optim.Adam(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent)
+    return q_net, q_target, replay_buffer, optimizer_agent
