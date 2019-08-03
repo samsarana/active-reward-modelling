@@ -61,9 +61,14 @@ class RewardModel(nn.Module):
             nn.Dropout(args.p_dropout_rm),
             nn.Linear(args.hid_units_rm, 1),
         )
-        
-    def forward(self, x):
-        return self.layers(x)
+        self.mean_prefs = 0 # mean of reward model across prefs_buffer
+        self.var_prefs = 0 # var of reward model across prefs_buffer
+
+    def forward(self, x, normalise=False):
+        r_hat = self.layers(x)
+        if normalise:
+            r_hat = (r_hat - self.mean_prefs) / np.sqrt(self.var_prefs + 1e-8)
+        return r_hat
 
 
 class RewardModelEnsemble(nn.Module):
@@ -71,10 +76,7 @@ class RewardModelEnsemble(nn.Module):
        Approximation of true reward, trained by supervised learning
        on preferences over trajectory segments as in Christiano et al. 2017
        Ouput is an average of `args.size_rm_ensemble` networks
-       TODO check this is how Christiano actually implements it.
-       In particular, do they say something about normalising
-       the output from each network in the ensemble separately?
-       Is this important?
+       TODO double check this is how Christiano actually implements it.
     """
     def __init__(self, state_size, action_size, args):
         """Feedforward NN with 2 hidden layers"""
@@ -93,18 +95,25 @@ class RewardModelEnsemble(nn.Module):
                         nn.Linear(args.hid_units_rm, 1),
                         )
                     )
+            setattr(self, 'mean_prefs{}'.format(ensemble_num), 0) # mean of each net in ensemble across prefs_buffer
+            setattr(self, 'var_prefs{}'.format(ensemble_num), 0) # var of each net in ensemble across prefs_buffer
         
-    def forward(self, x):
+    def forward(self, x, normalise=False):
         """Returns the average output from forward pass
            through each network in the ensemble.
         """
         output = 0
         for ensemble_num in range(self.ensemble_size):
             net = getattr(self, 'layers{}'.format(ensemble_num))
-            output += net(x)
+            r_hat = net(x)
+            if normalise:
+                mean = getattr(self, 'mean_prefs{}'.format(ensemble_num))
+                var = getattr(self, 'var_prefs{}'.format(ensemble_num))
+                r_hat = (r_hat - mean) / np.sqrt(var + 1e-8)
+            output += r_hat
         return output / self.ensemble_size
 
-    def forward_all(self, x):
+    def forward_all(self, x, normalise=False):
         """Instead of averaging output across `ensemble_size`
            networks, return tensor of the output from each network
            in ensemble. Results from different ensembles are
@@ -114,37 +123,27 @@ class RewardModelEnsemble(nn.Module):
         outputs = []
         for ensemble_num in range(self.ensemble_size):
             net = getattr(self, 'layers{}'.format(ensemble_num))
-            outputs.append(net(x))
+            r_hat = net(x)
+            if normalise:
+                mean = getattr(self, 'mean_prefs{}'.format(ensemble_num))
+                var = getattr(self, 'var_prefs{}'.format(ensemble_num))
+                r_hat = (r_hat - mean) / np.sqrt(var + 1e-8)
+            outputs.append(r_hat)
         return torch.cat(outputs, dim=-1)
 
-    def forward_single(self, x):
+    def forward_single(self, x, normalise=False):
         """Instead of averaging output across `ensemble_size`
            networks, return output from just one of the forward
            passes, selected u.a.r. from all nets in ensemble.
         """
-        net_num = random.randrange(self.ensemble_size)
-        net = getattr(self, 'layers{}'.format(net_num))
-        return net(x)
-
-    # def variance(self, x):
-    #     """Returns predictive variance of the networks
-    #        in the ensemble, on input x
-    #     """
-    #     batch_size, _, clip_length, _ = x.shape # only used for assert
-    #     outputs = []
-    #     for ensemble_num in range(self.ensemble_size):
-    #         net = getattr(self, 'layers{}'.format(ensemble_num))
-    #         outputs.append(net(x))
-    #     outputs_tensor = torch.cat(outputs, dim=-1)
-    #     assert outputs_tensor.shape == (batch_size, 2, clip_length, self.ensemble_size)
-    #     return outputs_tensor.var(dim=-1)
-
-    # def forward_no_ave(self, x):
-    #     """Instead of averaging output across 3 networks, return
-    #        a 3-tuple of the output from each network in ensemble
-    #        Do not use for learning, only for prediction!
-    #     """
-    #     return self.layers0(x), self.layers1(x), self.layers2(x)
+        ensemble_num = random.randrange(self.ensemble_size)
+        net = getattr(self, 'layers{}'.format(ensemble_num))
+        r_hat = net(x)
+        if normalise:
+            mean = getattr(self, 'mean_prefs{}'.format(ensemble_num))
+            var = getattr(self, 'var_prefs{}'.format(ensemble_num))
+            r_hat = (r_hat - mean) / np.sqrt(var + 1e-8)
+        return r_hat
 
 
 def compute_loss_rm_wchecks(r_hats_batch, mu_batch, args, obs_shape, act_shape):
@@ -253,27 +252,38 @@ class PrefsBuffer():
 
 def compute_reward_stats(reward_model, prefs_buffer):
     """Returns mean and variance of true and predicted reward
+       over the current examples in `prefs_buffer`
        (for normalising rewards sent to agent)
     """
     rt_mean, rt_var = prefs_buffer.compute_mean_var_GT()
-    rp_mean, rp_var = compute_mean_var(reward_model, prefs_buffer)
-    return rt_mean, rt_var, rp_mean, rp_var
+    reward_model = compute_mean_var(reward_model, prefs_buffer)
+    return (rt_mean, rt_var), reward_model
 
 
-def compute_mean_var(r, prefs_buffer):
+def compute_mean_var(reward_model, prefs_buffer):
     """Given reward function r and an instance of PrefsBuffer,
-       returns E[r(s,a)] and Var[r(s,a)]
+       computes E[r(s,a)] and Var[r(s,a)]
        where the expectation and variance are over all the (s,a) pairs
        currently in the buffer (prefs_buffer.clip_pairs).
-       The returned scalars are python numbers
+       Saves them as the appropriate attributes of `reward_model` and
+       returns it.
     """
-    assert isinstance(r, nn.Module)
     # flatten the clip_pairs and chuck them through the reward function
     sa_pairs = prefs_buffer.all_flat_sa_pairs()
-    r.eval() # turn off dropout
-    rews = r(sa_pairs).squeeze()
-    assert rews.shape == (prefs_buffer.current_length * 2 * prefs_buffer.clip_length,)
-    return rews.mean().item(), rews.var().item()
+    reward_model.eval() # turn off dropout
+    if isinstance(reward_model, RewardModelEnsemble):
+        for ensemble_num in range(reward_model.ensemble_size):
+            net = getattr(reward_model, 'layers{}'.format(ensemble_num))
+            r_hats = net(sa_pairs).squeeze()
+            assert r_hats.shape == (prefs_buffer.current_length * 2 * prefs_buffer.clip_length,)
+            setattr(reward_model, 'mean_prefs{}'.format(ensemble_num), r_hats.mean().item())
+            setattr(reward_model, 'var_prefs{}'.format(ensemble_num), r_hats.var().item())
+    elif isinstance(reward_model, RewardModel):
+        r_hats = reward_model(sa_pairs).squeeze()
+        assert r_hats.shape == (prefs_buffer.current_length * 2 * prefs_buffer.clip_length,)
+        reward_model.mean_prefs = r_hats.mean().item()
+        reward_model.var_prefs = r_hats.var().item()
+    return reward_model
 
 
 def test_correlation(reward_model, env, q_net, args, writer1, i_train_round):

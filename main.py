@@ -25,7 +25,8 @@ def parse_arguments():
     parser.add_argument('--ep_end_penalty', type=float, default=-29.0, help='How much reward does agent get when the (dummy) episode ends?')
     parser.add_argument('--test', action='store_true', help='Flag to make training procedure very short (to check for errors)')
     parser.add_argument('--render_policy_test', action='store_true', help='Flag to render 3 episodes of policy test')
-    
+    parser.add_argument('--terminate_once_solved', action='store_true', help='Experiment will terminate if agent test mean ep return >= env.spec.reward_threshold')
+
     # agent hyperparams
     parser.add_argument('--h1_agent', type=int, default=32)
     parser.add_argument('--h2_agent', type=int, default=64)
@@ -156,6 +157,10 @@ def main():
         try:
             logging.info('RUN {}/{} BEGIN\n'.format(i_run, args.n_runs - 1))
             run_experiment(args, i_run, returns_summary)
+            logging.info('RUN {}/{} SUCCEEDED\n'.format(i_run, args.n_runs - 1))
+            pd.DataFrame(returns_summary).to_csv('./logs/{}.csv'.format(args.info), index_label=['ep return type', 'round no.'])
+        except SystemExit:
+            logging.info('ENVIRONMENT SOLVED!')
             logging.info('RUN {}/{} SUCCEEDED\n'.format(i_run, args.n_runs - 1))
             pd.DataFrame(returns_summary).to_csv('./logs/{}.csv'.format(args.info), index_label=['ep return type', 'round no.'])
         except:

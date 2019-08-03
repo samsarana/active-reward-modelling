@@ -15,7 +15,7 @@ def test_policy(q_net, reward_model, reward_stats, args, random_seed, render=Fal
     state, n = env.reset(), 0
     returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
                'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
-    rt_mean, rt_var, rp_mean, rp_var = reward_stats
+    rt_mean, rt_var = reward_stats
     while n < num_episodes:
         if render and n < 3: # if render, watch 3 episodes
             env.render()
@@ -32,8 +32,9 @@ def test_policy(q_net, reward_model, reward_stats, args, random_seed, render=Fal
             reward_model.eval() # dropout off at test time
             sa_pair = torch.tensor(np.append(state, action)).float()
             r_pred = reward_model(sa_pair).item()
+            r_pred_norm = reward_model(sa_pair, normalise=True).item()
             returns['ep']['pred'] += r_pred
-            returns['ep']['pred_norm'] += (r_pred - rp_mean) / np.sqrt(rp_var + 1e-8)
+            returns['ep']['pred_norm'] += r_pred_norm
         
         # prepare for next step
         state = next_state
@@ -67,7 +68,7 @@ def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_ro
         returns_summary[i_run][('4.pred_norm', i_train_round)] = mean_ret_pred_norm
         writer2.add_scalar('1a.mean_ep_return_per_training_round', mean_ret_pred, i_train_round)
         writer2.add_scalar('1b.mean_ep_return_per_training_round_normalised', mean_ret_pred_norm, i_train_round)
-
+    return mean_ret_true
 
 def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_round, render=False, num_episodes=100):
     """Using the non-continuous version of the environment,

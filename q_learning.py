@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+from reward_learning import RewardModelEnsemble
 
 class DQN(nn.Module):
     def __init__(self, num_inputs, num_actions, args):
@@ -80,9 +81,9 @@ class ReplayBuffer():
         return len(self.buffer)
 
 
-def q_learning_loss(q_net, q_target, replay_buffer, args,
-                    mean_rew=None, var_rew=None, reward_model=None):
-    """Defines the loss function above
+def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
+                    normalise_rewards=False, rt_mean=None, rt_var=None):
+    """Defines the Q-Learning loss function.
        Help on interpreting variables:
        Each dimension of the batch pertains to one transition, i.e. one 5-tuple
             (state, action, reward, next_state, done)
@@ -94,30 +95,31 @@ def q_learning_loss(q_net, q_target, replay_buffer, args,
                        each transition, rather than action taken by agent
        expected_q_value : batch_dim. implements y_i.
     """
-    state, action, reward, next_state, done = replay_buffer.sample(q_net.batch_size)
+    state, action, true_reward, next_state, done = replay_buffer.sample(q_net.batch_size)
     # compute r_hats according to current reward_model and/or normalise rewards
-    normalise_rewards = True if mean_rew and var_rew else False
-    if normalise_rewards:
-        if reward_model:
-            sa_pair = torch.cat((state, action.unsqueeze(1).float()), dim=1)
-            assert isinstance(reward_model, nn.Module)
-            reward_model.eval() # turn off dropout at 'test' time i.e. when getting rewards to send to DQN
-            if args.no_ensemble_for_reward_pred:
-                r_hat = reward_model.forward_single(sa_pair)
-            else:
-                r_hat = reward_model(sa_pair)
-            norm_reward = (r_hat - mean_rew) / np.sqrt(var_rew + 1e-8)
+    if reward_model: # RL from preferences
+        sa_pair = torch.cat((state, action.unsqueeze(1).float()), dim=1)
+        assert isinstance(reward_model, nn.Module)
+        reward_model.eval() # turn off dropout at 'test' time i.e. when getting rewards to send to DQN
+        
+        if args.no_ensemble_for_reward_pred:
+            assert isinstance(reward_model, RewardModelEnsemble)
+            rew = reward_model.forward_single(sa_pair, normalise=normalise_rewards)
         else:
-            norm_reward = (reward - mean_rew) / np.sqrt(var_rew + 1e-8)
+            rew = reward_model(sa_pair, normalise=normalise_rewards)
     else:
-        norm_reward = reward
+        if normalise_rewards: # RL w normalised rewards
+            assert rt_mean is not None and rt_var is not None, "You told me to normalise rewards for RL but you haven't specified mean and variance of reward function w.r.t. examples in prefs_buffer!"
+            rew = (true_reward - rt_mean) / np.sqrt(rt_var + 1e-8)
+        else: # RL wo normalised rewards
+            rew = true_reward
 
     q_values         = q_net(state)
     next_q_values    = q_target(next_state).detach() # params from target network held fixed when optimizing loss func
 
     q_value          = q_values.gather(1, action.unsqueeze(1)).squeeze(1) # see https://colab.research.google.com/drive/1-6aNmf16JcytKw3BJ2UfGq5zkik1QLFm or https://stackoverflow.com/questions/50999977/what-does-the-gather-function-do-in-pytorch-in-layman-terms
     next_q_value, _  = next_q_values.max(-1) # max returns a (named)tuple (values, indices) where values is the maximum value of each row of the input tensor in the given dimension dim. And indices is the index location of each maximum value found (argmax).
-    expected_q_value = norm_reward + q_net.gamma * next_q_value * (1 - done)
+    expected_q_value = rew + q_net.gamma * next_q_value * (1 - done)
 
     loss = (q_value - expected_q_value).pow(2).mean() # mean is across batch dimension
     return loss
