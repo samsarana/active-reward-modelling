@@ -40,9 +40,10 @@ def parse_arguments():
     parser.add_argument('--epsilon_start', type=float, default=1.0, help='exploration probability for agent at start')
     parser.add_argument('--epsilon_decay', type=float, default=0.999, help='`epsilon *= epsilon * epsilon_decay` every learning step, until `epsilon_stop`') 
     parser.add_argument('--epsilon_stop', type=float, default=0.01)
-    parser.add_argument('--n_labels_per_round', type=int, default=10, help='How many labels to acquire per round? (in main training loop)')
-    parser.add_argument('--n_labels_pretraining', type=int, default=-1, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining. If -1 (default), it will be set to n_labels_per_round') # Ibarz: 25k
+    parser.add_argument('--n_labels_per_round', type=int, default=10, help='How many labels to acquire per round?')
+    # parser.add_argument('--n_labels_pretraining', type=int, default=-1, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining. If -1 (default), it will be set to n_labels_per_round') # Ibarz: 25k. Removed support for diff no. labels in pretraining
     # parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[5]*20, help='How many labels to acquire per round? (in main training loop). len should be same as n_rounds')
+    parser.add_argument('--batch_size_acq', type=int, default=1, help='In acquiring `n_labels_per_round`, what batch size are these acquired in? Reward model is trained after every acquisition batch. `batch_size_acq` == `n_labels_per_round`, is used in Christiano/Ibarz')
     parser.add_argument('--n_agent_train_steps', type=int, default=3000, help='No. of steps that agent takes per round in environment, while training every agent_gdt_step_period steps') # Ibarz: 100k
     parser.add_argument('--n_agent_total_steps', type=int, default=30000, help='Total no. of steps that agent takes in environment per round (if this is > n_agent_train_steps then agent collects extra experience w.o. training)')
     parser.add_argument('--reinit_agent', action='store_true', help='Flag to reinitialise the agent with fresh parameters before every training round')
@@ -77,8 +78,10 @@ def parse_arguments():
     # sample complexity rather than computational complexity (we assume it's cheap for the agent to do rollouts
     # and we want to find whether active learning using the same amount of *data from the human* beats the random baseline)
     args = parser.parse_args()
-    if args.n_labels_pretraining == -1:
-        args.n_labels_pretraining = args.n_labels_per_round
+    # if args.n_labels_pretraining == -1:
+    #     args.n_labels_pretraining = args.n_labels_per_round
+    assert args.n_labels_per_round % args.batch_size_acq == 0, "Acquisition batch size is {}, but it should divide n_labels_per_round, which is {}".format(args.batch_size_acq, args.n_labels_per_round)
+    args.n_acq_batches_per_round = args.n_labels_per_round // args.batch_size_acq
     if args.test:
         args.n_runs = 1
         args.n_rounds = 1
