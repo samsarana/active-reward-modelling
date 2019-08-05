@@ -22,9 +22,9 @@ class DQN(nn.Module):
         self.num_actions = num_actions
         self.batch_size = args.batch_size_agent
         self.gamma = args.gamma
-        self.epsilon = args.epsilon_start
-        self.epsilon_decay = args.epsilon_decay # exponential decay of epsilon after learning step
-        self.epsilon_stop = args.epsilon_stop
+        # self.epsilon = args.epsilon_start
+        # self.epsilon_decay = args.epsilon_decay # exponential decay of epsilon after learning step
+        # self.epsilon_stop = args.epsilon_stop
         self.tau = args.target_update_tau
 
     def forward(self, x):
@@ -136,3 +136,30 @@ def init_agent(args):
     replay_buffer = ReplayBuffer(args.replay_buffer_size) # TODO should I use old replay_buffer with reinitialised agent?
     optimizer_agent = optim.Adam(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent)
     return q_net, q_target, replay_buffer, optimizer_agent
+
+class LinearSchedule(object):
+    """Copy-pasted from:
+       https://github.com/openai/baselines/blob/master/baselines/common/schedules.py
+    """
+    def __init__(self, schedule_timesteps, final_p, initial_p=1.0):
+        """Linear interpolation between initial_p and final_p over
+        schedule_timesteps. After this many timesteps pass final_p is
+        returned.
+        Parameters
+        ----------
+        schedule_timesteps: int
+            Number of timesteps for which to linearly anneal initial_p
+            to final_p
+        initial_p: float
+            initial output value
+        final_p: float
+            final output value
+        """
+        self.schedule_timesteps = schedule_timesteps
+        self.final_p = final_p
+        self.initial_p = initial_p
+
+    def value(self, t):
+        """See Schedule.value"""
+        fraction = min(float(t) / self.schedule_timesteps, 1.0)
+        return self.initial_p + fraction * (self.final_p - self.initial_p)
