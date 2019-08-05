@@ -3,7 +3,7 @@
 import numpy as np
 import torch, gym, time
 
-def test_policy(q_net, reward_model, reward_stats, args, random_seed, render=False, num_episodes=100):
+def test_policy(q_net, reward_model, reward_stats, args, render=False, num_episodes=100):
     """Using the non-continuous version of the environment and q_net
        with argmax policy (deterministic), run the polcy for
        `num_episodes` and log mean episode return.
@@ -11,7 +11,7 @@ def test_policy(q_net, reward_model, reward_stats, args, random_seed, render=Fal
     """
     # set up testing
     env = gym.make(args.env_ID_test)
-    env.seed(random_seed)
+    env.seed(args.random_seed)
     state, n = env.reset(), 0
     returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
                'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
@@ -86,7 +86,7 @@ def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_ro
     """
     # set up testing
     env = gym.make(args.env_ID_test)
-    env.seed(i_run)
+    env.seed(args.random_seed)
     env.reset()
     n = 0
     returns = {'ep': 0, 'all': []}

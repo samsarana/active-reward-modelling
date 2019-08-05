@@ -45,7 +45,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
         q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
                                                                  reward_model, prefs_buffer, reward_stats, args, writers, i_train_round)
         # Stage 1.1b: Evalulate RL agent performance
-        test_returns = test_policy(q_net, reward_model, reward_stats, args, random_seed=i_run) # convention: seed with the run number
+        test_returns = test_policy(q_net, reward_model, reward_stats, args)
         mean_ret_true = log_tested_policy(test_returns, writers, returns_summary, args, i_run, i_train_round)
         
         # Possibly end training if mean_ret_true is high enough
@@ -125,13 +125,13 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
         state = next_state
 
         # log performance after a "dummy" episode has elapsed
-        if (step % args.dummy_ep_length == 0 or step == args.n_agent_train_steps - 1) and step < args.n_agent_train_steps:
+        if (step + 1) % args.dummy_ep_length == 0 and step < args.n_agent_train_steps:
             # interpreting writers: 1 == blue == true!
-            writer1.add_scalar('3a.dummy_ep_return_against_step/round_{}'.format(i_train_round), dummy_returns['ep']['true'], step)
-            writer1.add_scalar('3b.dummy_ep_return_against_step_normalised/round_{}'.format(i_train_round), dummy_returns['ep']['true_norm'], step)
+            writer1.add_scalar('3a.dummy_ep_return_against_step/round_{}'.format(i_train_round), dummy_returns['ep']['true'], step+1)
+            writer1.add_scalar('3b.dummy_ep_return_against_step_normalised/round_{}'.format(i_train_round), dummy_returns['ep']['true_norm'], step+1)
             if not args.RL_baseline:
-                writer2.add_scalar('3a.dummy_ep_return_against_step/round_{}'.format(i_train_round), dummy_returns['ep']['pred'], step)
-                writer2.add_scalar('3b.dummy_ep_return_against_step_normalised/round_{}'.format(i_train_round), dummy_returns['ep']['pred_norm'], step)
+                writer2.add_scalar('3a.dummy_ep_return_against_step/round_{}'.format(i_train_round), dummy_returns['ep']['pred'], step+1)
+                writer2.add_scalar('3b.dummy_ep_return_against_step_normalised/round_{}'.format(i_train_round), dummy_returns['ep']['pred_norm'], step+1)
             for key, value in dummy_returns['ep'].items():
                 dummy_returns['all'][key].append(value)
                 dummy_returns['ep'][key] = 0

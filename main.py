@@ -23,6 +23,7 @@ def parse_arguments():
     parser.add_argument('--test', action='store_true', help='Flag to make training procedure very short (to check for errors)')
     parser.add_argument('--render_policy_test', action='store_true', help='Flag to render 3 episodes of policy test')
     parser.add_argument('--terminate_once_solved', action='store_true', help='Experiment will terminate if agent test mean ep return >= env.spec.reward_threshold')
+    parser.add_argument('--seed_offset', type='int', default=0, help='We seed with i_run + seed_offset, where i_run in {0..n_runs-1}')
 
     # agent hyperparams
     parser.add_argument('--h1_agent', type=int, default=32)
@@ -122,20 +123,20 @@ def make_arg_changes(args):
 
 def run_experiment(args, i_run, returns_summary):
     # for reproducibility
-    random_seed = i_run
-    torch.manual_seed(random_seed)
-    np.random.seed(random_seed)
-    random.seed(random_seed)
+    args.random_seed = i_run + args.seed_offset
+    torch.manual_seed(args.random_seed)
+    np.random.seed(args.random_seed)
+    random.seed(args.random_seed)
 
     # TensorBoard logging
-    logdir = './logs/{}/{}'.format(args.info, random_seed)
+    logdir = './logs/{}/{}'.format(args.info, args.random_seed)
     writer1 = SummaryWriter(log_dir=logdir+'/true')
     writer2 = SummaryWriter(log_dir=logdir+'/pred')
     writers = [writer1, writer2]
 
     # make environment
     env = gym.make(args.env_ID)
-    env.seed(random_seed)
+    env.seed(args.random_seed)
     args.obs_shape = env.observation_space.shape[0] # env.observation_space is Box(4,) and calling .shape returns (4,) [gym can be ugly]
     assert isinstance(env.action_space, gym.spaces.Discrete), 'DQN requires discrete action space.'
     args.act_shape = 1 # [gym doesn't have a nice way to get shape of Discrete space... env.action_space.shape -> () ]
