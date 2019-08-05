@@ -41,7 +41,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
         # (in Ibarz, it always has at least 50 or 100 examples...)
         # Stage 1.1a: Reinforcement learning with (normalised) rewards from current reward model
         if args.reinit_agent:
-            q_net, q_target, replay_buffer, optimizer_agent = init_agent(args)
+            q_net, q_target, _, optimizer_agent = init_agent(args) # keep replay buffer experience -- OK as long as we use the new rewards
         q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
                                                                  reward_model, prefs_buffer, reward_stats, args, writers, i_train_round)
         # Stage 1.1b: Evalulate RL agent performance
