@@ -22,7 +22,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
     
     # BEGIN PRETRAINING
     # Stage 0.1: Do some rollouts from the randomly initialised policy
-    agent_experience, replay_buffer = do_pretraining_rollouts(q_net, replay_buffer, env, args)
+    agent_experience = do_pretraining_rollouts(q_net, env, args)
     # Stage 0.2: Sample without replacement from those rollouts and label them (synthetically)
     mu_counts_total = np.zeros((2,3))
     reward_model, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
@@ -104,7 +104,8 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
     state = env.reset()
     for step in range(args.n_agent_total_steps):
         # agent interact with env
-        action = q_net.act(state, q_net.epsilon)
+        epsilon = args.exploration.value(step)
+        action = q_net.act(state, epsilon)
         assert env.action_space.contains(action)
         next_state, r_true, _, _ = env.step(action) # one continuing episode
         # record step info
@@ -137,7 +138,8 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
                 dummy_returns['ep'][key] = 0
 
         # q_net gradient step
-        if step % args.agent_gdt_step_period == 0 and len(replay_buffer) >= 3*q_net.batch_size and step < args.n_agent_train_steps:
+        if step >= args.agent_learning_starts and step % args.agent_gdt_step_period == 0 and \
+                len(replay_buffer) >= 3*args.batch_size_agent and step < args.n_agent_train_steps:
             if args.RL_baseline:
                 loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, normalise_rewards=True, rt_mean=rt_mean, rt_var=rt_var)
             else:
@@ -146,9 +148,9 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
             loss_agent.backward()
             optimizer_agent.step()
             # decay epsilon every learning step
-            writer1.add_scalar('9.agent_epsilon/round_{}'.format(i_train_round), q_net.epsilon, step)
-            if q_net.epsilon > q_net.epsilon_stop:
-                q_net.epsilon *= q_net.epsilon_decay
+            writer1.add_scalar('9.agent_epsilon/round_{}'.format(i_train_round), epsilon, step)
+            # if q_net.epsilon > q_net.epsilon_stop:
+            #     q_net.epsilon *= q_net.epsilon_decay
             writer1.add_scalar('8.agent_loss/round_{}'.format(i_train_round), loss_agent, step)
             # scheduler.step() # Ibarz doesn't mention lr annealing...
 
@@ -170,7 +172,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
     return q_net, q_target, replay_buffer, agent_experience
 
 
-def do_pretraining_rollouts(q_net, replay_buffer, env, args):
+def do_pretraining_rollouts(q_net, env, args):
     """Agent interact with environment and collect experience.
        Number of steps taken determined by `args.n_labels_per_round`.
        NB Used to be determined by `args.n_labels_pretraining` until
@@ -178,14 +180,9 @@ def do_pretraining_rollouts(q_net, replay_buffer, env, args):
        Currently used only in pretraining, but I might refactor s.t. there's
        a single function that I can use for agent-environment
        interaction (with or without training).
-       NB I now add examples to the replay buffer in this stage, 
-       as well as to agent_experience
     """
     n_initial_steps = args.selection_factor * args.n_labels_per_round * 2 * args.clip_length
-    if args.n_agent_pretrain_steps:
-        n_initial_steps = max(args.n_agent_pretrain_steps, n_initial_steps)
-    assert n_initial_steps % args.clip_length == 0, "The number of intial agent steps ({}) should be divisible by the clip length ({})!".format(n_initial_steps, args.clip_length)
-    num_clips       = n_initial_steps // args.clip_length
+    num_clips       = args.selection_factor * args.n_labels_per_round * 2
     logging.info('Stage -1.1: Collecting rollouts from untrained policy, {} agent steps'.format(n_initial_steps))
     agent_experience = AgentExperience((num_clips, args.clip_length, args.obs_act_shape), args.force_label_choice)
     epsilon_pretrain = 0.5 # for now I'll use a constant epilson during pretraining
@@ -197,9 +194,8 @@ def do_pretraining_rollouts(q_net, replay_buffer, env, args):
         # record step information
         sa_pair = torch.tensor(np.append(state, action)).float()
         agent_experience.add(sa_pair, r_true) # add reward too in order to produce synthetic prefs
-        replay_buffer.push(state, action, r_true, next_state, False)
         state = next_state
-    return agent_experience, replay_buffer
+    return agent_experience
 
 
 def do_random_experiment(env, args, returns_summary, writers, i_run):

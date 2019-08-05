@@ -37,14 +37,15 @@ def parse_arguments():
     parser.add_argument('--agent_gdt_step_period', type=int, default=1) # Ibarz: 4
     parser.add_argument('--gamma', type=float, default=0.9)
     parser.add_argument('--epsilon_start', type=float, default=1.0, help='exploration probability for agent at start')
-    parser.add_argument('--epsilon_decay', type=float, default=0.999, help='`epsilon *= epsilon * epsilon_decay` every learning step, until `epsilon_stop`') 
+    # parser.add_argument('--epsilon_decay', type=float, default=0.999, help='`epsilon *= epsilon * epsilon_decay` every learning step, until `epsilon_stop`') 
     parser.add_argument('--epsilon_stop', type=float, default=0.01)
+    parser.add_argument('--exploration_fraction', type=float, default=0.1, help='Over what fraction of entire training period is epsilon annealed (linearly)?')
     parser.add_argument('--n_labels_per_round', type=int, default=5, help='How many labels to acquire per round?')
     # parser.add_argument('--n_labels_pretraining', type=int, default=-1, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining. If -1 (default), it will be set to n_labels_per_round') # Ibarz: 25k. Removed support for diff no. labels in pretraining
     # parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[5]*20, help='How many labels to acquire per round? (in main training loop). len should be same as n_rounds')
     parser.add_argument('--batch_size_acq', type=int, default=1, help='In acquiring `n_labels_per_round`, what batch size are these acquired in? Reward model is trained after every acquisition batch. `batch_size_acq` == `n_labels_per_round`, is used in Christiano/Ibarz')
-    parser.add_argument('--n_agent_pretrain_steps', type=int, default=None, help='By default, agent takes just enough pretraining steps to get n_labels_per_round. If specified, this arg overrides this setting.')
     parser.add_argument('--n_agent_train_steps', type=int, default=3000, help='No. of steps that agent takes per round in environment, while training every agent_gdt_step_period steps') # Ibarz: 100k
+    parser.add_argument('--agent_learning_starts', type=int, default=0, help='After how many steps does the agent start making learning updates?')
     parser.add_argument('--n_agent_total_steps', type=int, default=30000, help='Total no. of steps that agent takes in environment per round (if this is > n_agent_train_steps then agent collects extra experience w.o. training)')
     parser.add_argument('--reinit_agent', action='store_true', help='Flag to reinitialise the agent before every training round')
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
@@ -84,6 +85,10 @@ def make_arg_changes(args):
     #     args.n_labels_pretraining = args.n_labels_per_round
     assert args.n_labels_per_round % args.batch_size_acq == 0, "Acquisition batch size is {}, but it should divide n_labels_per_round, which is {}".format(args.batch_size_acq, args.n_labels_per_round)
     args.n_acq_batches_per_round = args.n_labels_per_round // args.batch_size_acq
+
+    args.exploration = LinearSchedule(schedule_timesteps=int(args.exploration_fraction * args.n_agent_train_steps),
+                                      initial_p=args.epsilon_start,
+                                      final_p=args.epsilon_stop)
     
     envs_to_ids = { 'cartpole': {'id': 'gym_barm:CartPole_Cont-v0',
                                 'id_test': 'CartPole-v0',
