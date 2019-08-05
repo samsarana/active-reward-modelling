@@ -244,14 +244,20 @@ The following taxonomy draws on those given in \cite{Sutton2018} and \cite{Achia
 
 \section{Reinforcement Learning from Unknown Reward Functions}
 For many domains in which we might want to use RL, states of the environment are not inherently associated with rewards.  Thus, we have the additional task of specifying a reward function, which maps states to rewards. Argue the case that directly specifying a reward function is hard, in order to motivate the next section: Reward Learning
-\subsection{Reward Learning}
+\subsection{Reward Learning with Handcrafted Feature Transformations}
 % We can use feedback of different modalities
 % There is both the standard and the deep case to consider
-\subsubsection{In Classical RL}
-% Active Preference-Based Learning of Reward Functions (ignore the active part here)
-% Learning Reward Functions by Integrating Human Demonstrations and Preferences (SAIL paper)
-\subsubsection{In Deep RL}
-% SARM Agenda; Christiano; Ibarz
+\subsubsection{Active Preference-Based Learning of Reward Functions}
+
+\subsubsection{Batch Active Preference-Based Learning of Reward Functions}
+
+\subsubsection{DemPref}
+% Summarise the contributions of the 2017,18,19 papers by Sadigh's lab. 
+% (+Batch) Active Preference-Based Learning of Reward Functions (ignore the active part here)
+% DemPref Learning Reward Functions by Integrating Human Demonstrations and Preferences
+\subsection{Reward Learning in Deep RL}
+% Christiano; Ibarz. Basically use the Context section of Ibarz -- this will make it easy!
+% perhaps mention SARM Agenda
 
 \chapter{Uncertainty in Deep Learning}
 % Talk about Yarin's thesis, BNNs; maybe Ian Obsband paper for good measure (esp. if I end up using ensemble instead of MC-Dropout?)
@@ -284,10 +290,17 @@ Discussion of previous work.
 \subsection{APRIL}
 % APRIL
 
-\subsection{Batch active preference-based learning}
-% Active Preference-Based Learning of Reward Functions (emphasis on the active part)
+\subsection{Active Preference-Based Learning of Reward Functions with handcrafted feature transformations}
+% Summarise the *active learning parts* of the 2017,18,19 papers by Sadigh's lab (I've already summarised the 
+% reward learning parts, above)
+% it probably doesn't make sense to have a subsubsection for each, as I assume the active parts are basically the same?
+% but work this out once you've worked out what the differences are
 
-\subsection{DemPref}
+\subsubsection{Active Preference-Based Learning of Reward Functions}
+
+\subsubsection{Batch Active Preference-Based Learning of Reward Functions}
+
+\subsubsection{DemPref}
 % Learning Reward Functions by Integrating Human Demonstrations and Preferences (DemPref) (they use the `Volume Removal Method' to do Active Learning)
 
 \subsection{Deep RL from Human Preferences}
@@ -307,7 +320,7 @@ Discussion of previous work.
 
 \section{Implementation Details}
 
-\chapter{Experiments}
+\chapter{Experimental Details}
 %TODO does it make sense to separate experiment details from method? I think so.
 % Here I'll give the experimental details
 % Gym. incl. why I chose it

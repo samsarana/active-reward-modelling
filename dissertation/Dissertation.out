@@ -25,21 +25,20 @@
 \BOOKMARK [2][-]{subsection.4.1.4}{BALD}{section.4.1}% 25
 \BOOKMARK [1][-]{section.4.2}{Applying Active Learning to RL without a reward function}{chapter.4}% 26
 \BOOKMARK [2][-]{subsection.4.2.1}{APRIL}{section.4.2}% 27
-\BOOKMARK [2][-]{subsection.4.2.2}{Batch active preference-based learning}{section.4.2}% 28
-\BOOKMARK [2][-]{subsection.4.2.3}{DemPref}{section.4.2}% 29
-\BOOKMARK [2][-]{subsection.4.2.4}{Deep RL from Human Preferences}{section.4.2}% 30
-\BOOKMARK [0][-]{chapter.5}{Method}{}% 31
-\BOOKMARK [1][-]{section.5.1}{Training Protocol}{chapter.5}% 32
-\BOOKMARK [1][-]{section.5.2}{Acquisition Functions}{chapter.5}% 33
-\BOOKMARK [1][-]{section.5.3}{Uncertainty Estimates}{chapter.5}% 34
-\BOOKMARK [1][-]{section.5.4}{Implementation Details}{chapter.5}% 35
-\BOOKMARK [0][-]{chapter.6}{Experiments}{}% 36
-\BOOKMARK [1][-]{section.6.1}{CartPole-v0}{chapter.6}% 37
-\BOOKMARK [0][-]{chapter.7}{Results}{}% 38
-\BOOKMARK [1][-]{section.7.1}{CartPole-v0}{chapter.7}% 39
-\BOOKMARK [0][-]{chapter.8}{Conclusions}{}% 40
-\BOOKMARK [1][-]{section.8.1}{Summary}{chapter.8}% 41
-\BOOKMARK [1][-]{section.8.2}{Evaluation}{chapter.8}% 42
-\BOOKMARK [1][-]{section.8.3}{Future Work}{chapter.8}% 43
-\BOOKMARK [0][-]{chapter*.4}{References}{}% 44
-\BOOKMARK [0][-]{appendix.A}{Some Appendix Material}{}% 45
+\BOOKMARK [2][-]{subsection.4.2.2}{Active Preference-Based Learning of Reward Functions with handcrafted feature transformations}{section.4.2}% 28
+\BOOKMARK [2][-]{subsection.4.2.3}{Deep RL from Human Preferences}{section.4.2}% 29
+\BOOKMARK [0][-]{chapter.5}{Method}{}% 30
+\BOOKMARK [1][-]{section.5.1}{Training Protocol}{chapter.5}% 31
+\BOOKMARK [1][-]{section.5.2}{Acquisition Functions}{chapter.5}% 32
+\BOOKMARK [1][-]{section.5.3}{Uncertainty Estimates}{chapter.5}% 33
+\BOOKMARK [1][-]{section.5.4}{Implementation Details}{chapter.5}% 34
+\BOOKMARK [0][-]{chapter.6}{Experiments}{}% 35
+\BOOKMARK [1][-]{section.6.1}{CartPole-v0}{chapter.6}% 36
+\BOOKMARK [0][-]{chapter.7}{Results}{}% 37
+\BOOKMARK [1][-]{section.7.1}{CartPole-v0}{chapter.7}% 38
+\BOOKMARK [0][-]{chapter.8}{Conclusions}{}% 39
+\BOOKMARK [1][-]{section.8.1}{Summary}{chapter.8}% 40
+\BOOKMARK [1][-]{section.8.2}{Evaluation}{chapter.8}% 41
+\BOOKMARK [1][-]{section.8.3}{Future Work}{chapter.8}% 42
+\BOOKMARK [0][-]{chapter*.10}{References}{}% 43
+\BOOKMARK [0][-]{appendix.A}{Some Appendix Material}{}% 44
