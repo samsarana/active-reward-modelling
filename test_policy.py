@@ -10,7 +10,7 @@ def test_policy(q_net, reward_model, reward_stats, args, random_seed, render=Fal
        Also log predicted and normalised return
     """
     # set up testing
-    env = gym.make(args.env_class_test)
+    env = gym.make(args.env_ID_test)
     env.seed(random_seed)
     state, n = env.reset(), 0
     returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
@@ -85,7 +85,7 @@ def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_ro
        and using/not using GT rewards
     """
     # set up testing
-    env = gym.make(args.env_class_test)
+    env = gym.make(args.env_ID_test)
     env.seed(i_run)
     env.reset()
     n = 0

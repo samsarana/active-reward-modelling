@@ -57,7 +57,7 @@ class Continuous_CartPoleEnv(gym.Env):
         'video.frames_per_second' : 50
     }
 
-    def __init__(self, ep_end_penalty=-10.0):
+    def __init__(self, ep_end_penalty=-29.0):
         self.gravity = 9.8
         self.masscart = 1.0
         self.masspole = 0.1

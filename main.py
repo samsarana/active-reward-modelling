@@ -15,14 +15,11 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     # experiment settings
     parser.add_argument('--info', type=str, default='', help='Tensorboard log is saved in ./logs/i_run/random_seed/[true|pred]/')
-    parser.add_argument('--env_class', type=str, default='gym_barm:CartPole_Cont-v0')
-    parser.add_argument('--env_class_test', type=str, default='CartPole-v0', help='We use the standard, non-continuous version of the env for testing agent performance')
-    parser.add_argument('--enrich_reward', action='store_true')
+    parser.add_argument('--env', type=str, default='cartpole', help='Choice of: cartpole, cartpole_rich, acrobot, mountain_car')
     parser.add_argument('--n_runs', type=int, default=40, help='number of runs to repeat the experiment')
     parser.add_argument('--n_rounds', type=int, default=40, help='number of rounds to repeat main training loop')
     parser.add_argument('--RL_baseline', action='store_true', help='Do RL baseline instead of reward learning?')
     parser.add_argument('--random_policy', action='store_true', help='Do the experiments with an entirely random policy, to benchmark performance')
-    parser.add_argument('--ep_end_penalty', type=float, default=-29.0, help='How much reward does agent get when the (dummy) episode ends?')
     parser.add_argument('--test', action='store_true', help='Flag to make training procedure very short (to check for errors)')
     parser.add_argument('--render_policy_test', action='store_true', help='Flag to render 3 episodes of policy test')
     parser.add_argument('--terminate_once_solved', action='store_true', help='Experiment will terminate if agent test mean ep return >= env.spec.reward_threshold')
@@ -48,7 +45,6 @@ def parse_arguments():
     parser.add_argument('--n_agent_train_steps', type=int, default=3000, help='No. of steps that agent takes per round in environment, while training every agent_gdt_step_period steps') # Ibarz: 100k
     parser.add_argument('--n_agent_total_steps', type=int, default=30000, help='Total no. of steps that agent takes in environment per round (if this is > n_agent_train_steps then agent collects extra experience w.o. training)')
     parser.add_argument('--reinit_agent', action='store_true', help='Flag to reinitialise the agent before every training round')
-    parser.add_argument('--dummy_ep_length', type=int, default=200, help="After how many steps in the episode-less env do we interpret an 'episode' as having elapsed and log performance? (This affects only result presentation not algo)")
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
 
     # reward model hyperparamas
@@ -75,10 +71,39 @@ def parse_arguments():
     parser.add_argument('--size_rm_ensemble', type=int, default=1, help='If active_method == ensemble then this must be >= 2')
     parser.add_argument('--selection_factor', type=int, default=10, help='when doing active learning, 1/selection_factor of the randomly sampled clip pairs are sent to human for evaluation')
     args = parser.parse_args()
+    args = make_arg_changes(args)
+    return args
+
+def make_arg_changes(args):
+    """Modifies or adds some experiment
+       settings to args, and returns them.
+    """
     # if args.n_labels_pretraining == -1:
     #     args.n_labels_pretraining = args.n_labels_per_round
     assert args.n_labels_per_round % args.batch_size_acq == 0, "Acquisition batch size is {}, but it should divide n_labels_per_round, which is {}".format(args.batch_size_acq, args.n_labels_per_round)
     args.n_acq_batches_per_round = args.n_labels_per_round // args.batch_size_acq
+    
+    envs_to_ids = { 'cartpole': {'id': 'gym_barm:CartPole_Cont-v0',
+                                'id_test': 'CartPole-v0',
+                                'max_ep_steps': 200
+                                },
+                    'cartpole_rich': {'id': 'gym_barm:CartPole_EnrichedCont-v0',
+                                      'id_test': 'gym_barm:CartPole_Enriched-v0',
+                                      'max_ep_steps': 200
+                                     },
+                    'acrobot': {'id': 'gym_barm:AcrobotContinual-v1',
+                                'id_test': 'Acrobot-v1',
+                                'max_ep_steps': 500
+                               },
+                    'mountain_car': {'id': 'gym_barm:MountainCarContinual-v0',
+                                    'id_test': 'MountainCar-v0',
+                                    'max_ep_steps': 200
+                                    }
+    }
+    args.env_ID = envs_to_ids[args.env]['id']
+    args.env_ID_test = envs_to_ids[args.env]['id_test']
+    args.dummy_ep_length = envs_to_ids[args.env]['max_ep_steps']
+
     if args.test:
         args.n_runs = 1
         args.n_rounds = 1
@@ -87,15 +112,11 @@ def parse_arguments():
         args.n_epochs_pretrain_rm = 10
         args.n_epochs_train_rm = 10
         args.selection_factor = 2
-    if args.uncert_method == 'ensemble':
-        assert args.size_rm_ensemble >= 2
     if args.RL_baseline:
         args.n_epochs_pretrain_rm = 0
         args.n_epochs_train_rm = 0
-    if args.enrich_reward:
-        assert args.env_class == 'gym_barm:CartPole_Cont-v0', "You haven't implemented enriched reward for envs other than CartPole!"
-        args.env_class = 'gym_barm:CartPole_EnrichedCont-v0'
-        args.env_class_test = 'gym_barm:CartPole_Enriched-v0'
+    if args.uncert_method == 'ensemble':
+        assert args.size_rm_ensemble >= 2
     return args
     
 
@@ -113,7 +134,7 @@ def run_experiment(args, i_run, returns_summary):
     writers = [writer1, writer2]
 
     # make environment
-    env = gym.make(args.env_class, ep_end_penalty=args.ep_end_penalty)
+    env = gym.make(args.env_ID)
     env.seed(random_seed)
     args.obs_shape = env.observation_space.shape[0] # env.observation_space is Box(4,) and calling .shape returns (4,) [gym can be ugly]
     assert isinstance(env.action_space, gym.spaces.Discrete), 'DQN requires discrete action space.'

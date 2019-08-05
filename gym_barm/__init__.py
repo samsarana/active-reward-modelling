@@ -20,3 +20,17 @@ register(
     max_episode_steps=float('inf'),
     reward_threshold=195.0,
 )
+
+register(
+    id='AcrobotContinual-v1',
+    entry_point='gym_barm.envs:AcrobotContinualEnv',
+    max_episode_steps=float('inf'),
+    reward_threshold=-100,
+)
+
+register(
+    id='MountainCarContinual-v0',
+    entry_point='gym_barm.envs:MountainCarContinualEnv',
+    max_episode_steps=float('inf'),
+    reward_threshold=-110.0,
+)
