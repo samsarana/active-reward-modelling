@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_label):
     writer1, writer2 = writers
     epochs = args.n_epochs_pretrain_rm if i_label <= -1 else args.n_epochs_train_rm
+    logging.info("Training reward model for {} epochs".format(epochs))
     reward_model.train() # dropout on
     for epoch in range(epochs):
         with torch.autograd.detect_anomaly():

@@ -73,7 +73,7 @@ def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, op
     logging.info('Making {} acquisitions, consisting of {} batches of acquisitions of size {}'.format(
         args.n_labels_per_round, args.n_acq_batches_per_round, args.batch_size_acq))
     rand_clip_data = generate_rand_clip_pairing(agent_experience, args.n_labels_per_round, args)
-    logging.info('Stage {}.3: Training reward model for {}*{} batches on those preferences'.format(i_train_round, args.n_acq_batches_per_round, args.n_epochs_train_rm))
+    logging.info('Stage {}.3: Training reward model for {} sets of batches on those preferences'.format(i_train_round, args.n_acq_batches_per_round))
     for i_acq_batch in range(args.n_acq_batches_per_round):
         i_label = args.n_acq_batches_per_round * i_train_round + i_acq_batch
         prefs_buffer, rand_clip_data, mu_counts_total = make_acquisitions(rand_clip_data, reward_model, prefs_buffer, args, writers, mu_counts_total, i_label)
