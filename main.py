@@ -66,6 +66,7 @@ def parse_arguments():
     parser.add_argument('--corr_num_rollouts', type=int, default=5, help='When collecting rollouts to evaluate correlation of true and predicted reward, how many rollouts in total?')
     parser.add_argument('--no_ensemble_for_reward_pred', action='store_true', help='If true, then use ensemble for uncertainty estimates but pick a random net to compute rewards sent to DQN')
     parser.add_argument('--reinit_rm', action='store_true', help='Flag to reinitialise reward model before every training')
+    parser.add_argument('--no_normalise_rm_while_training', action='store_true', help='Flag to not normalise output of reward predictors while training them (only while testing)')
 
     # active learning
     parser.add_argument('--active_method', type=str, default=None, help='Choice of: BALD, var_ratios, max_entropy, mean_std')
