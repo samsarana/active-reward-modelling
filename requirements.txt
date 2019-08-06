@@ -6,3 +6,4 @@ torch
 tqdm
 tb-nightly
 image
+ffmpeg
