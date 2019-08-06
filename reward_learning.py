@@ -23,11 +23,11 @@ def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, 
             optimizer_rm.zero_grad()
             loss_rm.backward()
             optimizer_rm.step()
-            writer1.add_scalar('7.reward_model_loss/label_{}'.format(i_label), loss_rm, epoch)
+            writer1.add_scalar('6.reward_model_loss/label_{}'.format(i_label), loss_rm, epoch)
             # compute lower bound for loss_rm and plot this too. TODO check this is bug free
             n_indifferent_labels = Counter(mu_batch).get(0.5, 0)
             loss_lower_bound = n_indifferent_labels * math.log(2)
-            writer2.add_scalar('7.reward_model_loss/label_{}'.format(i_label), loss_lower_bound, epoch)
+            writer2.add_scalar('6.reward_model_loss/label_{}'.format(i_label), loss_lower_bound, epoch)
     return reward_model
     
 
