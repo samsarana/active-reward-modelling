@@ -1,9 +1,12 @@
 """Functions to test a trained policy"""
 
 import numpy as np
-import torch, gym, time
+import torch, gym
+from gym import wrappers
+from time import time, sleep
+from rl_logging import log_agent_step
 
-def test_policy(q_net, reward_model, reward_stats, args, render=False, num_episodes=100):
+def test_policy(q_net, reward_model, reward_stats, args, num_episodes=100):
     """Using the non-continuous version of the environment and q_net
        with argmax policy (deterministic), run the polcy for
        `num_episodes` and log mean episode return.
@@ -17,35 +20,29 @@ def test_policy(q_net, reward_model, reward_stats, args, render=False, num_episo
                'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
     rt_mean, rt_var = reward_stats
     while n < num_episodes:
-        if render and n < 3: # if render, watch 3 episodes
+        if args.render_policy_test and n < 3: # if render, watch 3 episodes
             env.render()
-            time.sleep(1e-3)
+            sleep(1e-3)
         # agent interact with env
         action = q_net.act(state, epsilon=0)
         assert env.action_space.contains(action)
         next_state, r_true, done, _ = env.step(action)
         # save true reward...
-        returns['ep']['true'] += r_true
-        returns['ep']['true_norm'] += (r_true - rt_mean) / np.sqrt(rt_var + 1e-8)
-        # ...and reward the agent thinks it's getting
-        if not args.RL_baseline:
-            reward_model.eval() # dropout off at test time
-            sa_pair = torch.tensor(np.append(state, action)).float()
-            r_pred = reward_model(sa_pair).item()
-            r_pred_norm = reward_model(sa_pair, normalise=True).item()
-            returns['ep']['pred'] += r_pred
-            returns['ep']['pred_norm'] += r_pred_norm
-        
+        sa_pair = torch.tensor(np.append(state, action)).float()
+        returns = log_agent_step(sa_pair, r_true, returns, reward_stats, reward_model, args)        
         # prepare for next step
         state = next_state
         if done:
             for key, value in returns['ep'].items():
                 returns['all'][key].append(value)
                 returns['ep'][key] = 0
-            state = env.reset()
             n += 1
-            if render and n == 3:
+            if args.render_policy_test and n == 3:
                 env.close()
+            if n == num_episodes -1 and args.save_video:
+                # save the final test episode (see https://github.com/openai/gym/wiki/FAQ#how-do-i-export-the-run-to-a-video-file)
+                env = wrappers.Monitor(env, './logs/videos/test/' + str(time()) + '/')
+            state = env.reset()
     
     assert len(returns['all']['true']) == num_episodes
     return returns['all']
@@ -70,7 +67,7 @@ def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_ro
         writer2.add_scalar('1b.mean_ep_return_per_training_round_normalised', mean_ret_pred_norm, i_train_round)
     return mean_ret_true
 
-def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_round, render=False, num_episodes=100):
+def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_round, num_episodes=100):
     """Using the non-continuous version of the environment,
        take random steps for `num_episodes`
        and log mean episode return.
@@ -91,9 +88,9 @@ def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_ro
     n = 0
     returns = {'ep': 0, 'all': []}
     while n < num_episodes:
-        if render:
+        if args.render_policy_test:
             env.render()
-            time.sleep(1e-3)
+            sleep(1e-3)
         # agent interact with env
         action = env.action_space.sample()
         _, r_true, done, _ = env.step(action) # one continuous episode

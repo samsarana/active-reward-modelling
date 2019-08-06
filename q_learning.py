@@ -82,7 +82,7 @@ class ReplayBuffer():
 
 
 def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
-                    normalise_rewards=False, rt_mean=None, rt_var=None):
+                    normalise_rewards=False, true_reward_stats=None):
     """Defines the Q-Learning loss function.
        Help on interpreting variables:
        Each dimension of the batch pertains to one transition, i.e. one 5-tuple
@@ -109,7 +109,8 @@ def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
             rew = reward_model(sa_pair, normalise=normalise_rewards)
     else:
         if normalise_rewards: # RL w normalised rewards
-            assert rt_mean is not None and rt_var is not None, "You told me to normalise rewards for RL but you haven't specified mean and variance of reward function w.r.t. examples in prefs_buffer!"
+            assert true_reward_stats is not None, "You told me to normalise rewards for RL but you haven't specified mean and variance of reward function w.r.t. examples in prefs_buffer!"
+            rt_mean, rt_var = true_reward_stats
             rew = (true_reward - rt_mean) / np.sqrt(rt_var + 1e-8)
         else: # RL wo normalised rewards
             rew = true_reward
@@ -133,7 +134,7 @@ def init_agent(args):
     q_net = DQN(args.obs_shape, args.n_actions, args)
     q_target = DQN(args.obs_shape, args.n_actions, args)
     q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
-    replay_buffer = ReplayBuffer(args.replay_buffer_size) # TODO should I use old replay_buffer with reinitialised agent?
+    replay_buffer = ReplayBuffer(args.replay_buffer_size)
     optimizer_agent = optim.Adam(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent)
     return q_net, q_target, replay_buffer, optimizer_agent
 

@@ -22,6 +22,7 @@ def parse_arguments():
     parser.add_argument('--random_policy', action='store_true', help='Do the experiments with an entirely random policy, to benchmark performance')
     parser.add_argument('--test', action='store_true', help='Flag to make training procedure very short (to check for errors)')
     parser.add_argument('--render_policy_test', action='store_true', help='Flag to render 3 episodes of policy test')
+    parser.add_argument('--save_video', action='store_true', help='Flag to save final 2 test episode and final ~3 train episodes')
     parser.add_argument('--terminate_once_solved', action='store_true', help='Experiment will terminate if agent test mean ep return >= env.spec.reward_threshold')
     parser.add_argument('--seed_offset', type=int, default=0, help='We seed with i_run + seed_offset, where i_run in {0..n_runs-1}')
 
@@ -90,22 +91,26 @@ def make_arg_changes(args):
                                       initial_p=args.epsilon_start,
                                       final_p=args.epsilon_stop)
     
-    envs_to_ids = { 'cartpole': {'id': 'gym_barm:CartPole_Cont-v0',
+    envs_to_ids = { 'cartpole': {'id': 'gym_barm:CartPoleContinual-v0',
                                 'id_test': 'CartPole-v0',
                                 'max_ep_steps': 200
                                 },
-                    'cartpole_rich': {'id': 'gym_barm:CartPole_EnrichedCont-v0',
-                                      'id_test': 'gym_barm:CartPole_Enriched-v0',
-                                      'max_ep_steps': 200
-                                     },
-                    'acrobot': {'id': 'gym_barm:AcrobotContinual-v1',
+                    'acrobot': {'id': 'Acrobot-v1', # standard Acrobot already has suitable reward function for casting as continuing task
                                 'id_test': 'Acrobot-v1',
                                 'max_ep_steps': 500
                                },
                     'mountain_car': {'id': 'gym_barm:MountainCarContinual-v0',
                                     'id_test': 'MountainCar-v0',
                                     'max_ep_steps': 200
-                                    }
+                                    },
+                    'cartpole_old': {'id': 'gym_barm:CartPole_Cont-v0',
+                                'id_test': 'CartPole-v0',
+                                'max_ep_steps': 200
+                                },
+                    'cartpole_old_rich': {'id': 'gym_barm:CartPole_EnrichedCont-v0',
+                                      'id_test': 'gym_barm:CartPole_Enriched-v0',
+                                      'max_ep_steps': 200
+                                     },
     }
     args.env_ID = envs_to_ids[args.env]['id']
     args.env_ID_test = envs_to_ids[args.env]['id_test']
