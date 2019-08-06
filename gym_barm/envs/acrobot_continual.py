@@ -19,7 +19,7 @@ class AcrobotContinualEnv(core.Env):
     """
     ***
     NB Modified the env to be continual task (never gives done=True,
-    set max_episode_steps=float('inf'))
+    resets itself when `terminal=True`, set max_episode_steps=float('inf'))
     ***
     Acrobot is a 2-link pendulum with only the second joint actuated.
     Initially, both links point downwards. The goal is to swing the
