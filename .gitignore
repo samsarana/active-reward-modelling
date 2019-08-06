@@ -2,4 +2,4 @@ logs/
 logs_old/
 __pycache__/
 .vscode
-test.py
+junk.py
