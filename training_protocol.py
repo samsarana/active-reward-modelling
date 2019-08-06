@@ -47,9 +47,9 @@ def training_protocol(env, args, writers, returns_summary, i_run):
             q_net, q_target, _, optimizer_agent = init_agent(args) # keep replay buffer experience -- OK as long as we use the new rewards
         q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
                                                                  reward_model, prefs_buffer, reward_stats, args, writers,
-                                                                 i_train_round, save_video=True)
+                                                                 i_train_round)
         # Stage 1.1b: Evalulate RL agent performance
-        test_returns = test_policy(q_net, reward_model, reward_stats, args, save_video=True)
+        test_returns = test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round)
         mean_ret_true = log_tested_policy(test_returns, writers, returns_summary, args, i_run, i_train_round)
         
         # Possibly end training if mean_ret_true is high enough
@@ -105,6 +105,8 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
                     'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
     # Do RL!
     state = env.reset()
+    is_saving_video = False
+    done_saving_video = False
     for step in range(args.n_agent_total_steps):
         # agent interact with env
         epsilon = args.exploration.value(step)
@@ -120,13 +122,17 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
         # prepare for next step
         state = next_state
         if done:
-            if args.save_video and (args.n_agent_train_steps - step < 3*env.spec.max_episode_steps):
-                # save the final 5ish train episodes (see https://github.com/openai/gym/wiki/FAQ#how-do-i-export-the-run-to-a-video-file)
-                env = wrappers.Monitor(env, './logs/videos/train/' + str(time()) + '/')
-                save_video = False # don't call the env wrapper again
+            if args.save_video and not (is_saving_video or done_saving_video) and (args.n_agent_train_steps - step < 4*env.spec.max_episode_steps):
+                # save the final 4ish train episodes (see https://github.com/openai/gym/wiki/FAQ#how-do-i-export-the-run-to-a-video-file)
+                env = wrappers.Monitor(env, args.logdir + '/videos/train/' + str(time()) + '/')
+                is_saving_video = True # don't call the env wrapper again
+            if is_saving_video and step >= args.n_agent_train_steps:
+                env = gym.make(args.env_ID) # unwrap Monitor wrapper during non-training steps
+                env.seed(args.random_seed)
+                done_saving_video = True
             state = env.reset()
             if step < args.n_agent_train_steps:
-                dummy_returns = log_agent_episode(dummy_returns, writers, step, i_train_round, args)
+                dummy_returns = log_agent_episode(dummy_returns, writers, step, i_train_round, args, is_test=False)
 
         # q_net gradient step
         if step >= args.agent_learning_starts and step % args.agent_gdt_step_period == 0 and \
@@ -138,9 +144,9 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
             optimizer_agent.zero_grad()
             loss_agent.backward()
             optimizer_agent.step()
-            writer1.add_scalar('8.agent_loss/round_{}'.format(i_train_round), loss_agent, step)
+            writer1.add_scalar('7.agent_loss/round_{}'.format(i_train_round), loss_agent, step)
             # scheduler.step() # Ibarz doesn't mention lr annealing...
-            writer1.add_scalar('9.agent_epsilon/round_{}'.format(i_train_round), epsilon, step)
+            writer1.add_scalar('8.agent_epsilon/round_{}'.format(i_train_round), epsilon, step)
             # if q_net.epsilon > q_net.epsilon_stop:
             #     q_net.epsilon *= q_net.epsilon_decay
 
@@ -150,14 +156,16 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, pr
                 target_param.data.copy_(q_net.tau*local_param.data + (1.0-q_net.tau)*target_param.data)
             # q_target.load_state_dict(q_net.state_dict()) # old hard update code            
 
-    # log mean recent return this training round
-    # mean_dummy_true_returns = np.sum(np.array(dummy_returns['all']['true'][-3:])) / 3. # 3 dummy eps is the final 3*200/2000 == 3/10 eps in the round
-    mean_dummy_true_returns = np.sum(np.array(dummy_returns['all']['true'])) / len(dummy_returns['all']['true'])
-    writer1.add_scalar('2.mean_ep_returns_per_training_round', mean_dummy_true_returns, i_train_round)
+    # log mean return this training round
+    mean_true_returns = np.sum(np.array(dummy_returns['all']['true'])) / len(dummy_returns['all']['true'])
+    mean_true_returns_norm = np.sum(np.array(dummy_returns['all']['true_norm'])) / len(dummy_returns['all']['true_norm'])
+    writer1.add_scalar('3a.train_mean_ep_return_per_round', mean_true_returns, i_train_round)
+    writer1.add_scalar('3b.train_mean_ep_return_per_round_normalised', mean_true_returns_norm, i_train_round)
     if not args.RL_baseline:
-        # mean_dummy_pred_returns = np.sum(np.array(dummy_returns['all']['pred'][-3:])) / 3.
-        mean_dummy_pred_returns = np.sum(np.array(dummy_returns['all']['pred'])) / len(dummy_returns['all']['pred'])
-        writer2.add_scalar('2.mean_ep_returns_per_training_round', mean_dummy_pred_returns, i_train_round)
+        mean_pred_returns = np.sum(np.array(dummy_returns['all']['pred'])) / len(dummy_returns['all']['pred'])
+        mean_pred_returns_norm = np.sum(np.array(dummy_returns['all']['pred_norm'])) / len(dummy_returns['all']['pred_norm'])
+        writer2.add_scalar('3a.train_mean_ep_return_per_round', mean_pred_returns, i_train_round)
+        writer2.add_scalar('3b.train_mean_ep_return_per_round_normalised', mean_pred_returns_norm, i_train_round)
     
     return q_net, q_target, replay_buffer, agent_experience
 
@@ -211,12 +219,12 @@ def do_random_experiment(env, args, returns_summary, writers, i_run):
 
             if done:
                 state = env.reset()
-                writer1.add_scalar('3a.dummy_ep_return_against_step/round_{}'.format(i_train_round), dummy_returns['ep'], step)
+                writer1.add_scalar('4a.train_ep_return_per_step/round_{}'.format(i_train_round), dummy_returns['ep'], step)
                 dummy_returns['all'].append(dummy_returns['ep'])
                 dummy_returns['ep'] = 0
 
         # log mean recent return this training round
         # mean_dummy_true_returns = np.sum(np.array(dummy_returns['all'][-3:])) / 3. # 3 dummy eps is the final 3*200/2000 == 3/10 eps in the round
         mean_dummy_true_returns = np.sum(np.array(dummy_returns['all'])) / len(dummy_returns['all'])
-        writer1.add_scalar('2.mean_ep_returns_per_training_round', mean_dummy_true_returns, i_train_round)
+        writer1.add_scalar('4a.train_mean_ep_return_per_round', mean_dummy_true_returns, i_train_round)
         test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_round)
