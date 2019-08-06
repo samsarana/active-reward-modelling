@@ -16,9 +16,13 @@ python main.py --active_method=BALD --uncert_method=ensemble --size_rm_ensemble=
 ```
 to use BALD acquisition function.
 
-If running on a VM, run these commands to setup everything from scratch:
-bash ./barm/setup1.sh
+If running on a VM, clone the repo into the home directory and run these commands to setup everything from scratch:
+```
+cd ~/barm
+bash ./setup1.sh
 source ~/.bashrc
-bash ./barm/setup2.sh
+bash ./setup2.sh
 conda activate gym
-bash ./barm/setup3.sh
+bash ./setup3.sh
+```
+Also run ```bash ./setup4.sh``` if you want to be able to use the ```--save_video``` flag to save .mp4 files of agent behaviour.
