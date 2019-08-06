@@ -131,17 +131,29 @@ class AcrobotContinualEnv(core.Env):
         ns[3] = bound(ns[3], -self.MAX_VEL_2, self.MAX_VEL_2)
         self.state = ns
         terminal = self._terminal() # win! e.g. straight arm, theta_1 = 2pi/3 rad
-        reward = -1. if not terminal else 0. # should be fine to use as reward for continuing version, too...
-        # unlike CartPole, I no reason to reset env if terminal... terminal is good, here
+        reward = -1. if not terminal else 0. # NO MODIFCATION
+        if terminal:                         # ADDITION
+            self.reset() # sets self.state   # ADDITION
         # I've registered max_episode_steps=float('inf'), so we won't reset due to
-        # max_episode_steps reached, either
-        return (self._get_ob(), reward, False, {}) # *** THIS IS THE ONLY LINE I CHANGED to make continual
+        # max_episode_steps reached, only when arm angle is sufficiently high
+        return (self._get_ob(), reward, False, {}) # MODIFCATION
 
     def _get_ob(self):
         s = self.state
         return np.array([cos(s[0]), np.sin(s[0]), cos(s[1]), sin(s[1]), s[2], s[3]])
 
     def _terminal(self):
+        """theta_1 := s[0], angular displacement of arm1 from vertically downward
+           theta_2 := s[1], angular displacement of arm2 relative to arm1
+           For some intuition for what the terminal condition
+           represents, consider that if
+           theta_1 = 2pi/3 and theta_2 = 0
+           we have a straight arm that is pi/3 rad away from vertically upwards
+           and -cos(theta_1) -cos(theta_1 + theta_2)
+             = -cos(2pi/3)   -cos(2pi/3)
+             = 0.5 + 0.5 = 1
+           i.e. this is one threshold terminal condition.
+        """
         s = self.state
         return bool(-np.cos(s[0]) - np.cos(s[1] + s[0]) > 1.)
 
