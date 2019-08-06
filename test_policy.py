@@ -4,9 +4,9 @@ import numpy as np
 import torch, gym
 from gym import wrappers
 from time import time, sleep
-from rl_logging import log_agent_step
+from rl_logging import *
 
-def test_policy(q_net, reward_model, reward_stats, args, num_episodes=100):
+def test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round, num_episodes=100):
     """Using the non-continuous version of the environment and q_net
        with argmax policy (deterministic), run the polcy for
        `num_episodes` and log mean episode return.
@@ -15,7 +15,7 @@ def test_policy(q_net, reward_model, reward_stats, args, num_episodes=100):
     # set up testing
     env = gym.make(args.env_ID_test)
     env.seed(args.random_seed)
-    state, n = env.reset(), 0
+    state, n, step = env.reset(), 0, 0
     returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
                'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
     rt_mean, rt_var = reward_stats
@@ -29,21 +29,21 @@ def test_policy(q_net, reward_model, reward_stats, args, num_episodes=100):
         next_state, r_true, done, _ = env.step(action)
         # save true reward...
         sa_pair = torch.tensor(np.append(state, action)).float()
-        returns = log_agent_step(sa_pair, r_true, returns, reward_stats, reward_model, args)        
+        returns = log_agent_step(sa_pair, r_true, returns, reward_stats, reward_model, args)   
         # prepare for next step
         state = next_state
         if done:
-            for key, value in returns['ep'].items():
-                returns['all'][key].append(value)
-                returns['ep'][key] = 0
+            returns = log_agent_episode(returns, writers, step, i_train_round, args, is_test=True)
             n += 1
             if args.render_policy_test and n == 3:
                 env.close()
-            if n == num_episodes -1 and args.save_video:
-                # save the final test episode (see https://github.com/openai/gym/wiki/FAQ#how-do-i-export-the-run-to-a-video-file)
-                env = wrappers.Monitor(env, './logs/videos/test/' + str(time()) + '/')
+            if n == num_episodes - 3 and args.save_video:
+                # save the final 3 test episodes (see https://github.com/openai/gym/wiki/FAQ#how-do-i-export-the-run-to-a-video-file)
+                env = wrappers.Monitor(env, args.logdir + '/videos/test/' + str(time()) + '/')
+            
             state = env.reset()
-    
+        step += 1
+
     assert len(returns['all']['true']) == num_episodes
     return returns['all']
 
@@ -56,15 +56,15 @@ def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_ro
     mean_ret_true_norm = np.sum(np.array(returns['true_norm'])) / num_test_episodes
     returns_summary[i_run][('1.true', i_train_round)] = mean_ret_true # dict format that is friendly to creating a multiindex pd.DataFrame downstream
     returns_summary[i_run][('3.true_norm', i_train_round)] = mean_ret_true_norm
-    writer1.add_scalar('1a.mean_ep_return_per_training_round', mean_ret_true, i_train_round)
-    writer1.add_scalar('1b.mean_ep_return_per_training_round_normalised', mean_ret_true_norm, i_train_round)
+    writer1.add_scalar('1a.test_mean_ep_return_per_round', mean_ret_true, i_train_round)
+    writer1.add_scalar('1b.test_mean_ep_return_per_round_normalised', mean_ret_true_norm, i_train_round)
     if not args.RL_baseline:
         mean_ret_pred = np.sum(np.array(returns['pred'])) / num_test_episodes
         mean_ret_pred_norm = np.sum(np.array(returns['pred_norm'])) / num_test_episodes
         returns_summary[i_run][('2.pred', i_train_round)] = mean_ret_pred
         returns_summary[i_run][('4.pred_norm', i_train_round)] = mean_ret_pred_norm
-        writer2.add_scalar('1a.mean_ep_return_per_training_round', mean_ret_pred, i_train_round)
-        writer2.add_scalar('1b.mean_ep_return_per_training_round_normalised', mean_ret_pred_norm, i_train_round)
+        writer2.add_scalar('1a.test_mean_ep_return_per_round', mean_ret_pred, i_train_round)
+        writer2.add_scalar('1b.test_mean_ep_return_per_round_normalised', mean_ret_pred_norm, i_train_round)
     return mean_ret_true
 
 def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_round, num_episodes=100):
@@ -108,4 +108,4 @@ def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_ro
     writer1, writer2 = writers
     mean_ret_true = np.sum(np.array(returns['all'])) / num_episodes
     returns_summary[i_run][('true', i_train_round)] = mean_ret_true
-    writer1.add_scalar('1a.mean_ep_return_per_training_round', mean_ret_true, i_train_round)
+    writer1.add_scalar('1a.test_mean_ep_return_per_round', mean_ret_true, i_train_round)
