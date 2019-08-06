@@ -58,7 +58,7 @@ class EnrichedContinuousCartPoleEnv(gym.Env):
         'video.frames_per_second' : 50
     }
 
-    def __init__(self, ep_end_penalty=-10.0):
+    def __init__(self, ep_end_penalty=-29.0):
         self.gravity = 9.8
         self.masscart = 1.0
         self.masspole = 0.1
@@ -125,9 +125,8 @@ class EnrichedContinuousCartPoleEnv(gym.Env):
             reward = self.enriched_reward() # 1.0
         else: # done. Pole just fell! Give penalty and reset environment.
             reward = self.ep_end_penalty
-            self.reset()
 
-        return np.array(self.state), reward, False, {}
+        return np.array(self.state), reward, done, {}
 
     def enriched_reward(self):
         """x_rew \in [-1,1], linear interpolation (tinyurl.com/y3gsbwcj)

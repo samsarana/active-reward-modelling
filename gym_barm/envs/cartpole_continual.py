@@ -10,7 +10,7 @@ from gym import spaces, logger
 from gym.utils import seeding
 import numpy as np
 
-class Continuous_CartPoleEnv(gym.Env):
+class CartPoleContinualEnv(gym.Env):
     """
     Description:
         A pole is attached by an un-actuated joint to a cart, which moves along a frictionless track. The pendulum starts upright, and the goal is to prevent it from falling over by increasing and reducing the cart's velocity.
@@ -41,15 +41,11 @@ class Continuous_CartPoleEnv(gym.Env):
         All observations are assigned a uniform random value in [-0.05..0.05]
 
     Episode Termination:
-        ORIGINAL:
         Pole Angle is more than 12 degrees
         Cart Position is more than 2.4 (center of the cart reaches the edge of the display)
         Episode length is greater than 200
         Solved Requirements
         Considered solved when the average reward is greater than or equal to 195.0 over 100 consecutive trials.
-        MODIFIED:
-        In this Continuous_CartPoleEnv, episodes do not end, but rather there is a penalty (-self.ep_end_penalty reward) for end of episode.
-        This is a change made by Christiano et al. (2017) to avoid "encoding information about the task even when the reward function is not observable" (p.14)
     """
     
     metadata = {
@@ -57,7 +53,7 @@ class Continuous_CartPoleEnv(gym.Env):
         'video.frames_per_second' : 50
     }
 
-    def __init__(self, ep_end_penalty=-29.0):
+    def __init__(self):
         self.gravity = 9.8
         self.masscart = 1.0
         self.masspole = 0.1
@@ -67,7 +63,6 @@ class Continuous_CartPoleEnv(gym.Env):
         self.force_mag = 10.0
         self.tau = 0.02  # seconds between state updates
         self.kinematics_integrator = 'euler'
-        self.ep_end_penalty = ep_end_penalty
 
         # Angle at which to fail the episode
         self.theta_threshold_radians = 12 * 2 * math.pi / 360
@@ -120,11 +115,23 @@ class Continuous_CartPoleEnv(gym.Env):
                 or theta > self.theta_threshold_radians
         done = bool(done)
 
-        if not done: # done is now no longer a flag to end the episode, but to give negative reward
-            reward = 1.0
-        else: # done. Pole just fell! Give penalty and reset environment.
-            reward = self.ep_end_penalty
-            self.reset()
+        if not done:
+            # BEGIN MODIFICATIONS (see p.56 S&B 2nd Ed.)
+            # reward = 1.0
+            reward = 0.
+            # END MODIFICATIONS
+        elif self.steps_beyond_done is None:
+            # Pole just fell!
+            self.steps_beyond_done = 0
+            # BEGIN MODIFICATIONS (see p.56 S&B 2nd Ed.)
+            # reward = 1.0
+            reward = -1.
+            # END MODIFICATIONS
+        else:
+            if self.steps_beyond_done == 0:
+                logger.warn("You are calling 'step()' even though this environment has already returned done = True. You should always call 'reset()' once you receive 'done = True' -- any further steps are undefined behavior.")
+            self.steps_beyond_done += 1
+            reward = 0.0
 
         return np.array(self.state), reward, done, {}
 

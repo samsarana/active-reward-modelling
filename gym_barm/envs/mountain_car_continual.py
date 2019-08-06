@@ -61,13 +61,11 @@ class MountainCarContinualEnv(gym.Env):
         if (position==self.min_position and velocity<0): velocity = 0
 
         done = bool(position >= self.goal_position and velocity >= self.goal_velocity)
-        reward = -1.0 if not done else 0. # MODIFICATION. could also give +1 for done, but either should be fine
-        
-        if done:                             # ADDITION
-            self.reset() # sets self.state   # ADDITION
-
+        # BEGIN MODIFICATION
+        reward = -1.0 if not done else 0. # could also give +1 for done, but either should be fine
+        # END MODIFICATION
         self.state = (position, velocity)
-        return np.array(self.state), reward, False, {} # MODIFICATION
+        return np.array(self.state), reward, done, {}
 
     def reset(self):
         self.state = np.array([self.np_random.uniform(low=-0.6, high=-0.4), 0])
