@@ -18,8 +18,8 @@ def log_acquisition(idx, info_per_clip_pair, clip_pairs, rews, mus, rand_clip_pa
         assert len(info_per_clip_pair.shape) == 1
         total_info = info_per_clip_pair.sum()
         selected_info = info_per_clip_pair[idx].sum()
-        writer1.add_scalar('5.info_gain_per_label', selected_info, i_label)
-        writer2.add_scalar('5.info_gain_per_label', total_info, i_label)
+        writer1.add_scalar('5b.info_gain_per_label', selected_info, i_label)
+        writer2.add_scalar('5b.info_gain_per_label', total_info, i_label)
         # num_pairs = len(info_per_clip_pair)
         # colours = ['tab:orange' if i in idx else 'tab:blue' for i in range(num_pairs)]
         # info_bars = plt.figure()
@@ -38,19 +38,22 @@ def log_acquisition(idx, info_per_clip_pair, clip_pairs, rews, mus, rand_clip_pa
                           [rand_mu_counts.get(0, 0), rand_mu_counts.get(0.5, 0), rand_mu_counts.get(1, 0)]
                          ])
     # log no. labels of each type acquired
-    writer1.add_scalar('5b.0_labels', mu_counts.get(0, 0), i_label)
-    writer1.add_scalar('5b.0.5_labels', mu_counts.get(0.5, 0), i_label)
-    writer1.add_scalar('5b.1_labels', mu_counts.get(1, 0), i_label)
+    writer1.add_scalar('5c.0_labels', mu_counts.get(0, 0), i_label)
+    writer1.add_scalar('5c.0.5_labels', mu_counts.get(0.5, 0), i_label)
+    writer1.add_scalar('5c.1_labels', mu_counts.get(1, 0), i_label)
+    writer2.add_scalar('5c.0_labels', rand_mu_counts.get(0, 0), i_label)
+    writer2.add_scalar('5c.0.5_labels', rand_mu_counts.get(0.5, 0), i_label)
+    writer2.add_scalar('5c.1_labels', rand_mu_counts.get(1, 0), i_label)
     return label_counts
 
 def log_total_mu_counts(mu_counts, writers, args):
     writer1, writer2 = writers
     assert mu_counts.shape == (2,3)
     acquired, candidate = mu_counts
-    writer1.add_scalar('4.total_mu_counts', acquired[0], 0)
-    writer1.add_scalar('4.total_mu_counts', acquired[1], 1)
-    writer1.add_scalar('4.total_mu_counts', acquired[2], 2)
+    writer1.add_scalar('5a.total_mu_counts', acquired[0], 0)
+    writer1.add_scalar('5a.total_mu_counts', acquired[1], 1)
+    writer1.add_scalar('5a.total_mu_counts', acquired[2], 2)
     
-    writer2.add_scalar('4.total_mu_counts', candidate[0], 0)
-    writer2.add_scalar('4.total_mu_counts', candidate[1], 1) # global step cannot be float so make 0.5 -> 1 and 1 -> 2
-    writer2.add_scalar('4.total_mu_counts', candidate[2], 2)
+    writer2.add_scalar('5a.total_mu_counts', candidate[0], 0)
+    writer2.add_scalar('5a.total_mu_counts', candidate[1], 1) # global step cannot be float so make 0.5 -> 1 and 1 -> 2
+    writer2.add_scalar('5a.total_mu_counts', candidate[2], 2)
