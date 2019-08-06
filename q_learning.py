@@ -82,7 +82,7 @@ class ReplayBuffer():
 
 
 def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
-                    normalise_rewards=False, true_reward_stats=None):
+                    normalise_rewards=True, true_reward_stats=None):
     """Defines the Q-Learning loss function.
        Help on interpreting variables:
        Each dimension of the batch pertains to one transition, i.e. one 5-tuple

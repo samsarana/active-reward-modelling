@@ -28,7 +28,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
     agent_experience = do_pretraining_rollouts(q_net, env, args)
     # Stage 0.2: Sample without replacement from those rollouts and label them (synthetically)
     mu_counts_total = np.zeros((2,3))
-    reward_model, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
+    reward_model, reward_stats, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
             agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round=-1)
 
     # evaluate reward model correlation after pretraining (currently not interested)
@@ -38,8 +38,6 @@ def training_protocol(env, args, writers, returns_summary, i_run):
     # BEGIN TRAINING
     for i_train_round in range(args.n_rounds):
         logging.info('[Start Round {}]'.format(i_train_round))
-        # Compute mean and variance of true and predicted reward (for normalising rewards sent to agent)
-        reward_stats, reward_model = compute_reward_stats(reward_model, prefs_buffer)
         # TODO when prefs_buffer is small, reward_stats may be weird and hinder performance..?
         # (in Ibarz, it always has at least 50 or 100 examples...)
         # Stage 1.1a: Reinforcement learning with (normalised) rewards from current reward model
@@ -58,7 +56,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
                 raise SystemExit("Environment solved, moving onto next run.")
 
         # Stage 1.2 - 1.3: acquire labels from recent rollouts and train reward model on current dataset
-        reward_model, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
+        reward_model, reward_stats, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
             agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round)
         
         # Evaluate reward model correlation (currently not interested)
@@ -81,8 +79,14 @@ def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, op
         prefs_buffer, rand_clip_data, mu_counts_total = make_acquisitions(rand_clip_data, reward_model, prefs_buffer, args, writers, mu_counts_total, i_label)
         if args.reinit_rm:
             reward_model, optimizer_rm = init_rm(args)
+        # Compute mean and variance of predicted reward before training (for normalising during reward model training)
+        _, reward_model = compute_reward_stats(reward_model, prefs_buffer) # TODO slightly uncertain about whether we need to update mean/var even more often (i.e. inside rm
+        # rm training loop, in case we are reinitialising rm before training)
+        # Train reward model!
         reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_label)
-    return reward_model, prefs_buffer, mu_counts_total
+    # Compute mean and variance of true and predicted reward after training (for normalising rewards sent to agent)
+    reward_stats, reward_model = compute_reward_stats(reward_model, prefs_buffer)
+    return reward_model, reward_stats, prefs_buffer, mu_counts_total
 
 
 def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, reward_model, prefs_buffer, reward_stats, args, writers, i_train_round):
