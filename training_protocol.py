@@ -80,10 +80,11 @@ def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, op
         if args.reinit_rm:
             reward_model, optimizer_rm = init_rm(args)
         # Compute mean and variance of predicted reward before training (for normalising during reward model training)
-        # _, reward_model = compute_reward_stats(reward_model, prefs_buffer) # TODO slightly uncertain about whether we need to update mean/var even more often (i.e. inside rm
+        _, reward_model = compute_reward_stats(reward_model, prefs_buffer) # TODO slightly uncertain about whether we need to update mean/var even more often (i.e. inside rm
         # rm training loop, in case we are reinitialising rm before training)
         # Train reward model!
-        reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_label)
+        if prefs_buffer.current_length >= 10: # prevent gradient updates if too few training examples
+            reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_label)
     # Compute mean and variance of true and predicted reward after training (for normalising rewards sent to agent)
     reward_stats, reward_model = compute_reward_stats(reward_model, prefs_buffer)
     return reward_model, reward_stats, prefs_buffer, mu_counts_total
