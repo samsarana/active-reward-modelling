@@ -15,7 +15,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     # experiment settings
     parser.add_argument('--info', type=str, default='', help='Tensorboard log is saved in ./logs/i_run/random_seed/[true|pred]/')
-    parser.add_argument('--env', type=str, default='cartpole', help='Choice of: cartpole, cartpole_rich, acrobot, mountain_car')
+    parser.add_argument('--env', type=str, default='cartpole', help='Choice of: acrobot, mountain_car, cartpole, cartpole_old, cartpole_old_rich')
     parser.add_argument('--n_runs', type=int, default=40, help='number of runs to repeat the experiment')
     parser.add_argument('--n_rounds', type=int, default=40, help='number of rounds to repeat main training loop')
     parser.add_argument('--RL_baseline', action='store_true', help='Do RL baseline instead of reward learning?')
@@ -93,28 +93,22 @@ def make_arg_changes(args):
     
     envs_to_ids = { 'cartpole': {'id': 'gym_barm:CartPoleContinual-v0',
                                 'id_test': 'CartPole-v0',
-                                'max_ep_steps': 200
                                 },
                     'acrobot': {'id': 'Acrobot-v1', # standard Acrobot already has suitable reward function for casting as continuing task
                                 'id_test': 'Acrobot-v1',
-                                'max_ep_steps': 500
                                },
                     'mountain_car': {'id': 'gym_barm:MountainCarContinual-v0',
                                     'id_test': 'MountainCar-v0',
-                                    'max_ep_steps': 200
                                     },
                     'cartpole_old': {'id': 'gym_barm:CartPole_Cont-v0',
                                 'id_test': 'CartPole-v0',
-                                'max_ep_steps': 200
                                 },
                     'cartpole_old_rich': {'id': 'gym_barm:CartPole_EnrichedCont-v0',
                                       'id_test': 'gym_barm:CartPole_Enriched-v0',
-                                      'max_ep_steps': 200
                                      },
     }
     args.env_ID = envs_to_ids[args.env]['id']
     args.env_ID_test = envs_to_ids[args.env]['id_test']
-    args.dummy_ep_length = envs_to_ids[args.env]['max_ep_steps']
 
     if args.test:
         args.n_runs = 1
@@ -140,9 +134,9 @@ def run_experiment(args, i_run, returns_summary):
     random.seed(args.random_seed)
 
     # TensorBoard logging
-    logdir = './logs/{}/{}'.format(args.info, args.random_seed)
-    writer1 = SummaryWriter(log_dir=logdir+'/true')
-    writer2 = SummaryWriter(log_dir=logdir+'/pred')
+    args.logdir = './logs/{}/{}'.format(args.info, args.random_seed)
+    writer1 = SummaryWriter(log_dir=args.logdir+'/true')
+    writer2 = SummaryWriter(log_dir=args.logdir+'/pred')
     writers = [writer1, writer2]
 
     # make environment
