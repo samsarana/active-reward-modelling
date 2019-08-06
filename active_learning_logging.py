@@ -29,9 +29,6 @@ def log_acquisition(idx, info_per_clip_pair, clip_pairs, rews, mus, rand_clip_pa
         # plt.bar(np.arange(num_pairs), info_per_clip_pair, color=colours)
         # writer1.add_figure('3.info_gain_per_clip_pair', info_bars, i_label)
 
-    # TODO dump pairs (candidate and selected) into csv s.t. we can view what clips are chosen
-    # as well as their labels and rewards
-
     mu_counts = dict(Counter(mus))
     rand_mu_counts = dict(Counter(rand_mus))
     label_counts = np.array([[mu_counts.get(0, 0), mu_counts.get(0.5, 0), mu_counts.get(1, 0)],
