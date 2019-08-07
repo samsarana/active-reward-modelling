@@ -3,6 +3,7 @@
 import math, logging
 from collections import Counter
 from time import time
+import pandas as pd
 from gym import wrappers
 from q_learning import *
 from reward_learning import *
@@ -65,7 +66,8 @@ def training_protocol(env, args, writers, returns_summary, i_run):
         reward_model, reward_stats, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
             agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round)
         
-        # Evaluate reward model correlation (currently not interested)
+        pd.DataFrame(returns_summary).to_csv('./logs/{}.csv'.format(args.info), index_label=['ep return type', 'round no.', 'test no.'])
+            # Evaluate reward model correlation (currently not interested)
         # if not args.RL_baseline:
         #     test_correlation(reward_model, env, q_net, args, writers[0], i_train_round)
 
