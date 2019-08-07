@@ -53,7 +53,7 @@ def log_RL_loop(returns, args, i_train_round, sub_round, writers):
             writer2.add_scalar('3.train_mean_ep_return_per_round', mean_pred_returns, i_train_round)
 
 
-def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_round, sub_round):
+def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_round, sub_round, env):
     """Write test returns to Tensborboard and DataFrame
     """
     writer1, writer2 = writers
@@ -72,7 +72,7 @@ def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_ro
         returns_summary[i_run][('4.pred_norm', i_train_round, sub_round)] = mean_ret_pred_norm
         writer2.add_scalar('1a.test_mean_ep_return_per_sub_round', mean_ret_pred, i_train_sub_round)
         writer2.add_scalar('1b.test_mean_ep_return_per_sub_round_normalised', mean_ret_pred_norm, i_train_sub_round)
-    if sub_round == args.agent_test_frequency - 1: # final sub_round of the round
+    if sub_round == args.agent_test_frequency - 1 or (not args.continue_once_solved and mean_ret_true >= env.spec.reward_threshold): # final sub_round of the round
         writer1.add_scalar('1.test_mean_ep_return_per_round', mean_ret_true, i_train_round)
         if not args.RL_baseline:
             writer2.add_scalar('1.test_mean_ep_return_per_round', mean_ret_pred, i_train_round)
