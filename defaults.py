@@ -29,7 +29,6 @@ def cartpole_defaults(args):
 
 
 def acrobot_sam_defaults(args):
-    args.env = 'acrobot'
     args.lr_agent = 1e-3
     args.replay_buffer_size = 30000
     args.target_update_period = 1
