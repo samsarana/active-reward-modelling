@@ -10,11 +10,13 @@ from training_protocol import *
 from q_learning import *
 from reward_learning import *
 from active_learning import *
+from defaults import *
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
     # experiment settings
     parser.add_argument('--info', type=str, default='', help='Tensorboard log is saved in ./logs/i_run/random_seed/[true|pred]/')
+    parser.add_argument('--default_settings', type=str, default=None, help='Flag to override args with those in default.py. Choice of: acrobot, cartpole')
     parser.add_argument('--env', type=str, default='cartpole', help='Choice of: acrobot, mountain_car, cartpole, cartpole_old, cartpole_old_rich')
     parser.add_argument('--n_runs', type=int, default=40, help='number of runs to repeat the experiment')
     parser.add_argument('--n_rounds', type=int, default=40, help='number of rounds to repeat main training loop')
@@ -23,7 +25,7 @@ def parse_arguments():
     parser.add_argument('--test', action='store_true', help='Flag to make training procedure very short (to check for errors)')
     parser.add_argument('--render_policy_test', action='store_true', help='Flag to render 3 episodes of policy test')
     parser.add_argument('--save_video', action='store_true', help='Flag to save final 2 test episode and final ~3 train episodes')
-    parser.add_argument('--terminate_once_solved', action='store_true', help='Experiment will terminate if agent test mean ep return >= env.spec.reward_threshold')
+    parser.add_argument('--continue_once_solved', action='store_true', help='Experiment will continue even when agent test mean ep return >= env.spec.reward_threshold')
     parser.add_argument('--seed_offset', type=int, default=0, help='We seed with i_run + seed_offset, where i_run in {0..n_runs-1}')
 
     # agent hyperparams
@@ -45,9 +47,9 @@ def parse_arguments():
     # parser.add_argument('--n_labels_pretraining', type=int, default=-1, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining. If -1 (default), it will be set to n_labels_per_round') # Ibarz: 25k. Removed support for diff no. labels in pretraining
     # parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[5]*20, help='How many labels to acquire per round? (in main training loop). len should be same as n_rounds')
     parser.add_argument('--batch_size_acq', type=int, default=1, help='In acquiring `n_labels_per_round`, what batch size are these acquired in? Reward model is trained after every acquisition batch. `batch_size_acq` == `n_labels_per_round`, is used in Christiano/Ibarz')
-    parser.add_argument('--n_agent_train_steps', type=int, default=3000, help='No. of steps that agent takes per round in environment, while training every agent_gdt_step_period steps') # Ibarz: 100k
-    parser.add_argument('--agent_learning_starts', type=int, default=0, help='After how many steps does the agent start making learning updates?')
-    parser.add_argument('--n_agent_total_steps', type=int, default=30000, help='Total no. of steps that agent takes in environment per round (if this is > n_agent_train_steps then agent collects extra experience w.o. training)')
+    parser.add_argument('--n_agent_steps', type=int, default=3000, help='No. of steps that agent takes per round in environment, while training every agent_gdt_step_period steps') # Ibarz: 100k
+    parser.add_argument('--agent_test_frequency', type=int, default=1, help='Over the course of its n_agent_[train|total]_steps, how many times is agent performance tested? (and the run terminated if `terminate_once_solved == True`')
+    parser.add_argument('--agent_learning_starts', type=int, default=0, help='After how many steps does the agent start making learning updates? This replaced the functionality of n_agent_total_steps.')
     parser.add_argument('--reinit_agent', action='store_true', help='Flag to reinitialise the agent before every training round')
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
 
@@ -83,12 +85,21 @@ def make_arg_changes(args):
     """Modifies or adds some experiment
        settings to args, and returns them.
     """
-    # if args.n_labels_pretraining == -1:
-    #     args.n_labels_pretraining = args.n_labels_per_round
-    assert args.n_labels_per_round % args.batch_size_acq == 0, "Acquisition batch size is {}, but it should divide n_labels_per_round, which is {}".format(args.batch_size_acq, args.n_labels_per_round)
+    if args.default_settings:
+        default_args_map = {
+            'cartpole': cartpole_defaults,
+            'acrobot_sam': acrobot_sam_defaults,
+            'openai': openai_defaults,
+            'openai_atari': openai_atari_defaults
+        }
+        args = default_args_map[args.default_settings](args)
+
+    assert args.n_labels_per_round % args.batch_size_acq == 0,\
+        "Acquisition batch size is {}, but it should divide n_labels_per_round, which is {}".format(
+            args.batch_size_acq, args.n_labels_per_round)
     args.n_acq_batches_per_round = args.n_labels_per_round // args.batch_size_acq
 
-    args.exploration = LinearSchedule(schedule_timesteps=int(args.exploration_fraction * args.n_agent_train_steps),
+    args.exploration = LinearSchedule(schedule_timesteps=int(args.exploration_fraction * args.n_agent_steps),
                                       initial_p=args.epsilon_start,
                                       final_p=args.epsilon_stop)
     
@@ -110,12 +121,20 @@ def make_arg_changes(args):
     }
     args.env_ID = envs_to_ids[args.env]['id']
     args.env_ID_test = envs_to_ids[args.env]['id_test']
+    
+    # check some things about RL training
+    assert args.n_agent_steps % args.clip_length == 0,\
+        "clip_length ({}) should be a factor of n_agent_steps ({})".format(
+        args.clip_length, args.n_agent_steps)
+    assert args.n_agent_steps % args.agent_test_frequency == 0,\
+        "agent_test_frequency ({}} should be a factor of n_agent_steps ({})".format(
+            args.agent_test_frequency, args.n_agent_steps)
+    args.n_agent_steps_before_test = args.n_agent_steps // args.agent_test_frequency
 
     if args.test:
         args.n_runs = 1
         args.n_rounds = 1
-        args.n_agent_train_steps = 10
-        args.n_agent_total_steps = 1200
+        args.n_agent_steps = 1200
         args.n_epochs_pretrain_rm = 10
         args.n_epochs_train_rm = 10
         args.selection_factor = 2
@@ -186,11 +205,11 @@ def main():
             logging.info('RUN {}/{} BEGIN\n'.format(i_run, args.n_runs - 1))
             run_experiment(args, i_run, returns_summary)
             logging.info('RUN {}/{} SUCCEEDED\n'.format(i_run, args.n_runs - 1))
-            pd.DataFrame(returns_summary).to_csv('./logs/{}.csv'.format(args.info), index_label=['ep return type', 'round no.'])
+            pd.DataFrame(returns_summary).to_csv('./logs/{}.csv'.format(args.info), index_label=['ep return type', 'round no.', 'test no.'])
         except SystemExit:
             logging.info('ENVIRONMENT SOLVED!')
             logging.info('RUN {}/{} SUCCEEDED\n'.format(i_run, args.n_runs - 1))
-            pd.DataFrame(returns_summary).to_csv('./logs/{}.csv'.format(args.info), index_label=['ep return type', 'round no.'])
+            pd.DataFrame(returns_summary).to_csv('./logs/{}.csv'.format(args.info), index_label=['ep return type', 'round no.', 'test no.'])
         except:
             logging.exception('RUN {}/{} FAILED with the following traceback:\n'.format(i_run, args.n_runs))
 
