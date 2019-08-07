@@ -106,8 +106,11 @@ def make_arg_changes(args):
     envs_to_ids = { 'cartpole': {'id': 'gym_barm:CartPoleContinual-v0',
                                 'id_test': 'CartPole-v0',
                                 },
-                    'acrobot': {'id': 'AcrobotHard-v1', # standard Acrobot already has suitable reward function for casting as continuing task
-                                'id_test': 'AcrobotHard-v1',
+                    'acrobot': {'id': 'Acrobot-v1', # standard Acrobot already has suitable reward function for casting as continuing task
+                                'id_test': 'Acrobot-v1',
+                               },
+                    'acrobot_hard': {'id': 'gym_barm:AcrobotHard-v1', # standard Acrobot already has suitable reward function for casting as continuing task
+                                'id_test': 'gym_barm:AcrobotHard-v1',
                                },
                     'mountain_car': {'id': 'gym_barm:MountainCarContinual-v0',
                                     'id_test': 'MountainCar-v0',
