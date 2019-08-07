@@ -17,7 +17,7 @@ register(
 register(
     id='AcrobotHard-v1',
     entry_point='gym_barm.envs:AcrobotEnv',
-    reward_threshold=-70.0,
+    reward_threshold=-90.0,
     max_episode_steps=500,
 )
 
