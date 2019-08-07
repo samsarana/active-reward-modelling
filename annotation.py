@@ -44,16 +44,12 @@ def make_acquisitions(rand_clip_data, reward_model, prefs_buffer, args, writers,
 class AgentExperience():
     """For collecting experience from rollouts in a way that is
        friendly to downstream processes.
-       add(sa_pair): 
-       In particular, AgentExperience() instances are tensors
-       with size of dim 1 that can be spe
     """
     def __init__(self, experience_shape, force_label_choice=False):
         self.num_clips, self.clip_length, self.obs_act_size = experience_shape
         self.force_label_choice = force_label_choice
         self.clips = np.zeros(shape=experience_shape) # default dtype=np.float64. OK for torching later?
         self.clip_rewards = np.zeros(shape=(self.num_clips, self.clip_length))
-        # self.clip_returns = np.zeros(shape=self.num_clips) # TODO remove as it's unused, apart from as a check
         self.i = 0 # maintain pointer to where to add next clip
 
     def add(self, oa_pair, reward):
