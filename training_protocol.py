@@ -48,13 +48,14 @@ def training_protocol(env, args, writers, returns_summary, i_run):
         num_clips = int(args.n_agent_steps // args.clip_length)
         agent_experience = AgentExperience((num_clips, args.clip_length, args.obs_act_shape), args.force_label_choice) # since episodes do not end we collect one long trajectory then sample clips from it
         for sub_round in range(args.agent_test_frequency):
+            logging.info("Begin train {}".format(sub_round))
             q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
                                                                      agent_experience, reward_model, prefs_buffer,
                                                                      reward_stats, args, writers, i_train_round, sub_round)
             # Stage 1.1b: Evalulate RL agent performance
             logging.info("Begin test {}".format(sub_round))
             test_returns = test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round, sub_round)
-            mean_ret_true = log_tested_policy(test_returns, writers, returns_summary, args, i_run, i_train_round, sub_round)
+            mean_ret_true = log_tested_policy(test_returns, writers, returns_summary, args, i_run, i_train_round, sub_round, env)
             # Possibly end training if mean_ret_true is above the threshold
             if not args.continue_once_solved:
                 if mean_ret_true >= env.spec.reward_threshold:
