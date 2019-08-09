@@ -173,6 +173,9 @@ def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
             rew = reward_model.forward_single(sa_pair, normalise=normalise_rewards)
         else:
             rew = reward_model(sa_pair, normalise=normalise_rewards)
+        rew = rew.squeeze()
+        # import ipdb
+        # ipdb.set_trace()
     else:
         if normalise_rewards: # RL w normalised rewards
             assert true_reward_stats is not None, "You told me to normalise rewards for RL but you haven't specified mean and variance of reward function w.r.t. examples in prefs_buffer!"
