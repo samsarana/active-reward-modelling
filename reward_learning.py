@@ -17,14 +17,20 @@ def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, 
     for epoch in range(epochs):
         with torch.autograd.detect_anomaly():
             clip_pair_batch, mu_batch = prefs_buffer.sample(args.batch_size_rm)
-            if args.no_normalise_rm_while_training:
-                r_hats_batch = reward_model(clip_pair_batch, normalise=False).squeeze(-1)
-            else:
+            if args.normalise_rm_while_training:
                 reward_model = compute_mean_var(reward_model, prefs_buffer) # TODO uncertain about the speed and correctness of recomputing mean/var every gradient update
                 r_hats_batch = reward_model(clip_pair_batch, normalise=True).squeeze(-1) # squeeze the oa_pair dimension that was passed through reward_model
+                loss_rm = compute_loss_rm(r_hats_batch, mu_batch)
+            else:
+                if isinstance(reward_model, RewardModelEnsemble):
+                    r_hats_batch_draw = reward_model.forward_all(clip_pair_batch, normalise=False).squeeze(-1)
+                    loss_rm = compute_loss_rm_ensemble(r_hats_batch_draw, mu_batch)
+                else:
+                    assert isinstance(reward_model, RewardModel)
+                    r_hats_batch = reward_model(clip_pair_batch, normalise=False).squeeze(-1)
+                    loss_rm = compute_loss_rm(r_hats_batch, mu_batch)
             # assert clip_pair_batch.shape == (args.batch_size_rm, 2, args.clip_length, args.obs_act_shape)
             # loss_rm = compute_loss_rm_wchecks(r_hats_batch, mu_batch, args, args.obs_shape, args.act_shape)
-            loss_rm = compute_loss_rm(r_hats_batch, mu_batch)
             optimizer_rm.zero_grad()
             loss_rm.backward()
             optimizer_rm.step()
@@ -181,10 +187,31 @@ def compute_loss_rm_wchecks(r_hats_batch, mu_batch, args, obs_shape, act_shape):
 def compute_loss_rm(r_hats_batch, mu_batch):
     """Clean, assert-free version of the above.
     """
+    # import ipdb
+    # ipdb.set_trace()
     exp_sum_r_hats_batch = r_hats_batch.sum(dim=2).exp()
     p_hat_12_batch = exp_sum_r_hats_batch[:, 0] / exp_sum_r_hats_batch.sum(dim=1)
     return F.binary_cross_entropy(input=p_hat_12_batch, target=mu_batch, reduction='sum')
         
+def compute_loss_rm_ensemble(r_hats_batch_draw, mu_batch):
+    """When reward model is an ensemble, you should
+       average across elements in ensemble after mapping
+       from reward space to preference space, because
+       this effectively does the normalisation
+       per reward model for free (via the softmax)!
+    """
+    # import ipdb
+    # ipdb.set_trace()
+    batch_size, _, clip_length, num_samples = r_hats_batch_draw.shape
+    assert r_hats_batch_draw.shape[1] == 2
+    exp_sum_r_hats_batch_draw = r_hats_batch_draw.sum(dim=2).exp()
+    assert exp_sum_r_hats_batch_draw.shape == (batch_size, 2, num_samples)
+    p_hat_12_batch_draw = exp_sum_r_hats_batch_draw[:, 0, :] / exp_sum_r_hats_batch_draw.sum(dim=1)
+    assert p_hat_12_batch_draw.shape == (batch_size, num_samples)
+    p_hat_12_batch = p_hat_12_batch_draw.mean(1)
+    assert p_hat_12_batch.shape == mu_batch.shape
+    return F.binary_cross_entropy(input=p_hat_12_batch, target=mu_batch, reduction='sum')
+
 
 class PrefsBuffer():
     def __init__(self, capacity, clip_shape):

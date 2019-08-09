@@ -19,8 +19,8 @@ def parse_arguments():
     parser.add_argument('--info', type=str, default='', help='Tensorboard log is saved in ./logs/i_run/random_seed/[true|pred]/')
     parser.add_argument('--default_settings', type=str, default=None, help='Flag to override args with those in default.py. Choice of: acrobot_sam, openai, openai_atari, cartpole')
     parser.add_argument('--env_str', type=str, default='cartpole', help='Choice of: acrobot, mountain_car, cartpole, cartpole_old, cartpole_old_rich')
-    parser.add_argument('--n_runs', type=int, default=40, help='number of runs to repeat the experiment')
-    parser.add_argument('--n_rounds', type=int, default=40, help='number of rounds to repeat main training loop')
+    parser.add_argument('--n_runs', type=int, default=10, help='number of runs to repeat the experiment')
+    parser.add_argument('--n_rounds', type=int, default=100, help='number of rounds to repeat main training loop')
     parser.add_argument('--RL_baseline', action='store_true', help='Do RL baseline instead of reward learning?')
     parser.add_argument('--random_policy', action='store_true', help='Do the experiments with an entirely random policy, to benchmark performance')
     parser.add_argument('--test', action='store_true', help='Flag to make training procedure very short (to check for errors)')
@@ -69,7 +69,7 @@ def parse_arguments():
     parser.add_argument('--corr_num_rollouts', type=int, default=5, help='When collecting rollouts to evaluate correlation of true and predicted reward, how many rollouts in total?')
     parser.add_argument('--no_ensemble_for_reward_pred', action='store_true', help='If true, then use ensemble for uncertainty estimates but pick a random net to compute rewards sent to DQN')
     parser.add_argument('--no_reinit_rm', dest='reinit_rm', action='store_false', help='Flag not to reinitialise reward model before every training round')
-    parser.add_argument('--no_normalise_rm_while_training', action='store_true', help='Flag to not normalise output of reward predictors while training them (only while testing)')
+    parser.add_argument('--normalise_rm_while_training', action='store_true', help='Flag to normalise output of reward predictors while training them (only while testing)')
 
     # active learning
     parser.add_argument('--active_method', type=str, default=None, help='Choice of: BALD, var_ratios, max_entropy, mean_std')
