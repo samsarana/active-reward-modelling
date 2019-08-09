@@ -16,7 +16,7 @@ def cartpole_defaults(args):
     args.gamma = 0.9
     args.epsilon_stop = 0.01
     args.exploration_fraction = 0.1
-    args.n_labels_per_round = 1
+    # args.n_labels_per_round = 1
     args.n_agent_steps = 3000 # see docstr
     args.agent_test_frequency = 1
     args.agent_learning_starts = 0 # see docstr
@@ -37,7 +37,7 @@ def acrobot_sam_defaults(args):
     args.gamma = 0.99
     args.epsilon_stop = 0.01
     args.exploration_fraction = 0.1
-    args.n_labels_per_round = 1
+    # args.n_labels_per_round = 1
     args.n_agent_steps = 100000
     args.agent_test_frequency = 20 # 100k / 20 = 5k
     args.agent_learning_starts = 0
@@ -61,7 +61,7 @@ def openai_defaults(args):
     args.gamma = 1.0
     args.epsilon_stop = 0.02
     args.exploration_fraction = 0.1
-    args.n_labels_per_round = 1
+    # args.n_labels_per_round = 1
     args.n_agent_steps = 100000
     args.agent_test_frequency = 20 # 100k / 20 = 5k
     args.agent_learning_starts = 1000
@@ -82,7 +82,7 @@ def openai_atari_defaults(args):
     args.gamma = 0.99
     args.epsilon_stop = 0.01
     args.exploration_fraction = 0.1
-    args.n_labels_per_round = 1
+    # args.n_labels_per_round = 1
     args.n_agent_steps = 100000
     args.agent_test_frequency = 20 # 100k / 20 = 5k
     args.agent_learning_starts = 10000
