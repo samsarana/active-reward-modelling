@@ -5,6 +5,7 @@ import torch, gym
 from gym import wrappers
 from time import time, sleep
 from rl_logging import *
+from atari_preprocessing import preprocess_atari_env
 
 def test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round, sub_round, num_episodes=100):
     """Using the non-continuous version of the environment and q_net
@@ -14,11 +15,12 @@ def test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round,
     """
     # set up testing
     env = gym.make(args.env_ID_test)
+    if isinstance(env.env, gym.envs.atari.AtariEnv):
+        env = preprocess_atari_env(env)
     env.seed(args.random_seed)
     state, n, step = env.reset(), 0, 0
     returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
                'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
-    rt_mean, rt_var = reward_stats
     while n < num_episodes:
         if args.render_policy_test and n < 3: # if render, watch 3 episodes
             env.render()

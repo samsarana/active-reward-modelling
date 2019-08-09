@@ -11,6 +11,7 @@ from q_learning import *
 from reward_learning import *
 from active_learning import *
 from defaults import *
+from atari_preprocessing import preprocess_atari_env
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -121,6 +122,9 @@ def make_arg_changes(args):
                     'cartpole_old_rich': {'id': 'gym_barm:CartPole_EnrichedCont-v0',
                                       'id_test': 'gym_barm:CartPole_Enriched-v0',
                                      },
+                    'pong': {'id': 'PongNoFrameskip-v0',
+                             'id_test': 'PongNoFrameskip-v0',
+                                     }
     }
     args.env_ID = envs_to_ids[args.env]['id']
     args.env_ID_test = envs_to_ids[args.env]['id_test']
@@ -164,8 +168,15 @@ def run_experiment(args, i_run, returns_summary):
 
     # make environment
     env = gym.make(args.env_ID)
+    if isinstance(env.env, gym.envs.atari.AtariEnv):
+        env = preprocess_atari_env(env)
+        args.dqn_archi = 'conv'
+    else:
+        args.dqn_archi = 'mlp'
     env.seed(args.random_seed)
     args.obs_shape = env.observation_space.shape[0] # env.observation_space is Box(4,) and calling .shape returns (4,) [gym can be ugly]
+    args.obs_shape_all = env.observation_space.shape # TODO ugly
+    print('env.observation_space.shape', env.observation_space.shape)
     assert isinstance(env.action_space, gym.spaces.Discrete), 'DQN requires discrete action space.'
     args.act_shape = 1 # [gym doesn't have a nice way to get shape of Discrete space... env.action_space.shape -> () ]
     args.obs_act_shape = args.obs_shape + args.act_shape

@@ -22,9 +22,6 @@ class DQN(nn.Module):
         self.num_actions = num_actions
         self.batch_size = args.batch_size_agent
         self.gamma = args.gamma
-        # self.epsilon = args.epsilon_start
-        # self.epsilon_decay = args.epsilon_decay # exponential decay of epsilon after learning step
-        # self.epsilon_stop = args.epsilon_stop
         self.tau = args.target_update_tau
 
     def forward(self, x):
@@ -40,6 +37,75 @@ class DQN(nn.Module):
         """
         if random.random() > epsilon:
             state = torch.tensor(state, dtype=torch.float)
+            q_value = self(state)
+        # max is along non-batch dimension, which may be 0 or 1 depending on whether input is batched (action selection: not batched; computing loss: batched)
+            _, action_tensor  = q_value.max(-1) # max returns a (named)tuple (values, indices) where values is the maximum value of each row of the input tensor in the given dimension dim. And indices is the index location of each maximum value found (argmax).
+            action = int(action_tensor)
+        else:
+            action = random.randrange(0, self.num_actions)
+        return action
+
+# TODO understand convolutions properly, and where the stack dimension should be
+# Then go through rest of code and see what will break when obs.shape == (84,84,4)
+# some things clearly will e.g. AgentExperience
+# reward model (hmm, Christiano r^ : S x A -> R but it's a convnet...? now i can see
+# why it made sense for Ibarz to parameterise as r^ : S -> R instead...)
+# use the debugger to check the dims of everything
+
+class CnnDQN(nn.Module):
+    def __init__(self, num_inputs, num_actions, args):
+        super().__init__()
+        self.num_actions = num_actions
+        self.batch_size = args.batch_size_agent
+        self.gamma = args.gamma
+        self.tau = args.target_update_tau
+        self.obs_shape = args.obs_shape_all
+        self.convolutions = nn.Sequential(
+            nn.Conv2d(4, 32, kernel_size=8, stride=4), # num_inputs == env.observation_space.shape[0] == (84,84,4)[0]. Still not sure this is going to work -- can other 2 input dims be left implicitly wtih Conv2d layers? Maybe need to use Conv3d..?
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1),
+            nn.ReLU()
+        )
+        self.fc = nn.Sequential(
+            # nn.Linear(7 * 7 * 64, 512),
+            nn.Linear(self.conv_layers_out_size(), 512),
+            nn.ReLU(),
+            nn.Linear(512, num_actions)
+        )
+
+    def forward(self, x):
+        x = self.convolutions(x)
+        x = x.view(x.shape[0], -1)
+        x = self.fc(x)
+        return x
+
+    def conv_layers_out_size(self):
+        """Hack to compute size of 1st dim of
+           output from features (0th dim
+           is batch dim)
+           Q: is this necessary b/c otherwise
+           we'd have to redo annoying padding
+           calculations every time we wanted
+           to use the network with a different
+           sized input?
+        """
+        print(self.obs_shape)
+        print('convolutions_out_shape:', self.convolutions(torch.zeros(1, *self.obs_shape)).view(1, -1).shape)
+        return self.convolutions(torch.zeros(1, *self.obs_shape)).view(1, -1).shape[1]
+    
+    def act(self, state, epsilon=0):
+        """For Q-networks, computing action and forward pass are NOT
+            the same thing! (unlike for policy networks)
+            Takes Box(4) and returns Discrete(2)
+            Box(4) = R^4, represented as np.ndarray, shape=(4,), dtype=float32
+            Discrete(2) = {0, 1} where 0 and 1 are standard integers
+            [NB previously in my Gridworld: took a tuple (int, int) and returns scalar tensor with dtype torch.long]
+        """
+        if random.random() > epsilon:
+            state = torch.tensor(state, dtype=torch.float)
+            state = state.unsqueeze(0)
             q_value = self(state)
         # max is along non-batch dimension, which may be 0 or 1 depending on whether input is batched (action selection: not batched; computing loss: batched)
             _, action_tensor  = q_value.max(-1) # max returns a (named)tuple (values, indices) where values is the maximum value of each row of the input tensor in the given dimension dim. And indices is the index location of each maximum value found (argmax).
@@ -131,8 +197,12 @@ def init_agent(args):
        Deep Q-learning:
        Q-network, target network, replay buffer and optimizer.
     """
-    q_net = DQN(args.obs_shape, args.n_actions, args)
-    q_target = DQN(args.obs_shape, args.n_actions, args)
+    if args.dqn_archi == 'mlp':
+        q_net = DQN(args.obs_shape, args.n_actions, args)
+        q_target = DQN(args.obs_shape, args.n_actions, args)
+    elif args.dqn_archi == 'conv':
+        q_net = CnnDQN(args.obs_shape, args.n_actions, args)
+        q_target = CnnDQN(args.obs_shape, args.n_actions, args)
     q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
     replay_buffer = ReplayBuffer(args.replay_buffer_size)
     optimizer_agent = optim.Adam(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent)
