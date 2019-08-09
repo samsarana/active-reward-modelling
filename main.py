@@ -116,6 +116,9 @@ def make_arg_changes(args):
                     'mountain_car': {'id': 'gym_barm:MountainCarContinual-v0',
                                     'id_test': 'MountainCar-v0',
                                     },
+                    'mountain_car_enriched': {'id': 'gym_barm:MountainCarContinualEnriched-v0',
+                                              'id_test': 'MountainCar-v0', # test in standard env so we know how well agent is truly doing
+                                             },
                     'cartpole_old': {'id': 'gym_barm:CartPole_Cont-v0',
                                 'id_test': 'CartPole-v0',
                                 },

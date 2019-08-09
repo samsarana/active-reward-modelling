@@ -15,6 +15,13 @@ register(
 )
 
 register(
+    id='MountainCarContinualEnriched-v0',
+    entry_point='gym_barm.envs:MountainCarContinualEnv',
+    max_episode_steps=200,
+    reward_threshold=-110.0,
+)
+
+register(
     id='AcrobotHard-v1',
     entry_point='gym_barm.envs:AcrobotEnv',
     reward_threshold=-90.0,
