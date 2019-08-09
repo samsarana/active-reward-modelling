@@ -69,8 +69,8 @@ class CnnDQN(nn.Module):
             nn.ReLU()
         )
         self.fc = nn.Sequential(
-            # nn.Linear(7 * 7 * 64, 512),
-            nn.Linear(self.conv_layers_out_size(), 512),
+            nn.Linear(64 * 7 * 7, 512),
+            # nn.Linear(self.conv_layers_out_size(), 512),
             nn.ReLU(),
             nn.Linear(512, num_actions)
         )
@@ -81,19 +81,19 @@ class CnnDQN(nn.Module):
         x = self.fc(x)
         return x
 
-    def conv_layers_out_size(self):
-        """Hack to compute size of 1st dim of
-           output from features (0th dim
-           is batch dim)
-           Q: is this necessary b/c otherwise
-           we'd have to redo annoying padding
-           calculations every time we wanted
-           to use the network with a different
-           sized input?
-        """
-        print(self.obs_shape)
-        print('convolutions_out_shape:', self.convolutions(torch.zeros(1, *self.obs_shape)).view(1, -1).shape)
-        return self.convolutions(torch.zeros(1, *self.obs_shape)).view(1, -1).shape[1]
+    # def conv_layers_out_size(self):
+    #     """Hack to compute size of 1st dim of
+    #        output from features (0th dim
+    #        is batch dim)
+    #        Q: is this necessary b/c otherwise
+    #        we'd have to redo annoying padding
+    #        calculations every time we wanted
+    #        to use the network with a different
+    #        sized input?
+    #     """
+    #     print(self.obs_shape)
+    #     print('convolutions_out_shape:', self.convolutions(torch.zeros(1, *self.obs_shape)).view(1, -1).shape)
+    #     return self.convolutions(torch.zeros(1, *self.obs_shape)).view(1, -1).shape[1]
     
     def act(self, state, epsilon=0):
         """For Q-networks, computing action and forward pass are NOT
