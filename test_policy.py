@@ -15,7 +15,8 @@ def test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round,
     """
     # set up testing
     env = gym.make(args.env_ID_test)
-    if isinstance(env.env, gym.envs.atari.AtariEnv):
+    # if isinstance(env.env, gym.envs.atari.AtariEnv):
+    if args.env_str == 'pong':
         env = preprocess_atari_env(env)
     env.seed(args.random_seed)
     state, n, step = env.reset(), 0, 0

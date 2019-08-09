@@ -17,8 +17,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     # experiment settings
     parser.add_argument('--info', type=str, default='', help='Tensorboard log is saved in ./logs/i_run/random_seed/[true|pred]/')
-    parser.add_argument('--default_settings', type=str, default=None, help='Flag to override args with those in default.py. Choice of: acrobot, cartpole')
-    parser.add_argument('--env', type=str, default='cartpole', help='Choice of: acrobot, mountain_car, cartpole, cartpole_old, cartpole_old_rich')
+    parser.add_argument('--default_settings', type=str, default=None, help='Flag to override args with those in default.py. Choice of: acrobot_sam, openai, openai_atari, cartpole')
+    parser.add_argument('--env_str', type=str, default='cartpole', help='Choice of: acrobot, mountain_car, cartpole, cartpole_old, cartpole_old_rich')
     parser.add_argument('--n_runs', type=int, default=40, help='number of runs to repeat the experiment')
     parser.add_argument('--n_rounds', type=int, default=40, help='number of rounds to repeat main training loop')
     parser.add_argument('--RL_baseline', action='store_true', help='Do RL baseline instead of reward learning?')
@@ -126,8 +126,8 @@ def make_arg_changes(args):
                              'id_test': 'PongNoFrameskip-v0',
                                      }
     }
-    args.env_ID = envs_to_ids[args.env]['id']
-    args.env_ID_test = envs_to_ids[args.env]['id_test']
+    args.env_ID = envs_to_ids[args.env_str]['id']
+    args.env_ID_test = envs_to_ids[args.env_str]['id_test']
     
     # check some things about RL training
     assert args.n_agent_steps % args.clip_length == 0,\
@@ -168,7 +168,8 @@ def run_experiment(args, i_run, returns_summary):
 
     # make environment
     env = gym.make(args.env_ID)
-    if isinstance(env.env, gym.envs.atari.AtariEnv):
+    # if isinstance(env.env, gym.envs.atari.AtariEnv):
+    if args.env_str == 'pong':
         env = preprocess_atari_env(env)
         args.dqn_archi = 'conv'
     else:
@@ -176,7 +177,6 @@ def run_experiment(args, i_run, returns_summary):
     env.seed(args.random_seed)
     args.obs_shape = env.observation_space.shape[0] # env.observation_space is Box(4,) and calling .shape returns (4,) [gym can be ugly]
     args.obs_shape_all = env.observation_space.shape # TODO ugly
-    print('env.observation_space.shape', env.observation_space.shape)
     assert isinstance(env.action_space, gym.spaces.Discrete), 'DQN requires discrete action space.'
     args.act_shape = 1 # [gym doesn't have a nice way to get shape of Discrete space... env.action_space.shape -> () ]
     args.obs_act_shape = args.obs_shape + args.act_shape
