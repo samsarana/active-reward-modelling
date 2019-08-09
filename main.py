@@ -51,7 +51,7 @@ def parse_arguments():
     parser.add_argument('--n_agent_steps', type=int, default=3000, help='No. of steps that agent takes per round in environment, while training every agent_gdt_step_period steps') # Ibarz: 100k
     parser.add_argument('--agent_test_frequency', type=int, default=1, help='Over the course of its n_agent_[train|total]_steps, how many times is agent performance tested? (and the run terminated if `terminate_once_solved == True`')
     parser.add_argument('--agent_learning_starts', type=int, default=0, help='After how many steps does the agent start making learning updates? This replaced the functionality of n_agent_total_steps.')
-    parser.add_argument('--reinit_agent', action='store_true', help='Flag to reinitialise the agent before every training round')
+    parser.add_argument('--no_reinit_agent', dest='reinit_agent', action='store_false', help='Flag not to reinitialise the agent before every training round')
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
 
     # reward model hyperparamas
@@ -68,7 +68,7 @@ def parse_arguments():
     parser.add_argument('--corr_rollout_steps', type=int, default=1000, help='When collecting rollouts to evaluate correlation of true and predicted reward, how many steps per rollout?')
     parser.add_argument('--corr_num_rollouts', type=int, default=5, help='When collecting rollouts to evaluate correlation of true and predicted reward, how many rollouts in total?')
     parser.add_argument('--no_ensemble_for_reward_pred', action='store_true', help='If true, then use ensemble for uncertainty estimates but pick a random net to compute rewards sent to DQN')
-    parser.add_argument('--reinit_rm', action='store_true', help='Flag to reinitialise reward model before every training')
+    parser.add_argument('--no_reinit_rm', dest='reinit_rm', action='store_false', help='Flag not to reinitialise reward model before every training round')
     parser.add_argument('--no_normalise_rm_while_training', action='store_true', help='Flag to not normalise output of reward predictors while training them (only while testing)')
 
     # active learning
