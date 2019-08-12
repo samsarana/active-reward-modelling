@@ -73,7 +73,7 @@ class RewardModel(nn.Module):
             nn.Linear(args.hid_units_rm, 1),
         )
         self.mean_prefs = 0 # mean of reward model across prefs_buffer
-        self.var_prefs = 0 # var of reward model across prefs_buffer
+        self.var_prefs = 1 # var of reward model across prefs_buffer
 
     def forward(self, x, normalise=False):
         r_hat = self.layers(x)
@@ -107,7 +107,7 @@ class RewardModelEnsemble(nn.Module):
                         )
                     )
             setattr(self, 'mean_prefs{}'.format(ensemble_num), 0) # mean of each net in ensemble across prefs_buffer
-            setattr(self, 'var_prefs{}'.format(ensemble_num), 0) # var of each net in ensemble across prefs_buffer
+            setattr(self, 'var_prefs{}'.format(ensemble_num), 1) # var of each net in ensemble across prefs_buffer
         
     def forward(self, x, normalise=False):
         """Returns the average output from forward pass
