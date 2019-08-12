@@ -170,9 +170,9 @@ def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
         
         if args.no_ensemble_for_reward_pred:
             assert isinstance(reward_model, RewardModelEnsemble)
-            rew = reward_model.forward_single(sa_pair, normalise=normalise_rewards)
+            rew = reward_model.forward_single(sa_pair, normalise=normalise_rewards).detach()
         else:
-            rew = reward_model(sa_pair, normalise=normalise_rewards)
+            rew = reward_model(sa_pair, normalise=normalise_rewards).detach()
         rew = rew.squeeze()
         # import ipdb
         # ipdb.set_trace()
@@ -190,7 +190,8 @@ def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
     q_value          = q_values.gather(1, action.unsqueeze(1)).squeeze(1) # see https://colab.research.google.com/drive/1-6aNmf16JcytKw3BJ2UfGq5zkik1QLFm or https://stackoverflow.com/questions/50999977/what-does-the-gather-function-do-in-pytorch-in-layman-terms
     next_q_value, _  = next_q_values.max(-1) # max returns a (named)tuple (values, indices) where values is the maximum value of each row of the input tensor in the given dimension dim. And indices is the index location of each maximum value found (argmax).
     expected_q_value = rew + q_net.gamma * next_q_value * (1 - done)
-
+    
+    # TODO clip the error term
     loss = (q_value - expected_q_value).pow(2).mean() # mean is across batch dimension
     return loss
 
