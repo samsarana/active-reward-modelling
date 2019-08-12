@@ -15,6 +15,15 @@ Yarin Gal.
 \newblock {Uncertainty in Deep Learning}.
 \newblock {\em Phd Thesis}, 1(1):1--11, 2017.
 
+\bibitem{Mnih2015}
+Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Andrei~A. Rusu, Joel Veness,
+  Marc~G. Bellemare, Alex Graves, Martin Riedmiller, Andreas~K. Fidjeland,
+  Georg Ostrovski, Stig Petersen, Charles Beattie, Amir Sadik, Ioannis
+  Antonoglou, Helen King, Dharshan Kumaran, Daan Wierstra, Shane Legg, and
+  Demis Hassabis.
+\newblock {Human-level control through deep reinforcement learning}.
+\newblock {\em Nature}, 518(7540):529--533, 2015.
+
 \bibitem{Sutton2018}
 R.~S. Sutton and A.~G. Barto.
 \newblock {\em {Reinforcement Learning: An Introduction (2nd Edition, in

@@ -19,7 +19,7 @@
 \renewcommand{\P}[1]{\mathbb{P}\left( #1 \right) }
 %\newcommand{\E}[1]{\mathbb{E} \left[ #1 \right] }
 \newcommand{\E}[2]{\mathbb{E}_{#1} \left[ #2 \right] }
-\newcommand{\V}[1]{\mathbb{V}ar \left[ #1 \right]}
+\newcommand{\V}[2]{\mathbb{V}ar_{#1} \left[ #2 \right]}
 \newcommand{\KLD}[2]{\mathrm{KL} \left[ \left. \left. #1 \right|\right| #2 \right] }
 
 \newcommand{\w}{\mathbf{w}}
@@ -99,7 +99,7 @@ The reader may have noticed that we first introduced MDPs as a formalism for an 
 \end{hypothesis}
 However, this hypothesis gives no information about how to construct such a scalar signal; only that it exists. Indeed, recent work has shown that it is far from trivial to do so; possible failure modes include negative side effects, reward hacking and unsafe exploration \cite{Amodei2016}. This is central to the topic of this dissertation---our aim is to improve the sample efficiency of one particular method of reinforcement learning when the reward signal is unknown.
 
-\subsection{Returns and Episodes}
+\subsection{Returns and Episodes} \label{rets_and_episodes}
 Having asserted that we can express the objective of reinforcement learning in terms of scalar reward, we now formally define this objective. Consider the following objective:
 \begin{definition}[(Future discounted) return]
 Let a sequence of rewards between time step $ t + 1 $ and $ T $ (inclusive) be $ R_{t+1}, R_{t+1}, \dots, R_T $. Let $ \gamma \in [0, 1] $ be a discount factor of future rewards. Then we define the (future discounted) return of this sequence of rewards \cite[p.~57]{Sutton2018}:
@@ -184,7 +184,7 @@ These value functions obey special recursive relationships called Bellman equati
 	\end{align}
 \end{proposition}
 
-\begin{proposition}[Bellman equation for $ q_* $ {\cite[p.~63]{Sutton2018}}]
+\begin{proposition}[Bellman equation for $ q_* $ {\cite[p.~63]{Sutton2018}}] \label{bellman_q*}
 	Let $ p $ be the dynamics of an MDP, $ \gamma $ a discount factor and $ q_* $ an optimal Q-function. Then:
 	\begin{align}
 	q_*(s, a) = \underset{s', r \sim p(., . \mid s, a)}{\mathbb{E}} \left[ r + \gamma ~ \underset{a' \in \mathcal{A}}{\max}\left[q_*(s', a')\right] \right]
@@ -196,7 +196,7 @@ One method of solving the reinforcement learning problem is to explicitly solve 
 
 However, in reality, we rarely have access to $ p $, or sufficient computational resources to solve this system of equations exactly \cite[p.~66]{Sutton2018}. Thus, the literature on RL solution methods focuses on finding approximate solutions.
 
-In this section, we give a brief and incomplete taxonomy of RL solution methods, most of which give approximate solutions. Then, we focus on one such method, Deep Q-Learning, which is important for the rest of this thesis.
+In this section, we give a brief and incomplete taxonomy of RL solution methods, most of which give approximate solutions. Then, we focus on one such method, the deep Q-network, which is important for the rest of this thesis.
 
 \subsection{Taxonomy of RL Solution Methods}
 The following taxonomy draws on those given in \cite{Sutton2018} and \cite{Achiam2019}.
@@ -237,22 +237,62 @@ The following taxonomy draws on those given in \cite{Sutton2018} and \cite{Achia
 % design choices; trade-offs?
 % model-based v model-free
 
-\subsection{Deep Q-Learning} \label{DQN}
+\subsection{Deep Q-network} \label{DQN}
+The deep Q-network (DQN) agent approximates $ q_* $ using a deep convolutional neural network $ Q(s,a; \theta) $ as the function approximator \cite{Mnih2015}. $ \theta $ are the parameters (weights) of the neural network, which is called a Q-network. It can be trained by performing gradient descent on the parameters $ \theta_i $ at iteration $ i $ to reduce the mean-squared error between $ Q(s,a; \theta_i) $ and the Bellman equation for $ q_*(s,a) $, given in Proposition (\ref{bellman_q*}). Since we do not have access to the true value of this target, we instead use approximate target values $ y = r + max_{a'} ~ Q(s', a' ; \theta_i^-) $, with $ \theta_i^- $ some previous network parameters.
 
-% perhaps explain in detail just one algo (DQN, or whichever algo ends up being most important for my experiments)
+One could then perform standard gradient descent on this loss function using the experience collected by the agent $\langle (s_t, a_t, r_{t+1}, s_{t+1}) \rangle_{t=0}^T $ as data, as one would do in the supervised learning setting. However, there are three important differences in the reinforcement learning setting: correlations both (i) in the data set, and (ii) between $ Q(s,a ; \theta_i) $ and the targets. Furthermore, (iii) updates to $ Q $ may change the policy and thus change the data distribution. This leads to instability in training. To address this, the authors propose two algorithmic innovations. Firstly, instead of training on experience in the order that it is collected, the agent maintains a buffer of experience $ D_t = \{ e_1, e_2, \dots, e_t \} $ where $ e_t = (s_t, a_t, r_{t+1}, s_{t+1}) $. When making learning updates, drawing minibatches uniformly at random from this buffer breaks correlations in the experience sequence and smooths over changes in the data distribution, alleviating problems (i) and (iii). This is termed \textit{experience replay}. Secondly, to reduce correlations between $ Q $ and the targets and alleviate problem (ii), the approximate target values are updated to match the parameters $ Q $ only every $ C $ steps for some hyperparameter $ C > 1 $.
+
+With these changes, we arrive at a loss function $ \ell_i(\theta_i) $ for each learning update $ i $:
+\begin{align*}
+\ell_i(\theta_i) &= \E{ s,a,r }{ (\E{s'}{y \mid s,a} - Q(s,a;\theta_i))^2 } \\
+                 &= \E{ s,a,r }{ \E{s'}{y - Q(s,a;\theta_i) \mid s,a } ^2 } \\
+                 &= \E{ s,a,r }{ \E{s'}{(y - Q(s,a;\theta_i))^2 \mid s,a}  - \V{s'}{y - Q(s,a;\theta_i)) \mid s,a}   } \\
+                 &= \E{s,a,r,s'}{(y - Q(s,a;\theta_i))^2} - \E{s,a,r}{\V{s'}{y}}
+\end{align*}
+where the expectations and variances are with respect to samples from the experience replay. This loss function is then optimized by stochastic gradient descent with respect to the network parameters $ \theta_i $. Note that the final term is independent of these parameters, so we can ignore it. Finally, the authors found that stability is improved by clipping the error term $ y - Q(s,a;\theta_i) $ to be between $ -1 $ and $ 1 $.
+
+We summarise this training procedure in Algorithm \ref{alg:dqn}. To ensure adequate exploration, the agent's policy is $ \epsilon $-greedy with respect to the current estimate of the optimal action-value function.
+
+\begin{algorithm}
+	\caption{Deep Q-learning with experience replay.}
+	\label{alg:dqn}
+	\begin{algorithmic}[1]
+		\State Initialise replay memory $ D $ to capacity $ N $
+		\State Initialise neural network $ Q $ with random weights $ \theta $ as approximate optimal action-value function
+		\State Initialise neural network $ \hat{Q} $ with identical weights $ \theta^- = \theta $ as approximate target action-value function
+		\State Reset environment to starting state $ s_0 $
+		\For{$ t=0, \dots, T $}
+		\State With probability $ \epsilon $ execute random action $ a_t $
+		\State otherwise execute action $ a_t = \arg\max_a Q(s_t, a ; \theta) $
+		\State Observe next state and corresponding reward $ s_{t+1}, r_{t+1} \sim p(.,.\mid s_t,a_t) $
+		\State Store transition $ (s_t, a_t, r_{t+1}, s_{t+1}) $ in $ D_t $
+		\State Randomly sample minibatch of transitions $ (s_j, a_j, r_{j+1}, s_{j+1}) \sim D_t $
+		\State Set $ y_j = \begin{cases}
+		                   r_{j+1} \text{ if episode terminates at step $ j+1 $} \\
+		                   r_{j+1} + \gamma \max_{a'} \hat{Q}(s_{j+1}, a_j ; \theta^- ) \text{ otherwise}
+		\end{cases}$
+		\State Do gradient descent on $ (y_j - Q(s_j, a_j ; \theta))^2 $ w.r.t network parameters $ \theta $
+		\State Every $ C $ steps set $ \theta^- = \theta $
+		\EndFor
+	\end{algorithmic}
+\end{algorithm}
+
+Note that line 11 assumes we are training DQN to perform an episodic task, hence the first case which follows the convention given in Section \ref{rets_and_episodes} whereby zero reward is given for all states after the terminal state. If the task were instead continuing, line 11 would simply be $ y_j = r_{j+1} + \gamma \max_{a'} \hat{Q}(s_{j+1}, a_j ; \theta^- ) $.
+
 %TODO do I need to describe neural networks too?
 
 \section{Reinforcement Learning from Unknown Reward Functions}
 For many domains in which we might want to use RL, states of the environment are not inherently associated with rewards.  Thus, we have the additional task of specifying a reward function, which maps states to rewards. Argue the case that directly specifying a reward function is hard, in order to motivate the next section: Reward Learning
-\subsection{Reward Learning with Handcrafted Feature Transformations}
 % We can use feedback of different modalities
 % There is both the standard and the deep case to consider
+\subsection{Reward Learning with Handcrafted Feature Transformations}
+
 \subsubsection{Active Preference-Based Learning of Reward Functions}
 
 \subsubsection{Batch Active Preference-Based Learning of Reward Functions}
 
 \subsubsection{DemPref}
-% Summarise the contributions of the 2017,18,19 papers by Sadigh's lab. 
+% Summarise the contributions of the 2017,18,19 papers by Sadigh's lab.
 % (+Batch) Active Preference-Based Learning of Reward Functions (ignore the active part here)
 % DemPref Learning Reward Functions by Integrating Human Demonstrations and Preferences
 \subsection{Reward Learning in Deep RL}
