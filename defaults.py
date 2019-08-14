@@ -7,7 +7,6 @@ def cartpole_defaults(args):
        taken at beginning of training. But I think
        this isn't an important moving part.
     """
-    args.env_str = 'cartpole'
     args.lr_agent = 1e-3
     args.replay_buffer_size = 30000
     args.target_update_period = 1
@@ -44,8 +43,8 @@ def acrobot_sam_defaults(args):
     args.agent_test_frequency = 20 # 100k / 20 = 5k
     args.agent_learning_starts = 0
     args.reinit_agent = True
-    args.n_epochs_pretrain_rm = 2000 # not yet tested
-    args.n_epochs_train_rm = 2000 # not yet tested
+    args.n_epochs_pretrain_rm = 1500 # not yet tested
+    args.n_epochs_train_rm = 1500 # not yet tested
     args.clip_length = 25
     args.reinit_rm = True
     return args

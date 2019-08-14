@@ -29,6 +29,13 @@ register(
 )
 
 register(
+    id='AcrobotScrambled-v1',
+    entry_point='gym_barm.envs:AcrobotScrambledEnv',
+    reward_threshold=-100.0,
+    max_episode_steps=500,
+)
+
+register(
     id='CartPole_Cont-v0',
     entry_point='gym_barm.envs:Continuous_CartPoleEnv',
     max_episode_steps=200,
