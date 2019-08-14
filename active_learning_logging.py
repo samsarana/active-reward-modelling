@@ -3,6 +3,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import Counter
+import gym
+from gym import wrappers
+from time import time, sleep
 
 def log_acquisition(idx, info_per_clip_pair, clip_pairs, rews, mus, rand_clip_pairs, rand_rews, rand_mus, i_label, args, writers):
     """1. Scalar plot information gain against i_label
@@ -11,6 +14,8 @@ def log_acquisition(idx, info_per_clip_pair, clip_pairs, rews, mus, rand_clip_pa
           as well as their labels and rewards
        4. Returns array [no. 0-labels, no. 1/2 labels, no. 1 labels] s.t. we can
           accumulate the frequency with which each label is acquired.
+       Takes:
+         `clip_pairs`: batch of clip pairs (shape=batch_size, 2, clip_length, obs_act_length)
     """
     writer1, writer2 = writers
     if args.active_method:
@@ -41,6 +46,50 @@ def log_acquisition(idx, info_per_clip_pair, clip_pairs, rews, mus, rand_clip_pa
     writer2.add_scalar('5c.0_labels', rand_mu_counts.get(0, 0), i_label)
     writer2.add_scalar('5c.0.5_labels', rand_mu_counts.get(0.5, 0), i_label)
     writer2.add_scalar('5c.1_labels', rand_mu_counts.get(1, 0), i_label)
+
+    # save video of clip pairs. TODO this code doesn't work. the video is only of the first frame
+    if args.save_pair_videos:
+        batch_size, _, clip_length, obs_act_length = clip_pairs.shape
+        for i_batch in range(batch_size):
+            for pair_num in range(2):
+                clip = clip_pairs[i_batch][pair_num]
+                env = gym.make(args.env_ID)
+                fname = '{}/videos/clip_pairs/i_label={}i_batch={}pair={}time={}/'.format(
+                    args.logdir, i_label, i_batch, pair_num, str(time()))
+                # debugging START
+                # import ipdb
+                # ipdb.set_trace()
+                # debugging END
+                env = wrappers.Monitor(env, fname)
+                # env._before_reset()
+                env.reset()
+                # env._flush()
+                env.reset_video_recorder()
+                # env._after_reset()
+                for step in range(clip_length):
+                    obs = clip[step][:args.obs_shape]
+                    action = clip[step][args.obs_shape:]
+                    if 'Acrobot' in args.env_ID:
+                        theta1 = np.arccos(obs[0])
+                        if obs[1] < 0: # sin(theta1) > 0
+                            theta1 = -theta1
+                        theta2 = np.arccos(obs[2])
+                        if obs[3] < 0: # sin(theta2) > 0
+                            theta2 = -theta2
+                        state = np.array([theta1, theta2, obs[4], obs[5]])
+                    elif 'CartPole' in args.env_ID:
+                        state = obs
+                    else:
+                        raise NotImplementedError("You haven't told me how to map observations to states for environment {}".format(args.env_ID))
+                    # env._before_step(action)
+                    # import ipdb
+                    # ipdb.set_trace()
+                    env.state = state
+                    # env._flush(force=True)
+                    env.video_recorder.capture_frame()
+                    # env._after_step(obs, rews[i_batch][pair_num][step], False, {})
+                    # sleep(1e-3)
+                env.close()
     return label_counts
 
 def log_total_mu_counts(mu_counts, writers, args):
