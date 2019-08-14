@@ -33,12 +33,24 @@ Jonathan Ho and Stefano Ermon.
 \newblock {Generative Adversarial Imitation Learning}.
 \newblock 2016.
 
+\bibitem{Ibarz2018}
+Borja Ibarz, Jan Leike, Tobias Pohlen, Geoffrey Irving, Shane Legg, and Dario
+  Amodei.
+\newblock {Reward learning from human preferences and demonstrations in Atari}.
+\newblock (2017):1--20, 2018.
+
 \bibitem{Knox2009}
 W~Bradley Knox and Peter Stone.
 \newblock {Interactively shaping agents via human reinforcement: The Tamer
   Framework}.
 \newblock {\em Proc. fifth Int. Conf. Knowl. capture - K-CAP '09}, page~9,
   2009.
+
+\bibitem{Mnih2016}
+Volodymyr Mnih, Adri{\`{a}}~Puigdom{\`{e}}nech Badia, Mehdi Mirza, Alex Graves,
+  Timothy~P. Lillicrap, Tim Harley, David Silver, and Koray Kavukcuoglu.
+\newblock {Asynchronous Methods for Deep Reinforcement Learning}.
+\newblock 48, 2016.
 
 \bibitem{Mnih2015}
 Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Andrei~A. Rusu, Joel Veness,
@@ -53,6 +65,12 @@ Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Andrei~A. Rusu, Joel Veness,
 Andrew Ng and Stuart Russell.
 \newblock {Algorithms for inverse reinforcement learning}.
 \newblock {\em Proc. Seventeenth Int. Conf. Mach. Learn.}, 0:663--670, 2000.
+
+\bibitem{Schulman2015}
+John Schulman, Sergey Levine, Philipp Moritz, Michael~I. Jordan, and Pieter
+  Abbeel.
+\newblock {Trust Region Policy Optimization}.
+\newblock 2015.
 
 \bibitem{Sutton2018}
 R.~S. Sutton and A.~G. Barto.

@@ -1,5 +1,5 @@
 \documentclass[11pt, a4paper, bibliography=totoc]{report}
-\usepackage{amsmath,amsthm,amssymb, tabularx, listings, enumerate, cancel, bussproofs, tabto, wasysym, algpseudocode, algorithm, savesym, mathtools, physics, xcolor, setspace, appendix, dirtree}
+\usepackage{amsmath,amsthm,amssymb, ltablex, listings, enumerate, cancel, bussproofs, tabto, wasysym, algpseudocode, algorithm, savesym, mathtools, physics, xcolor, setspace, appendix, dirtree, ragged2e}
 \usepackage[margin=3.5cm]{geometry}
 \usepackage[font=footnotesize,labelfont=bf]{caption}
 \usepackage[nottoc]{tocbibind} % adds Bibliography to 
@@ -21,7 +21,10 @@
 \newcommand{\E}[2]{\mathbb{E}_{#1} \left[ #2 \right] }
 \newcommand{\V}[2]{\mathbb{V}ar_{#1} \left[ #2 \right]}
 \newcommand{\KLD}[2]{\mathrm{KL} \left[ \left. \left. #1 \right|\right| #2 \right] }
-\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcommand{\rp}{\hat{r}}
+\newcommand{\expbuff}{\mathrm{E}}
+\newcommand{\annbuff}{\mathrm{A}}
+\newcommand{\repbuff}{\mathrm{D}}
 
 \newcommand{\w}{\mathbf{w}}
 \newcommand{\data}{\mathcal{D}}
@@ -71,10 +74,10 @@ This subsection will introduce agent, environment, policy, reward signal, value 
 \section{Finite Markov Decision Processes}
 Finite Markov Decision Processes (finite MDPs) are a way of mathematically formalising the RL problem: they capture the most important aspects of the problem faced by an agent interacting with its environment to achieve a goal. We introduce the elements of this formalism: the agent-environment interface, goals and rewards, returns and episodes. Then...
 
-\subsection{The Agent-Environment Interface}
+\subsection{The Agent-Environment Interface} \label{subsection:agent_env_interface}
 MDPs consist firstly of the continual interaction between an agent selecting actions, and an environment responding by changing state, and presenting the new state to the agent, along with an associated scalar reward. Recall that the agent seeks to maximise this reward over time through its choice of actions.
 
-More formally, consider a sequence of discrete time steps, $t = 1,2,3, \dots$. At each time step $t$, the agent receives some representation of the environment's \textit{state}, $ S_t \in \mathcal{S} $, and chooses an \textit{action}, $ A_t \in \mathcal{A} $. On the next time step, the agent receives reward $ R_{t+1} \in \mathcal{R} \subset \reals $, and finds itself in a new state, $ S_{t+1} $. These interactions repeat over time, giving rise to a \textit{trajectory}:
+More formally, consider a sequence of discrete time steps, $t = 1,2,3, \dots$. At each time step $t$, the agent receives some representation of the environment's \textit{state}, $ S_t \in \mathcal{S} $, and chooses an \textit{action}, $ A_t \in \mathcal{A} $. On the next time step, the agent receives reward $ R_{t+1} \in \mathcal{R} \subset \reals $, and finds itself in a new state, $ S_{t+1} $. These interactions repeat over time, giving rise to a \textit{trajectory}, $ \tau $:
 \begin{align*}
 S_0, A_0, R_1, S_1, A_1, R_2, S_2, A_2, R_3, \dots
 \end{align*}
@@ -199,7 +202,7 @@ However, in reality, we rarely have access to $ p $, or sufficient computational
 
 In this section, we give a brief and incomplete taxonomy of RL solution methods, most of which give approximate solutions. Then, we focus on one such method, the deep Q-network, which is important for the rest of this thesis.
 
-\subsection{Taxonomy of RL Solution Methods}
+\subsection{Taxonomy of RL Solution Methods} \label{subsection:rl_taxonomy}
 The following taxonomy draws on those given in \cite{Sutton2018} and \cite{Achiam2019}.
 
 \dirtree{%
@@ -294,7 +297,7 @@ Finally, an agent may learn from binary preferences over trajectories \cite{Wils
 
 Each of these methods have shown promising results, and some of the advantages and disadvantages are summarised in Table \ref{table:1}.
 
-\small\singlespacing
+\small\singlespacing\RaggedLeft
 \begin{tabularx}{\textwidth}{ 
 		|X|X|X|X|
 	}
@@ -307,16 +310,15 @@ Upper bound on performance? & Superhuman performance is possible & Impossible to
 \hline 
 Suitability to exploration-heavy tasks & Limited\footnote{\label{footnote:exploration}The human can only give feedback on states visited by the agent. If the agent does not explore well, this limits the amount of information the human can convey. Since exploration is determined by the inferred reward func } & Well suited, since demonstrations can guide exploration & Limited\footnote{See footnote \ref{footnote:exploration}} \\ 
 \hline 
-Communication efficiency & On the order of hundreds of bits per human hour & Much richer in information than trajectory preferences (Ibarz et al. show that demonstrations half the amount of human time required to achieve the same level of performance) & Scalar rewards provide richer information than binary preferences over trajectories, but not as rich as demonstrations \\ 
+Communication efficiency & On the order of hundreds of bits per human hour & Much richer in information than trajectory preferences \footnote{\cite{Ibarz2018} show that demonstrations half the amount of human time required to achieve the same level of performance} & Scalar rewards provide richer information than binary preferences over trajectories, but not as rich as demonstrations \\ 
 \hline 
-Computational efficiency & On the order of 10 million learning time steps (in Atari environments) & On the order of 10 million learning time steps (in Atari environments) & On the order of thousands of time steps (in Atari environments)* \\ 
+Computational efficiency (in simple Atari environments) & On the order of 10 million RL time steps & On the order of 10 million RL time steps & On the order of thousands of learning time steps \footnote{Note that the work which prototypes this method trains, with an unspecified amount of compute, a deep autoencoder to extract 100 features from the Atari game screen \textit{before} commencing the RL stage. The other methods do not do such pretraining, thus the reported results do not allow for a fair comparison.} \\ 
 \hline
-\end{tabularx}
 \caption{Summary of the properties of using different forms of human feedback in RL without a reward function.} \label{table:1}
-\doublespacing
-\normalsize
+\end{tabularx}
+\normalsize\doublespacing\justify
 
-Since this dissertation concerns reward learning from trajectory preferences specifically, the remainder of this section explains in more detail the algorithms used to do so. There are two branches of work on this question: that which learns a reward function based on handcrafted features of the environment state, and that which takes the deep learning approach of training a reward model end-to-end without handcrafted feature.
+Since this dissertation concerns reward learning from trajectory preferences specifically, the remainder of this section explains in more detail the algorithms used to do so. There are two branches of work on this question: that which learns a reward function based on handcrafted features of the environment state, and that which takes the deep learning approach of training a reward model end-to-end without handcrafted features.
 
 \subsection{Reward Learning from Trajectory Preferences with Handcrafted Feature Transformations}
 % Summarise the contributions of the 2017,18,19 papers by Sadigh's lab.
@@ -330,7 +332,40 @@ Since this dissertation concerns reward learning from trajectory preferences spe
 \subsubsection{DemPref}
 
 \subsection{Reward Learning from Trajectory Preferences in Deep RL}
+
+\subsubsection{Setting}
+The agent-environment interface is as described in Section \ref{subsection:agent_env_interface}, with the modification that on step $ t $, instead of receiving reward $ R_{t+1} \in \mathcal{R} \subset \reals $, there is an \textit{annotator} who expresses preferences between \textit{trajectory segments}, or \textit{clips}. A clip is a finite sequence of states and actions $ ((s_0,a_0), (s_1,a_1),\dots,(s_{k-1},a_{k-1})) \in (\mathcal{S} \times \mathcal{A})^k $. If the annotator prefers some clip $ \sigma^1 $ to another clip $ \sigma^2 $, write $ \sigma^1 \succ \sigma^2 $. The agent does not see the annotator's implicit reward function $ r : \mathcal{S} \times \mathcal{A} \mapsto \mathcal{R} $, and must instead use the preferences expressed by the annotator to maximise $ r $ over time. This is the goal of reward learning from trajectory preferences.
+%TODO need to define \succ in terms of r(.,.) ?
+If the annotator could write down their true $ r $, then clearly we could perform traditional RL instead of taking the reward learning approach. However, as we noted above, we are interested in applying RL to tasks for which we do not have the true $ r $, which is when reward learning is useful. Nonetheless, for the purposes of quantitatively evaluating the method, we consider tasks for which we do have access to the true $ r $.
+
+\subsubsection{Method}
+The method has two components: a policy $ \pi : \mathcal{S} \times \mathcal{A} \mapsto [0,1] $ and an estimate of the annotator's reward function, $ \rp : \mathcal{S} \times \mathcal{A} \mapsto \mathcal{R} $, called a \textit{reward model} or \textit{reward predictor}. Both components are parametrised by a deep neural network. The agent learns to maximise the annotator's implicit reward function over time by iterating through the following three processes:
+\begin{enumerate}
+	\item Reinforcement learning by a traditional deep RL algorithm whereby policy $ \pi $ interacts with the environment for $ T $ steps and updates its parameters to optimise $ \rp $ over time. Agent experience $ \mathrm{E} = ((s_0, a_0), (s_1, a_1),\dots, (s_{T-1}, a_{T-1}) ) $ is stored.
+	\item Select pairs of clips $ (\sigma^1, \sigma^2) $ from $ \expbuff $, request a preference $ \mu $ from the annotator on each sampled pair, and add the labelled pair to the annotation buffer $ \annbuff $.
+	\item Supervised learning to train the reward model on $ \annbuff $, the preferences expressed by the annotator so far.
+\end{enumerate}
+More detail on each process is provided below.
+
+\subsubsection{Process 1: Training the policy} %TODO make sure I mention q-learning v policy optimisation distinction in section \ref{subsection:rl_taxonomy}
+As mentioned, process 1 is akin to traditional RL except $ \rp $ is used in place of the environment reward $ r $. There are two subtleties to mention. Firstly, since $ \rp $ is learned while RL is taking place, \cite{Christiano2017} prefer policy optimization methods over Q-learning, as these have been successfully applied to RL tasks with a non-stationary reward function \cite{Ho2016}. Specifically, they use A2C \cite{Mnih2016} and TPRO \cite{Schulman2015}. However, the follow up paper \cite{Ibarz2018} uses a Q-learning method\footnote{The reason for deviating from the recommendation in \cite{Christiano2017} is that \cite{Ibarz2018} combine reward learning from trajectory preferences and expert demonstrations, and DQfD is state-of-the-art for the latter problem.}, DQfD \cite{Hester2017}, and it is not clear that performance is impaired. Hence, the literate is ambiguous on whether a non-stationary reward function is necessarily problematic for Q-learning. %TODO link to the section of my method where I say that I used DQN; motivate why I did this; say that reinitialising agent should make it okay.
+
+Secondly, the reward model $ \rp $ is trained only on pairwise comparisons, and so its scale is underdetermined. Previous work therefore proposes periodically normalising $ \rp $ to have zero mean and constant standard deviation over the examples in $ \annbuff $. This is crucial for training stability since deep RL is sensitive to the scale of rewards. %TODO perhaps comment here or later on what Zac said that scaling rewards can actually in some cases change optimal policy...
+%TODO comment here on later on the subtelties of normalisation when using an ensemble for your rewards.
+
+\subsubsection{Process 2: Selecting and annotating clips}
+
+
+\subsubsection{Process 3: Training the reward model}
 Again, if we assume that there is some latent reward function $ \hat{r} : \mathcal{S} \times \mathcal{A} \mapsto \reals $ which explains the human's judgements, and also that the human's probability of preferring one trajectory to another depends exponentially on the value of $ \hat{r} $ summed over the trajectory, we can model $ \hat{r} $ with a neural network and fit its parameters to best explain the human's judgements.
+
+\begin{align*}
+\hat{P}(\sigma^1 \succ \sigma^2) = \frac{\exp \sum_t \hat{r}(s_t^1, a_t^1)}{\exp \sum_t \hat{r}(s_t^1, a_t^1) + \exp \sum_t \hat{r}(s_t^2, a_t^2)}
+\end{align*}
+\begin{align*}
+\text{loss}(\hat{r}) = -\sum_{(\sigma^1, \sigma^2, \mu) \in D} \mu(1) \log \hat{P}(\sigma^1 \succ \sigma^2) + \mu(2)\log \hat{P}(\sigma^2 \succ \sigma^1)
+\end{align*}
+
 
 \chapter{Uncertainty in Deep Learning}
 % Talk about Yarin's thesis, BNNs; maybe Ian Obsband paper for good measure (esp. if I end up using ensemble instead of MC-Dropout?)
