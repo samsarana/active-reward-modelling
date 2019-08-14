@@ -21,6 +21,7 @@
 \newcommand{\E}[2]{\mathbb{E}_{#1} \left[ #2 \right] }
 \newcommand{\V}[2]{\mathbb{V}ar_{#1} \left[ #2 \right]}
 \newcommand{\KLD}[2]{\mathrm{KL} \left[ \left. \left. #1 \right|\right| #2 \right] }
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
 
 \newcommand{\w}{\mathbf{w}}
 \newcommand{\data}{\mathcal{D}}
@@ -282,22 +283,54 @@ Note that line 11 assumes we are training DQN to perform an episodic task, hence
 %TODO do I need to describe neural networks too?
 
 \section{Reinforcement Learning from Unknown Reward Functions}
-For many domains in which we might want to use RL, states of the environment are not inherently associated with rewards.  Thus, we have the additional task of specifying a reward function, which maps states to rewards. Argue the case that directly specifying a reward function is hard, in order to motivate the next section: Reward Learning
-% We can use feedback of different modalities
-% There is both the standard and the deep case to consider
-\subsection{Reward Learning with Handcrafted Feature Transformations}
+So far, we have assumed that as the agent interacts with the environment, it receives both information about the next state and the associated scalar reward. This presents an obvious challenge if we want to apply RL to solve real-world problems: since the world does not give scalar rewards, it seems we would have to manually specify a reward function mapping states of the world to rewards. For complex or poorly defined goals, this is difficult to do. If we try instead to design an approximate reward function, an agent optimizing hard for this objective will do so at the expense of satisfying our preferences \cite[p.~1]{Christiano2017}.
+
+To circumvent this issue, a growing body of work studies how to do RL from various forms of human \textit{feedback}, instead of an explicit reward function. Three main feedback methods have been studied, all of which involve a human-in-the-loop providing information to the agent about the desired behaviour. Firstly, an agent may learn from expert demonstrations. This may involve using demonstrations to infer a reward function, an approach known as \textit{inverse reinforcement learning} \cite{Ng2000, Ziebart2008}. One can then use a standard RL algorithm on this recovered reward function. Other methods involve training a policy directly from demonstrations, referred to as \textit{imitation learning} \cite{Ho2016, Hester2017}.
+
+Secondly, an agent may learn from feedback on its current policy in the form of scalar rewards \cite{Knox2009, Warnell2017}. Instead of providing a set of demonstrations, the human-in-the-loop observes the agent's behaviour and gives an appropriate reward. If it is assumed that the human provides this reinforcement according to some latent reward function $ \hat{r} : \mathcal{S} \times \mathcal{A} \mapsto \reals $, then standard supervised learning techniques can be applied to model this function. The agent can then select actions so as to maximise modelled reward.
+
+Finally, an agent may learn from binary preferences over trajectories \cite{Wilson2012, Christiano2017}. As with the \textit{policy feedback} method, the human-in-the-loop observes the agent's behaviour. However, instead of giving scalar rewards, she is periodically presented with a pair of trajectories and must indicate which they prefer\footnote{The human also has the option of expressing indifference, or that the trajectories are incomparable.}. In a similar fashion to the above, we can model the human's preferences $ \hat{r} : \mathcal{S} \times \mathcal{A} \mapsto \reals $. Then, standard RL algorithms can be applied to maximise the expected (modelled) reward over time.
+%TODO is this last paragraph too specfic since it only applies to the reward learning from trajectory preferences in the Deep RL case?
+
+Each of these methods have shown promising results, and some of the advantages and disadvantages are summarised in Table \ref{table:1}.
+
+\small\singlespacing
+\begin{tabularx}{\textwidth}{ 
+		|X|X|X|X|
+	}
+	\hline 
+\textbf{Property} & \textbf{Trajectory preferences} & \textbf{Expert demonstrations} & \textbf{Policy feedback} \\ 
+\hline 
+Demandingness for human & Human only needs to judge outcomes & Human needs to perform task (expertly) & Human needs to provide suitable scalar rewards \\ 
+\hline 
+Upper bound on performance? & Superhuman performance is possible & Impossible to significantly surpass performance of expert & Superhuman performance is possible \\ 
+\hline 
+Suitability to exploration-heavy tasks & Limited\footnote{\label{footnote:exploration}The human can only give feedback on states visited by the agent. If the agent does not explore well, this limits the amount of information the human can convey. Since exploration is determined by the inferred reward func } & Well suited, since demonstrations can guide exploration & Limited\footnote{See footnote \ref{footnote:exploration}} \\ 
+\hline 
+Communication efficiency & On the order of hundreds of bits per human hour & Much richer in information than trajectory preferences (Ibarz et al. show that demonstrations half the amount of human time required to achieve the same level of performance) & Scalar rewards provide richer information than binary preferences over trajectories, but not as rich as demonstrations \\ 
+\hline 
+Computational efficiency & On the order of 10 million learning time steps (in Atari environments) & On the order of 10 million learning time steps (in Atari environments) & On the order of thousands of time steps (in Atari environments)* \\ 
+\hline
+\end{tabularx}
+\caption{Summary of the properties of using different forms of human feedback in RL without a reward function.} \label{table:1}
+\doublespacing
+\normalsize
+
+Since this dissertation concerns reward learning from trajectory preferences specifically, the remainder of this section explains in more detail the algorithms used to do so. There are two branches of work on this question: that which learns a reward function based on handcrafted features of the environment state, and that which takes the deep learning approach of training a reward model end-to-end without handcrafted feature.
+
+\subsection{Reward Learning from Trajectory Preferences with Handcrafted Feature Transformations}
+% Summarise the contributions of the 2017,18,19 papers by Sadigh's lab.
+% (+Batch) Active Preference-Based Learning of Reward Functions (ignore the active part here)
+% DemPref Learning Reward Functions by Integrating Human Demonstrations and Preferences
 
 \subsubsection{Active Preference-Based Learning of Reward Functions}
 
 \subsubsection{Batch Active Preference-Based Learning of Reward Functions}
 
 \subsubsection{DemPref}
-% Summarise the contributions of the 2017,18,19 papers by Sadigh's lab.
-% (+Batch) Active Preference-Based Learning of Reward Functions (ignore the active part here)
-% DemPref Learning Reward Functions by Integrating Human Demonstrations and Preferences
-\subsection{Reward Learning in Deep RL}
-% Christiano; Ibarz. Basically use the Context section of Ibarz -- this will make it easy!
-% perhaps mention SARM Agenda
+
+\subsection{Reward Learning from Trajectory Preferences in Deep RL}
+Again, if we assume that there is some latent reward function $ \hat{r} : \mathcal{S} \times \mathcal{A} \mapsto \reals $ which explains the human's judgements, and also that the human's probability of preferring one trajectory to another depends exponentially on the value of $ \hat{r} $ summed over the trajectory, we can model $ \hat{r} $ with a neural network and fit its parameters to best explain the human's judgements.
 
 \chapter{Uncertainty in Deep Learning}
 % Talk about Yarin's thesis, BNNs; maybe Ian Obsband paper for good measure (esp. if I end up using ensemble instead of MC-Dropout?)
@@ -388,7 +421,7 @@ We used the environments provided by OpenAI Gym to run our experiments.
 % acknowledgements
 
 \bibliographystyle{plain}
-\bibliography{MSc}
+\bibliography{library}
 
 \appendix
 \appendixpage

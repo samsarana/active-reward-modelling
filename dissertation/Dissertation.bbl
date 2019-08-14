@@ -1,4 +1,4 @@
-\begin{thebibliography}{1}
+\begin{thebibliography}{10}
 
 \bibitem{Achiam2019}
 Joshua Achiam.
@@ -10,10 +10,35 @@ Dario Amodei, Chris Olah, Jacob Steinhardt, Paul Christiano, John Schulman, and
 \newblock {Concrete Problems in AI Safety}.
 \newblock pages 1--29, 2016.
 
+\bibitem{Christiano2017}
+Paul Christiano, Jan Leike, Tom~B. Brown, Miljan Martic, Shane Legg, and Dario
+  Amodei.
+\newblock {Deep reinforcement learning from human preferences}.
+\newblock 2017.
+
 \bibitem{Gal2017a}
 Yarin Gal.
 \newblock {Uncertainty in Deep Learning}.
 \newblock {\em Phd Thesis}, 1(1):1--11, 2017.
+
+\bibitem{Hester2017}
+Todd Hester, Matej Vecerik, Olivier Pietquin, Marc Lanctot, Tom Schaul, Bilal
+  Piot, Dan Horgan, John Quan, Andrew Sendonaris, Gabriel Dulac-Arnold, Ian
+  Osband, John Agapiou, Joel~Z. Leibo, and Audrunas Gruslys.
+\newblock {Deep Q-learning from Demonstrations}.
+\newblock 2017.
+
+\bibitem{Ho2016}
+Jonathan Ho and Stefano Ermon.
+\newblock {Generative Adversarial Imitation Learning}.
+\newblock 2016.
+
+\bibitem{Knox2009}
+W~Bradley Knox and Peter Stone.
+\newblock {Interactively shaping agents via human reinforcement: The Tamer
+  Framework}.
+\newblock {\em Proc. fifth Int. Conf. Knowl. capture - K-CAP '09}, page~9,
+  2009.
 
 \bibitem{Mnih2015}
 Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Andrei~A. Rusu, Joel Veness,
@@ -24,10 +49,32 @@ Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Andrei~A. Rusu, Joel Veness,
 \newblock {Human-level control through deep reinforcement learning}.
 \newblock {\em Nature}, 518(7540):529--533, 2015.
 
+\bibitem{Ng2000}
+Andrew Ng and Stuart Russell.
+\newblock {Algorithms for inverse reinforcement learning}.
+\newblock {\em Proc. Seventeenth Int. Conf. Mach. Learn.}, 0:663--670, 2000.
+
 \bibitem{Sutton2018}
 R.~S. Sutton and A.~G. Barto.
 \newblock {\em {Reinforcement Learning: An Introduction (2nd Edition, in
   preparation)}}.
 \newblock 2018.
+
+\bibitem{Warnell2017}
+Garrett Warnell, Nicholas Waytowich, Vernon Lawhern, and Peter Stone.
+\newblock {Deep TAMER: Interactive Agent Shaping in High-Dimensional State
+  Spaces}.
+\newblock pages 1545--1553, 2017.
+
+\bibitem{Wilson2012}
+A.~Wilson, A.~Fern, and P.~Tadepalli.
+\newblock {A Bayesian approach for policy learning from trajectory preference
+  queries}.
+\newblock {\em Adv. Neural Inf. Process. Syst.}, 2:1--9, 2012.
+
+\bibitem{Ziebart2008}
+B.D. Ziebart, Andrew Maas, J.A. Bagnell, and A.K. Dey.
+\newblock {Maximum entropy inverse reinforcement learning}.
+\newblock {\em Proc. AAAI}, (January):1433--1438, 2008.
 
 \end{thebibliography}

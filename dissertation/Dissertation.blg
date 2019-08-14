@@ -1,6 +1,11 @@
 This is BibTeX, Version 0.99dThe top-level auxiliary file: Dissertation.aux
 The style file: plain.bst
-Database file #1: MSc.bib
+Database file #1: library.bib
 Warning--empty journal in Amodei2016
+Warning--empty journal in Christiano2017
+Warning--empty journal in Hester2017
+Warning--empty journal in Ho2016
 Warning--empty publisher in Sutton2018
-(There were 2 warnings)
+Warning--empty journal in Warnell2017
+Warning--there's a number but no volume in Ziebart2008
+(There were 7 warnings)
