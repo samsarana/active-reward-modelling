@@ -24,8 +24,8 @@ def cartpole_defaults(args):
     args.n_epochs_train_rm = 2000
     args.clip_length = 25
     args.reinit_rm = True
-    args.n_rounds = 50
-    args.n_runs = 20
+    # args.n_rounds = 50
+    # args.n_runs = 20
     return args
 
 
