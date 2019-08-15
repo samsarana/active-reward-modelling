@@ -52,7 +52,7 @@ def init_rm(args):
     """Intitialises and returns the necessary objects for
        reward learning: reward model and optimizer.
     """
-    logging.debug('Initialising reward model') # NB changed logging level from info to debug
+    logging.info('Initialising reward model')
     if args.size_rm_ensemble >= 2:
         reward_model = RewardModelEnsemble(args.obs_shape, args.act_shape, args)
     else:
