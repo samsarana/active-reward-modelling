@@ -149,7 +149,7 @@ def make_arg_changes(args):
     if args.test:
         args.n_runs = 1
         args.n_rounds = 1
-        args.n_agent_steps = 1200
+        args.n_agent_steps = 5000
         args.n_epochs_pretrain_rm = 10
         args.n_epochs_train_rm = 10
         args.selection_factor = 2

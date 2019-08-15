@@ -14,6 +14,9 @@ def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, 
     epochs = args.n_epochs_pretrain_rm if i_label <= -1 else args.n_epochs_train_rm
     logging.info("Training reward model for {} epochs".format(epochs))
     reward_model.train() # dropout on
+    # DEBUG
+    logging.info("reward_model weight before train {}: {}".format(i_label, list(reward_model.parameters())[0][0][0]))
+    # END
     for epoch in range(epochs):
         with torch.autograd.detect_anomaly():
             clip_pair_batch, mu_batch = prefs_buffer.sample(args.batch_size_rm)
@@ -39,6 +42,9 @@ def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, 
             n_indifferent_labels = Counter(mu_batch).get(0.5, 0)
             loss_lower_bound = n_indifferent_labels * math.log(2)
             writer2.add_scalar('6.reward_model_loss/label_{}'.format(i_label), loss_lower_bound, epoch)
+    # DEBUG
+    logging.info("reward_model weight after  train {}: {}".format(i_label, list(reward_model.parameters())[0][0][0]))
+    # END
     return reward_model
     
 

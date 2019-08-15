@@ -1,6 +1,6 @@
 """Classes and functions to do Q-learning"""
 
-import gym, random, time
+import gym, random, time, logging
 import numpy as np
 from collections import deque
 import torch
@@ -161,6 +161,7 @@ def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
                        each transition, rather than action taken by agent
        expected_q_value : batch_dim. implements y_i.
     """
+    # import ipdb; ipdb.set_trace()
     state, action, true_reward, next_state, done = replay_buffer.sample(q_net.batch_size)
     # compute r_hats according to current reward_model and/or normalise rewards
     if reward_model: # RL from preferences
@@ -177,12 +178,14 @@ def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
         # import ipdb
         # ipdb.set_trace()
     else:
-        if normalise_rewards: # RL w normalised rewards
-            assert true_reward_stats is not None, "You told me to normalise rewards for RL but you haven't specified mean and variance of reward function w.r.t. examples in prefs_buffer!"
-            rt_mean, rt_var = true_reward_stats
-            rew = (true_reward - rt_mean) / np.sqrt(rt_var + 1e-8)
-        else: # RL wo normalised rewards
-            rew = true_reward
+        logging.info("damn")
+        pass
+        # if normalise_rewards: # RL w normalised rewards
+        #     assert true_reward_stats is not None, "You told me to normalise rewards for RL but you haven't specified mean and variance of reward function w.r.t. examples in prefs_buffer!"
+        #     rt_mean, rt_var = true_reward_stats
+        #     rew = (true_reward - rt_mean) / np.sqrt(rt_var + 1e-8)
+        # else: # RL wo normalised rewards
+        #     rew = true_reward
 
     q_values         = q_net(state)
     next_q_values    = q_target(next_state).detach() # params from target network held fixed when optimizing loss func
