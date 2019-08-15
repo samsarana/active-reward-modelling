@@ -129,7 +129,8 @@ class AcrobotScrambledEnv(core.Env):
         terminal = self._terminal()
         # BEGIN MODIFICATION
         # reward = -1. if not terminal else 0.
-        reward = np.random.randint(-100,100) # scramble the reward function...
+        # reward = np.random.randint(-100,100) # scramble the reward function...
+        reward = 0 # it should now be impossible to learn a good policy in this environment...
         # END MODIFICATION
         return (self._get_ob(), reward, terminal, {})
 
