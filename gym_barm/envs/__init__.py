@@ -1,4 +1,5 @@
 from gym_barm.envs.cartpole_continual import CartPoleContinualEnv
+from gym_barm.envs.cartpole_scrambled import CartPoleScrambledEnv
 from gym_barm.envs.mountain_car_continual import MountainCarContinualEnv
 from gym_barm.envs.mountain_car_continual_enriched import MountainCarContinualEnrichedEnv
 from gym_barm.envs.acrobot import AcrobotEnv

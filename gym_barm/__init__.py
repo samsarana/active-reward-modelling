@@ -8,6 +8,13 @@ register(
 )
 
 register(
+    id='CartPoleScrambled-v0',
+    entry_point='gym_barm.envs:CartPoleScrambledEnv',
+    max_episode_steps=200,
+    reward_threshold=195.0,
+)
+
+register(
     id='MountainCarContinual-v0',
     entry_point='gym_barm.envs:MountainCarContinualEnv',
     max_episode_steps=200,
