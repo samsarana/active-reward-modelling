@@ -110,6 +110,9 @@ def make_arg_changes(args):
     envs_to_ids = { 'cartpole': {'id': 'gym_barm:CartPoleContinual-v0',
                                 'id_test': 'CartPole-v0',
                                 },
+                    'cartpole_scrambled': {'id': 'gym_barm:CartPoleScrambled-v0',
+                                           'id_test': 'CartPole-v0', # test in standard env so we know how well agent is truly doing
+                                },
                     'acrobot': {'id': 'Acrobot-v1', # standard Acrobot already has suitable reward function for casting as continuing task
                                 'id_test': 'Acrobot-v1',
                                },
