@@ -5,7 +5,7 @@ import torch, gym
 from gym import wrappers
 from time import time, sleep
 from rl_logging import *
-from atari_preprocessing import preprocess_atari_env
+from atari_preprocessing import *
 
 def test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round, sub_round, num_episodes=100):
     """Using the non-continuous version of the environment and q_net
@@ -16,6 +16,8 @@ def test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round,
     # set up testing
     env = gym.make(args.env_ID_test)
     # if isinstance(env.env, gym.envs.atari.AtariEnv):
+    if args.env_str == 'frozen_lake':
+        env = DiscreteToBox(env)
     if args.env_str == 'pong':
         env = preprocess_atari_env(env)
     env.seed(args.random_seed)

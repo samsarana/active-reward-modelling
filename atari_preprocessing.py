@@ -61,3 +61,25 @@ class FrameStack(gym.Wrapper):
             return np.stack(self.frames, axis=0) # CHANGED FROM AXIS=2
         else:
             return np.concatenate(self.frames, axis=0) # CHANGED FROM AXIS=2. SEEMS BAD!!! work rationally, from the bottom up...
+
+
+class DiscreteToBox(gym.Wrapper):
+    """Takes env with
+       env.observation_space = Box
+       and wraps it to have observation_space Discrete
+       with shape (1,)
+    """
+    def __init__(self, env):
+        """Buffer observations and stack across channels (last axis)."""
+        gym.Wrapper.__init__(self, env)
+        n = env.observation_space.n
+        self.observation_space = spaces.Box(low=0, high=n-1, shape=(1,))
+
+    def reset(self):
+        """Clear buffer and re-fill by duplicating the first observation."""
+        ob = self.env.reset()
+        return np.array([ob])
+
+    def step(self, action):
+        ob, reward, done, info = self.env.step(action)
+        return np.array([ob]), reward, done, info

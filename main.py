@@ -11,14 +11,14 @@ from q_learning import *
 from reward_learning import *
 from active_learning import *
 from defaults import *
-from atari_preprocessing import preprocess_atari_env
+from atari_preprocessing import *
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
     # experiment settings
     parser.add_argument('--info', type=str, default='', help='Tensorboard log is saved in ./logs/i_run/random_seed/[true|pred]/')
     parser.add_argument('--default_settings', type=str, default=None, help='Flag to override args with those in default.py. Choice of: acrobot_sam, openai, openai_atari, cartpole')
-    parser.add_argument('--env_str', type=str, default='cartpole', help='Choice of: acrobot, mountain_car, cartpole, cartpole_old, cartpole_old_rich')
+    parser.add_argument('--env_str', type=str, default='cartpole', help='Choice of: acrobot, mountain_car, cartpole, cartpole_old, cartpole_old_rich, frozen_lake')
     parser.add_argument('--n_runs', type=int, default=10, help='number of runs to repeat the experiment')
     parser.add_argument('--n_rounds', type=int, default=100, help='number of rounds to repeat main training loop')
     parser.add_argument('--RL_baseline', action='store_true', help='Do RL baseline instead of reward learning?')
@@ -133,6 +133,9 @@ def make_arg_changes(args):
                                      },
                     'pong': {'id': 'PongNoFrameskip-v0',
                              'id_test': 'PongNoFrameskip-v0',
+                                     },
+                    'frozen_lake': {'id': 'FrozenLake-v0',
+                                    'id_test': 'FrozenLake-v0',
                                      }
     }
     args.env_ID = envs_to_ids[args.env_str]['id']
@@ -177,6 +180,8 @@ def run_experiment(args, i_run, returns_summary):
 
     # make environment
     env = gym.make(args.env_ID)
+    if args.env_str == 'frozen_lake':
+        env = DiscreteToBox(env)
     # if isinstance(env.env, gym.envs.atari.AtariEnv):
     if args.env_str == 'pong':
         env = preprocess_atari_env(env)
@@ -184,8 +189,13 @@ def run_experiment(args, i_run, returns_summary):
     else:
         args.dqn_archi = 'mlp'
     env.seed(args.random_seed)
-    args.obs_shape = env.observation_space.shape[0] # env.observation_space is Box(4,) and calling .shape returns (4,) [gym can be ugly]
-    args.obs_shape_all = env.observation_space.shape # TODO ugly
+    if isinstance(env.observation_space, gym.spaces.Box):
+        args.obs_shape = env.observation_space.shape[0] # env.observation_space is Box(4,) and calling .shape returns (4,) [gym can be ugly]
+        args.obs_shape_all = env.observation_space.shape # TODO ugly
+    # elif isinstance(env.observation_space, gym.spaces.Discrete):
+    #     args.obs_shape = 1
+    else:
+        raise RuntimeError("I don't know what observation space {} is!".format(env.observation_space))
     assert isinstance(env.action_space, gym.spaces.Discrete), 'DQN requires discrete action space.'
     args.act_shape = 1 # [gym doesn't have a nice way to get shape of Discrete space... env.action_space.shape -> () ]
     args.obs_act_shape = args.obs_shape + args.act_shape
