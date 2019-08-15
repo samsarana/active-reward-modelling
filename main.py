@@ -30,6 +30,7 @@ def parse_arguments():
     parser.add_argument('--continue_once_solved', action='store_true', help='Experiment will continue even when agent test mean ep return >= env.spec.reward_threshold')
     parser.add_argument('--seed_offset', type=int, default=0, help='We seed with i_run + seed_offset, where i_run in {0..n_runs-1}')
     parser.add_argument('--n_sample_reps', type=int, default=1, help='For debugging: if >1, this will cause n_sample_reps exact copies of the first clip sampled from AgentExperience to be given to acquisition function')
+    parser.add_argument('--reinit_rm_when_q_learning', action='store_true', help='For debugging: this will do the crazy thing of reinitialising reward model every time we want to use it to send rewards to DQN')
 
     # agent hyperparams
     parser.add_argument('--h1_agent', type=int, default=32)
@@ -217,6 +218,7 @@ def main():
     os.makedirs('./logs/', exist_ok=True)
     logging.basicConfig(filename='./logs/{}.log'.format(args.info), level=logging.INFO)
     logging.getLogger().addHandler(logging.StreamHandler()) # makes messages print to stderr, too
+    logging.basicConfig(filename='./logs/{}_debug.log'.format(args.info), level=logging.DEBUG)
     logging.info('Running experiment with the following settings:')
     for arg in vars(args):
         logging.info('{}: {}'.format(arg, getattr(args, arg)))

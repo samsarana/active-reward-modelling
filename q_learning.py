@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from reward_learning import RewardModelEnsemble
+from reward_learning import RewardModelEnsemble, init_rm
 
 class DQN(nn.Module):
     def __init__(self, num_inputs, num_actions, args):
@@ -165,6 +165,9 @@ def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
     state, action, true_reward, next_state, done = replay_buffer.sample(q_net.batch_size)
     # compute r_hats according to current reward_model and/or normalise rewards
     if reward_model: # RL from preferences
+        if args.reinit_rm_when_q_learning:
+            logging.debug("DEBUG: Getting rew in q_learning_loss from reinitialised reward_model")
+            reward_model, optimizer_rm = init_rm(args)
         sa_pair = torch.cat((state, action.unsqueeze(1).float()), dim=1)
         assert isinstance(reward_model, nn.Module)
         reward_model.eval() # turn off dropout at 'test' time i.e. when getting rewards to send to DQN
