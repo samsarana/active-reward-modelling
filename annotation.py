@@ -12,6 +12,7 @@ def generate_rand_clip_pairing(agent_experience, num_labels_requested, args):
     if args.acq_search_strategy == 'christiano':
         logging.info('Collecting {} clip pairs and selecting the best 1/{} using {} acquisition func'.format(
                     args.selection_factor * num_labels_requested, args.selection_factor, args.acquistion_func.__name__))
+
         rand_clip_data = agent_experience.sample_pairs(args.selection_factor * num_labels_requested) # rand_clip_data = (rand_clip_pairs, rand_rews, rand_mus)
     elif args.acq_search_strategy == 'all_pairs':
         logging.info('Collecting all possible clip pairs. We will later select the best {} using {} acquisition func'.format(
@@ -45,12 +46,13 @@ class AgentExperience():
     """For collecting experience from rollouts in a way that is
        friendly to downstream processes.
     """
-    def __init__(self, experience_shape, force_label_choice=False):
+    def __init__(self, experience_shape, force_label_choice=False, n_sample_reps=1):
         self.num_clips, self.clip_length, self.obs_act_size = experience_shape
         self.force_label_choice = force_label_choice
         self.clips = np.zeros(shape=experience_shape) # default dtype=np.float64. OK for torching later?
         self.clip_rewards = np.zeros(shape=(self.num_clips, self.clip_length))
         self.i = 0 # maintain pointer to where to add next clip
+        self.n_sample_reps = n_sample_reps
 
     def add(self, oa_pair, reward):
         """Takes oa_pair of type torch.tensor(dtype=torch.float)
@@ -102,6 +104,8 @@ class AgentExperience():
             "Trying to sample {} clips ({} labels/clip_pairs) but agent_experience only has {} clips!".format(
             batch_size*2, batch_size, self.clips.shape[0])
         rows_i = np.random.choice(batch_size*2, size=(batch_size,2), replace=False)
+        if self.n_sample_reps > 1:
+            rows_i = np.tile(rows_i, (self.n_sample_reps, 1)) # tile the rows to sample `self.n_sample_reps` times in 0th dim (and 1 time--i.e. don't tile--in 1st dim)
         clip_pairs = self.clips[rows_i] # TODO fancy indexing is slow. is this a bottleneck?
         rewards = self.clip_rewards[rows_i]
         returns = rewards.sum(axis=-1)

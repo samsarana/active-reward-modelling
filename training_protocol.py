@@ -47,7 +47,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
             q_net, q_target, _, optimizer_agent = init_agent(args) # keep replay buffer experience -- OK as long as we use the new rewards
         # set up buffer to collect agent_experience for possible annotation
         num_clips = int(args.n_agent_steps // args.clip_length)
-        agent_experience = AgentExperience((num_clips, args.clip_length, args.obs_act_shape), args.force_label_choice) # since episodes do not end we collect one long trajectory then sample clips from it
+        agent_experience = AgentExperience((num_clips, args.clip_length, args.obs_act_shape), args.force_label_choice, args.n_sample_reps) # since episodes do not end we collect one long trajectory then sample clips from it
         for sub_round in range(args.agent_test_frequency):
             logging.info("Begin train {}".format(sub_round))
             q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
@@ -172,7 +172,7 @@ def do_pretraining_rollouts(q_net, env, args):
     n_initial_steps = args.selection_factor * args.n_labels_per_round * 2 * args.clip_length
     num_clips       = args.selection_factor * args.n_labels_per_round * 2
     logging.info('Stage -1.1: Collecting rollouts from untrained policy, {} agent steps'.format(n_initial_steps))
-    agent_experience = AgentExperience((num_clips, args.clip_length, args.obs_act_shape), args.force_label_choice)
+    agent_experience = AgentExperience((num_clips, args.clip_length, args.obs_act_shape), args.force_label_choice, args.n_sample_reps)
     epsilon_pretrain = 0.5 # for now I'll use a constant epilson during pretraining
     state = env.reset()
     for _ in range(n_initial_steps):

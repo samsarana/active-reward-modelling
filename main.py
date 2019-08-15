@@ -29,6 +29,7 @@ def parse_arguments():
     parser.add_argument('--save_pair_videos', action='store_true', help='Flag to save videos of acquired clip pairs')
     parser.add_argument('--continue_once_solved', action='store_true', help='Experiment will continue even when agent test mean ep return >= env.spec.reward_threshold')
     parser.add_argument('--seed_offset', type=int, default=0, help='We seed with i_run + seed_offset, where i_run in {0..n_runs-1}')
+    parser.add_argument('--n_sample_reps', type=int, default=1, help='For debugging: if >1, this will cause n_sample_reps exact copies of the clips sampled from AgentExperience to also be sampled')
 
     # agent hyperparams
     parser.add_argument('--h1_agent', type=int, default=32)
