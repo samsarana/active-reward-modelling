@@ -116,7 +116,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
         # record step info
         sa_pair = torch.tensor(np.append(state, action)).float()
         agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
-        replay_buffer.push(state, action, r_true, next_state, False) # done=False since agent thinks the task is continual; r_true when args.RL baseline
+        replay_buffer.push(state, action, r_true, next_state, False) # done=False since agent thinks the task is continual; r_true used only when args.RL baseline
         dummy_returns = log_agent_step(sa_pair, r_true, dummy_returns, reward_stats, reward_model, args)
         # prepare for next step
         state = next_state
