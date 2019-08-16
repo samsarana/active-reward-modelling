@@ -166,7 +166,7 @@ def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
     # compute r_hats according to current reward_model and/or normalise rewards
     if reward_model: # RL from preferences
         if args.reinit_rm_when_q_learning:
-            logging.debug("DEBUG: Getting rew in q_learning_loss from reinitialised reward_model")
+            # logging.debug("Getting rew in q_learning_loss from reinitialised reward_model")
             reward_model, optimizer_rm = init_rm(args)
         sa_pair = torch.cat((state, action.unsqueeze(1).float()), dim=1)
         assert isinstance(reward_model, nn.Module)
@@ -181,14 +181,13 @@ def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
         # import ipdb
         # ipdb.set_trace()
     else:
-        logging.info("damn")
-        pass
-        # if normalise_rewards: # RL w normalised rewards
-        #     assert true_reward_stats is not None, "You told me to normalise rewards for RL but you haven't specified mean and variance of reward function w.r.t. examples in prefs_buffer!"
-        #     rt_mean, rt_var = true_reward_stats
-        #     rew = (true_reward - rt_mean) / np.sqrt(rt_var + 1e-8)
-        # else: # RL wo normalised rewards
-        #     rew = true_reward
+        # logging.debug("Using TRUE REWARD")
+        if normalise_rewards: # RL w normalised rewards
+            assert true_reward_stats is not None, "You told me to normalise rewards for RL but you haven't specified mean and variance of reward function w.r.t. examples in prefs_buffer!"
+            rt_mean, rt_var = true_reward_stats
+            rew = (true_reward - rt_mean) / np.sqrt(rt_var + 1e-8)
+        else: # RL wo normalised rewards
+            rew = true_reward
 
     q_values         = q_net(state)
     next_q_values    = q_target(next_state).detach() # params from target network held fixed when optimizing loss func
