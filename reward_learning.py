@@ -285,7 +285,19 @@ class PrefsBuffer():
            true and modelled rewards.
         """
         all_rewards_flat = self.rewards[:self.current_length].reshape(-1)
-        return all_rewards_flat.mean(), all_rewards_flat.var()
+        mean, var = all_rewards_flat.mean(), all_rewards_flat.var()
+        if var == 0: var = 1
+        # sometimes early in training using RL baseline
+        # the prefs buffer won't contain any experience
+        # with non-zero true reward. this would make the
+        # normalised true rewards explode
+        # setting var to 1 if this is the case is one fix
+        # though it is kinda hacky & it seems plausible
+        # that this could lead to weird behaviour...
+        # in general: take care using normalisation with
+        # RL baseline! (When you start Atari experiments,
+        # best to turn it off initially...)
+        return mean, var
 
 
 def compute_reward_stats(reward_model, prefs_buffer):
