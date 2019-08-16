@@ -1,2 +1,2 @@
 #!/bin/bash
-xvfb-run -s "-screen 0 1400x900x24" python main.py --env=acrobot_all_scrambled --n_runs=1 --n_rounds=3 --default_settings=acrobot_sam --info=RandAcq-acrobot-0rew-lr0   --lr_rm=0. --save_video
+xvfb-run -s "-screen 0 1400x900x24" python main.py --env=acrobot_all_scrambled --n_runs=1 --n_rounds=3 --default_settings=acrobot_sam --info=RandAcq-acrobot-0rew-lr0   --lr_rm=0. --save_video --continue_once_solved
