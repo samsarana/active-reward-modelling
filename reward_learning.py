@@ -14,16 +14,15 @@ def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, 
     epochs = args.n_epochs_pretrain_rm if i_label <= -1 else args.n_epochs_train_rm
     logging.info("Training reward model for {} epochs".format(epochs))
     reward_model.train() # dropout on
-    # DEBUG
-    logging.info("reward_model weight before train {}: {}".format(i_label, list(reward_model.parameters())[0][0][0]))
-    # END
+    # logging.info("reward_model weight before train {}: {}".format(i_label, list(reward_model.parameters())[0][0][0]))
     for epoch in range(epochs):
         with torch.autograd.detect_anomaly():
             clip_pair_batch, mu_batch = prefs_buffer.sample(args.batch_size_rm)
             if args.normalise_rm_while_training:
-                reward_model = compute_mean_var(reward_model, prefs_buffer) # TODO uncertain about the speed and correctness of recomputing mean/var every gradient update
-                r_hats_batch = reward_model(clip_pair_batch, normalise=True).squeeze(-1) # squeeze the oa_pair dimension that was passed through reward_model
-                loss_rm = compute_loss_rm(r_hats_batch, mu_batch)
+                raise RuntimeError("Normalising reward model while training is an untested idea. Why are you doing it?")
+                # reward_model = compute_mean_var(reward_model, prefs_buffer) # TODO uncertain about the speed and correctness of recomputing mean/var every gradient update
+                # r_hats_batch = reward_model(clip_pair_batch, normalise=True).squeeze(-1) # squeeze the oa_pair dimension that was passed through reward_model
+                # loss_rm = compute_loss_rm(r_hats_batch, mu_batch)
             else:
                 if isinstance(reward_model, RewardModelEnsemble):
                     r_hats_batch_draw = reward_model.forward_all(clip_pair_batch, normalise=False).squeeze(-1)
@@ -42,9 +41,7 @@ def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, 
             n_indifferent_labels = Counter(mu_batch).get(0.5, 0)
             loss_lower_bound = n_indifferent_labels * math.log(2)
             writer2.add_scalar('6.reward_model_loss/label_{}'.format(i_label), loss_lower_bound, epoch)
-    # DEBUG
-    logging.info("reward_model weight after  train {}: {}".format(i_label, list(reward_model.parameters())[0][0][0]))
-    # END
+    # logging.info("reward_model weight after  train {}: {}".format(i_label, list(reward_model.parameters())[0][0][0]))
     return reward_model
     
 
@@ -286,17 +283,23 @@ class PrefsBuffer():
         """
         all_rewards_flat = self.rewards[:self.current_length].reshape(-1)
         mean, var = all_rewards_flat.mean(), all_rewards_flat.var()
-        if var == 0: var = 1
-        # sometimes early in training using RL baseline
-        # the prefs buffer won't contain any experience
-        # with non-zero true reward. this would make the
-        # normalised true rewards explode
-        # setting var to 1 if this is the case is one fix
-        # though it is kinda hacky & it seems plausible
-        # that this could lead to weird behaviour...
-        # in general: take care using normalisation with
-        # RL baseline! (When you start Atari experiments,
-        # best to turn it off initially...)
+        if var == 0:
+            var = 1
+            logging.warning("Variance of true rewards of experience in prefs_buffer is zero!")
+            logging.warning("HACK: to save you, I set the variance to 1, but be warned!")
+            logging.info("This should be fine as long as RL_baseline is False")
+            logging.info("Since in this case, normalised true rewards are logged but not used by the algo")
+            logging.info("But if RL_baseline, then you should think carefully about whether hacking var to 1 could lead to strange behaviour")
+            # sometimes early in training using RL baseline
+            # the prefs buffer won't contain any experience
+            # with non-zero true reward. this would make the
+            # normalised true rewards explode
+            # setting var to 1 if this is the case is one fix
+            # though it is kinda hacky & it seems plausible
+            # that this could lead to weird behaviour...
+            # in general: take care using normalisation with
+            # RL baseline! (When you start Atari experiments,
+            # best to turn it off initially...)
         return mean, var
 
 
@@ -326,13 +329,23 @@ def compute_mean_var(reward_model, prefs_buffer):
             net = getattr(reward_model, 'layers{}'.format(ensemble_num))
             r_hats = net(sa_pairs).squeeze()
             assert r_hats.shape == (prefs_buffer.current_length * 2 * prefs_buffer.clip_length,)
-            setattr(reward_model, 'mean_prefs{}'.format(ensemble_num), r_hats.mean().item())
-            setattr(reward_model, 'var_prefs{}'.format(ensemble_num), r_hats.var().item())
+            mean, var = r_hats.mean().detach().item(), r_hats.var().detach().item()
+            if var == 0:
+                var = 1
+                logging.warning("Variance of predicted rewards over experience in prefs_buffer is zero!")
+                logging.warning("HACK: to save you, I set reward_model.var_prefs to 1, but be warned!")
+            setattr(reward_model, 'mean_prefs{}'.format(ensemble_num), mean)
+            setattr(reward_model, 'var_prefs{}'.format(ensemble_num), var)
     elif isinstance(reward_model, RewardModel):
         r_hats = reward_model(sa_pairs).squeeze()
         assert r_hats.shape == (prefs_buffer.current_length * 2 * prefs_buffer.clip_length,)
-        reward_model.mean_prefs = r_hats.mean().item()
-        reward_model.var_prefs = r_hats.var().item()
+        mean, var = r_hats.mean().detach().item(), r_hats.var().detach().item()
+        if var == 0:
+            var = 1
+            logging.warning("Variance of predicted rewards over experience in prefs_buffer is zero!")
+            logging.warning("HACK: to save you, I set reward_model.var_prefs to 1, but be warned!")
+        reward_model.mean_prefs = mean
+        reward_model.var_prefs = var
     return reward_model
 
 
