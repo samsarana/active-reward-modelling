@@ -10,7 +10,7 @@ def cartpole_defaults(args):
        from exponential to linear
        but I think it should be roughly the same
     """
-    args.lr_agent = 1e-3
+    # args.lr_agent = 1e-3
     args.replay_buffer_size = 30000
     args.target_update_period = 1
     args.target_update_tau = 8e-2
@@ -33,7 +33,7 @@ def cartpole_defaults(args):
 
 
 def acrobot_sam_defaults(args):
-    args.lr_agent = 1e-3
+    # args.lr_agent = 1e-3
     args.replay_buffer_size = 30000
     args.target_update_period = 1
     args.target_update_tau = 8e-2
@@ -57,7 +57,7 @@ def openai_defaults(args):
     """NB These settings succeeded for Acrobot
        though not quite as well as acrobot_sam_defaults
     """
-    args.lr_agent = 5e-4
+    # args.lr_agent = 5e-4
     args.replay_buffer_size = 50000
     args.target_update_period = 500
     args.target_update_tau = 1
@@ -78,7 +78,7 @@ def openai_defaults(args):
 
 
 def openai_atari_defaults(args):
-    args.lr_agent = 1e-4
+    # args.lr_agent = 1e-4
     args.replay_buffer_size = 10000
     args.target_update_period = 1000
     args.target_update_tau = 1
