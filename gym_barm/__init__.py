@@ -62,3 +62,9 @@ register(
     max_episode_steps=200,
     reward_threshold=195.0,
 )
+
+register(
+     id='Gridworld-v0',
+     entry_point='gym_barm.envs:GridworldEnv', 
+     max_episode_steps=1000, # value used by Zac
+)
