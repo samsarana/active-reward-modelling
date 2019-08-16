@@ -2,7 +2,7 @@ from gym.envs.registration import register
 
 register(
     id='CartPoleContinual-v0',
-    entry_point='gym_barm.envs:Continuous_CartPoleEnv',
+    entry_point='gym_barm.envs:CartPoleContinualEnv',
     max_episode_steps=200,
     reward_threshold=195.0,
 )
