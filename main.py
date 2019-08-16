@@ -122,6 +122,9 @@ def make_arg_changes(args):
                     'acrobot_scrambled': {'id': 'gym_barm:AcrobotScrambled-v1',
                                      'id_test': 'Acrobot-v1', # test in standard env so we know how well agent is truly doing
                                },
+                    'acrobot_all_scrambled': {'id': 'gym_barm:AcrobotScrambled-v1',
+                                     'id_test': 'gym_barm:AcrobotScrambled-v1', # this test will be meaningless
+                               },
                     'mountain_car': {'id': 'gym_barm:MountainCarContinual-v0',
                                     'id_test': 'MountainCar-v0',
                                     },

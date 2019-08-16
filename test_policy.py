@@ -24,6 +24,9 @@ def test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round,
     state, n, step = env.reset(), 0, 0
     returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
                'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
+    if args.save_video:
+        fname = '{}/videos/test/round={}sub={}time={}/'.format(args.logdir, i_train_round, sub_round, str(time()))
+        env = wrappers.Monitor(env, fname) # save all test videos
     while n < num_episodes:
         if args.render_policy_test and n < 3: # if render, watch 3 episodes
             env.render()
@@ -42,9 +45,9 @@ def test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round,
             n += 1
             if args.render_policy_test and n == 3:
                 env.close()
-            if n == num_episodes - 3 and args.save_video:
-                # save the final 3 test episodes (see https://github.com/openai/gym/wiki/FAQ#how-do-i-export-the-run-to-a-video-file)
-                env = wrappers.Monitor(env, args.logdir + '/videos/test/' + str(time()) + '/')
+            # if n == num_episodes - 3 and args.save_video:
+            #     # save the final 3 test episodes (see https://github.com/openai/gym/wiki/FAQ#how-do-i-export-the-run-to-a-video-file)
+            #     env = wrappers.Monitor(env, args.logdir + '/videos/test/' + str(time()) + '/')
             
             state = env.reset()
         step += 1
