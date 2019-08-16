@@ -6,6 +6,9 @@ def cartpole_defaults(args):
        because the extra steps are now
        taken at beginning of training. But I think
        this isn't an important moving part.
+       Also I changed the episilon annealing
+       from exponential to linear
+       but I think it should be roughly the same
     """
     args.lr_agent = 1e-3
     args.replay_buffer_size = 30000
