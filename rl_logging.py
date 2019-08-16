@@ -85,7 +85,7 @@ def log_agent_training_info(args, i_train_round):
     else:
         logging.info('Stage {}.1: RL using reward model'.format(i_train_round))
     if args.normalise_rewards:
-        logging.info('Agent will received rewards that have been *normalised* across all s-a pairs currenyly in prefs_buffer')
+        logging.info('Agent will received rewards that have been *normalised* across all s-a pairs currently in prefs_buffer')
     else:
         logging.info('**Agent will receive non-normalised rewards**')
     logging.info('Agent takes {} steps'.format(args.n_agent_steps))

@@ -28,9 +28,6 @@ def test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round,
     returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
                'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
     while n < num_episodes:
-        if args.render_policy_test and n < 3: # if render, watch 3 episodes
-            env.render()
-            sleep(1e-3)
         # agent interact with env
         action = q_net.act(state, epsilon=0)
         assert env.action_space.contains(action)
@@ -43,12 +40,8 @@ def test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round,
         if done:
             returns = log_agent_episode(returns, writers, step, i_train_round, sub_round, args, is_test=True)
             n += 1
-            if args.render_policy_test and n == 3:
-                env.close()
-            # if n == num_episodes - 3 and args.save_video:
-            #     # save the final 3 test episodes (see https://github.com/openai/gym/wiki/FAQ#how-do-i-export-the-run-to-a-video-file)
-            #     env = wrappers.Monitor(env, args.logdir + '/videos/test/' + str(time()) + '/')
-            
+            if args.save_video and args.n_test_vids_to_save > -1 and n == args.n_test_vids_to_save:
+                env.close() # stop saving video (unsure whether this unwraps the env or just forces video to stop by closing render window, but it works.)
             state = env.reset()
         step += 1
 
@@ -77,9 +70,6 @@ def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_ro
     n = 0
     returns = {'ep': 0, 'all': []}
     while n < num_episodes:
-        if args.render_policy_test:
-            env.render()
-            sleep(1e-3)
         # agent interact with env
         action = env.action_space.sample()
         _, r_true, done, _ = env.step(action) # one continuous episode
