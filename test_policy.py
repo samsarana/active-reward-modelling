@@ -20,13 +20,13 @@ def test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round,
         env = DiscreteToBox(env)
     if args.env_str == 'pong':
         env = preprocess_atari_env(env)
+    if args.save_video:
+        fname = '{}/videos/test/round={}sub={}time={}/'.format(args.logdir, i_train_round, sub_round, str(time()))
+        env = wrappers.Monitor(env, fname) # save all test videos
     env.seed(args.random_seed)
     state, n, step = env.reset(), 0, 0
     returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
                'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
-    if args.save_video:
-        fname = '{}/videos/test/round={}sub={}time={}/'.format(args.logdir, i_train_round, sub_round, str(time()))
-        env = wrappers.Monitor(env, fname) # save all test videos
     while n < num_episodes:
         if args.render_policy_test and n < 3: # if render, watch 3 episodes
             env.render()
