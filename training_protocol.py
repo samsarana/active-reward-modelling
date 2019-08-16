@@ -136,9 +136,9 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
         if step >= args.agent_learning_starts and step % args.agent_gdt_step_period == 0 and \
                 len(replay_buffer) >= 3*args.batch_size_agent:
             if args.RL_baseline:
-                loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, normalise_rewards=True, true_reward_stats=reward_stats)
+                loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, normalise_rewards=args.normalise_rewards, true_reward_stats=reward_stats)
             else:
-                loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=reward_model, normalise_rewards=True)
+                loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=reward_model, normalise_rewards=args.normalise_rewards)
             optimizer_agent.zero_grad()
             loss_agent.backward()
             optimizer_agent.step()

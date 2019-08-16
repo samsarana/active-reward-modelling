@@ -55,6 +55,7 @@ def parse_arguments():
     parser.add_argument('--agent_test_frequency', type=int, default=1, help='Over the course of its n_agent_[train|total]_steps, how many times is agent performance tested? (and the run terminated if `terminate_once_solved == True`')
     parser.add_argument('--agent_learning_starts', type=int, default=0, help='After how many steps does the agent start making learning updates? This replaced the functionality of n_agent_total_steps.')
     parser.add_argument('--no_reinit_agent', dest='reinit_agent', action='store_false', help='Flag not to reinitialise the agent before every training round')
+    parser.add_argument('--no_normalise_rewards', dest='normalise_rewards', action='store_false', help='Flag not to normalise rewards sent to the agent (either true or predicted, depending on args.RL_baseline)')
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
 
     # reward model hyperparamas
