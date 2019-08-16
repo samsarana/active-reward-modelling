@@ -8,8 +8,8 @@ def log_agent_step(sa_pair, r_true, rets, reward_stats, reward_model, args):
     # also log reward the agent thinks it's getting according to current reward_model
     if not args.RL_baseline:
         reward_model.eval() # dropout off at 'test' time i.e. when logging performance
-        r_pred = reward_model(sa_pair).item()
-        r_pred_norm = reward_model(sa_pair, normalise=True).item()
+        r_pred = reward_model(sa_pair).detach().item()
+        r_pred_norm = reward_model(sa_pair, normalise=True).detach().item()
         rets['ep']['pred'] += r_pred
         rets['ep']['pred_norm'] += r_pred_norm
     return rets

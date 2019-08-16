@@ -327,9 +327,9 @@ def compute_mean_var(reward_model, prefs_buffer):
     if isinstance(reward_model, RewardModelEnsemble):
         for ensemble_num in range(reward_model.ensemble_size):
             net = getattr(reward_model, 'layers{}'.format(ensemble_num))
-            r_hats = net(sa_pairs).squeeze()
+            r_hats = net(sa_pairs).detach().squeeze()
             assert r_hats.shape == (prefs_buffer.current_length * 2 * prefs_buffer.clip_length,)
-            mean, var = r_hats.mean().detach().item(), r_hats.var().detach().item()
+            mean, var = r_hats.mean().item(), r_hats.var().item()
             if var == 0:
                 var = 1
                 logging.warning("Variance of predicted rewards over experience in prefs_buffer is zero!")
@@ -337,9 +337,9 @@ def compute_mean_var(reward_model, prefs_buffer):
             setattr(reward_model, 'mean_prefs{}'.format(ensemble_num), mean)
             setattr(reward_model, 'var_prefs{}'.format(ensemble_num), var)
     elif isinstance(reward_model, RewardModel):
-        r_hats = reward_model(sa_pairs).squeeze()
+        r_hats = reward_model(sa_pairs).detach().squeeze()
         assert r_hats.shape == (prefs_buffer.current_length * 2 * prefs_buffer.clip_length,)
-        mean, var = r_hats.mean().detach().item(), r_hats.var().detach().item()
+        mean, var = r_hats.mean().item(), r_hats.var().item()
         if var == 0:
             var = 1
             logging.warning("Variance of predicted rewards over experience in prefs_buffer is zero!")
