@@ -234,7 +234,7 @@ def main():
     os.makedirs('./logs/', exist_ok=True)
     logging.basicConfig(filename='./logs/{}.log'.format(args.info), level=logging.INFO)
     logging.getLogger().addHandler(logging.StreamHandler()) # makes messages print to stderr, too
-    logging.basicConfig(filename='./logs/{}_debug.log'.format(args.info), level=logging.DEBUG)
+    # logging.basicConfig(filename='./logs/{}_debug.log'.format(args.info), level=logging.DEBUG)
     logging.info('Running experiment with the following settings:')
     for arg in vars(args):
         logging.info('{}: {}'.format(arg, getattr(args, arg)))
