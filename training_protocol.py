@@ -45,7 +45,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
         if args.reinit_agent:
             q_net, q_target, _, optimizer_agent = init_agent(args) # keep replay buffer experience -- OK as long as we use the new rewards
         # set up buffer to collect agent_experience for possible annotation
-        num_clips = int(args.n_agent_steps // args.clip_length)
+        num_clips = args.n_agent_steps // args.clip_length
         agent_experience = AgentExperience(num_clips, args) # since episodes do not end we collect one long trajectory then sample clips from it
         for sub_round in range(args.agent_test_frequency): # code more readable if this for-loop converted to if-statement
             logging.info("Begin train {}".format(sub_round))
