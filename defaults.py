@@ -96,3 +96,32 @@ def openai_atari_defaults(args):
     args.clip_length = 25
     args.reinit_rm = True
     return args
+
+
+def gridworld_defaults(args):
+    """
+    https://github.com/awjuliani/DeepRL-Agents/blob/master/Double-Dueling-DQN.ipynb
+    """
+    args.batch_size_agent = 32 # NB Zac uses 64
+    args.agent_gdt_step_period = 4
+    args.gamma = 0.99
+    args.episilon_start = 1.0
+    args.epsilon_stop = 0.1 # this is a bit of a non-standard choice by them... Zac uses 0.05
+    # the next 2 lines are not quite accurate since they assume each episode
+    # in their training lasts max_epLen steps, but it should be fine??
+    args.exploration_fraction = 0.02 # annealing_steps / n_agent_steps = 10k / 500k = 0.02
+    args.n_agent_steps = int(500e3) # num_episodes * max_epLen = 10k * 50 = 500k
+    args.n_agent_steps_pretrain = 10000
+    args.target_update_tau = 0.001 # Zac uses hard updates (I guess?)
+    args.target_update_period = 4 # Zac uses 5
+    # from here on, I got the values from Zac's defaults
+    args.h1_agent = 128 # used by Zac. online has 4 conv layers followed by size 512 layer,
+    args.h2_agent = 128 # then "split into separate advantage and value streams." (they use dueling DQN)
+    args.replay_buffer_size = int(20e3) # used by Zac. NB online uses 50e3
+    args.lr_agent = 1e-3 # used by Zac. NB online uses 1e-4 but I'll start w Zac's since my archi is same as his, not theirs
+    # the rest of these I made up
+    args.agent_test_frequency = 50 # test every 10k agent steps (50 times in total)
+    # TODO think about these reward modelling settings
+    args.n_epochs_pretrain_rm = 2000 # not yet tested
+    args.n_epochs_train_rm = 2000 # not yet tested
+    return args
