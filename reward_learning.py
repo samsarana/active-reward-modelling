@@ -217,15 +217,15 @@ def compute_loss_rm_ensemble(r_hats_batch_draw, mu_batch):
 
 
 class PrefsBuffer():
-    def __init__(self, capacity, clip_shape):
-        clip_length, obs_act_length = clip_shape
-        self.clip_pairs = np.zeros(shape=(capacity, 2, clip_length, obs_act_length)) # 2 because preference is on clip *pair*
-        self.rewards = np.zeros(shape=(capacity, 2, clip_length))
-        self.mus = np.zeros(shape=capacity)
-        self.capacity = capacity
+    def __init__(self, args):
+        self.capacity = args.prefs_buffer_size
+        self.clip_length = args.clip_length
+        self.obs_act_length = args.obs_act_shape
+        self.oa_dtype = args.oa_dtype
+        self.clip_pairs = np.zeros(shape=(self.capacity, 2, self.clip_length, self.obs_act_length), dtype=args.oa_dtype) # 2 because preference is on clip *pair*
+        self.rewards = np.zeros(shape=(self.capacity, 2, self.clip_length))
+        self.mus = np.zeros(shape=self.capacity)
         self.current_length = 0 # maintain the current length to help with sampling from the fixed size array
-        self.clip_length = clip_length
-        self.obs_act_length = obs_act_length
 
     def push(self, new_clip_pairs, new_rews, new_mus):
         """Takes
@@ -236,6 +236,7 @@ class PrefsBuffer():
         """
         len_new_pairs = len(new_clip_pairs)
         assert len_new_pairs == len(new_mus)
+        assert new_clip_pairs.dtype == self.oa_dtype, "Trying to add clip pair with dtype {} but PrefsBuffer only takes dtype {}".format(new_clip_pairs.dtype, self.oa_dtype)
         self.clip_pairs = np.roll(self.clip_pairs, len_new_pairs, axis=0)
         self.rewards = np.roll(self.rewards, len_new_pairs, axis=0)
         self.mus = np.roll(self.mus, len_new_pairs)
