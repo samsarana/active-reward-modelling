@@ -33,7 +33,9 @@ def test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round,
         assert env.action_space.contains(action)
         next_state, r_true, done, _ = env.step(action)
         # save true reward...
-        sa_pair = torch.tensor(np.append(state, action)).float()
+        # sa_pair = torch.tensor(np.append(state, action)).float()
+        sa_pair = np.append(state, action).astype(args.oa_dtype, casting='unsafe')
+        assert (sa_pair == np.append(state, action)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
         returns = log_agent_step(sa_pair, r_true, returns, reward_stats, reward_model, args)   
         # prepare for next step
         state = next_state
