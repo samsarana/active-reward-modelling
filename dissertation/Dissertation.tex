@@ -356,7 +356,7 @@ Secondly, the reward model $ \rp $ is trained only on pairwise comparisons, and 
 %TODO comment here on later on the subtelties of normalisation when using an ensemble for your rewards.
 
 \subsubsection{Process 2: Selecting and annotating clips}
-
+%\includegraphics[scale=1]{./results_A1}
 
 \subsubsection{Process 3: Training the reward model}
 Again, if we assume that there is some latent reward function $ \hat{r} : \mathcal{S} \times \mathcal{A} \mapsto \reals $ which explains the human's judgements, and also that the human's probability of preferring one trajectory to another depends exponentially on the value of $ \hat{r} $ summed over the trajectory, we can model $ \hat{r} $ with a neural network and fit its parameters to best explain the human's judgements.
