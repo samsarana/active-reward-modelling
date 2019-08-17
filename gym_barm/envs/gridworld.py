@@ -22,17 +22,18 @@ class gameOb():
         self.name = name
         
 class GridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
-    def __init__(self, partial=False, size=6): # sam added defaults
+    def __init__(self, partial=False, size=5): # sam added defaults
         self.sizeX = size
         self.sizeY = size
         self.actions = 4
         self.objects = []
         self.partial = partial
-        a = self.reset()
-        plt.imshow(a,interpolation="nearest")
+        self.reset()
+        plt.imshow(self.state, interpolation="nearest")
         # Sam added the following two lines
         self.action_space = spaces.Discrete(4) # Discrete(n) is a discrete space in :math:`\{ 0, 1, \\dots, n-1 \}`
-        self.observation_space = spaces.Box(low=0, high=255, shape=(84,84,3)) # Box represents the Cartesian product of n closed intervals
+        # self.observation_space = spaces.Box(low=0, high=255, shape=(84,84,3)) # Box represents the Cartesian product of n closed intervals
+        self.observation_space = spaces.Box(low=0, high=255, shape=(21168,)) # Box represents the Cartesian product of n closed intervals
         # not certain that high is 255 but pretty sure... this comes from scipy.misc.imresize
         
     def reset(self):
@@ -53,7 +54,7 @@ class GridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
         self.objects.append(bug4)
         state = self.renderEnv()
         self.state = state
-        return state
+        return self._get_obs()
 
     def moveChar(self,direction):
         # 0 - up, 1 - down, 2 - left, 3 - right
@@ -129,16 +130,12 @@ class GridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
 
     def step(self,action):
         penalty = self.moveChar(action)
-        reward,done = self.checkGoal()
+        reward, done = self.checkGoal()
         state = self.renderEnv()
-        if reward == None:
-            print('reward == None')
-            print('done:', done) # TODO I'm not sure what these lines are doing, and not sure when reward is None (which comes from other.reward)
-            print('reward:', reward)
-            print('penalty:', penalty)
-            return state, (reward+penalty),done, {} # sam added {} - empty info
-        else:
-            return state, (reward+penalty), done, {} # sam added {} - empty info
+        self.state = state
+        assert reward != None, "Hmm, reward is None. What's going on?"
+        return self._get_obs(), (reward + penalty), done, {} # sam added {} - empty info
+
 
     def render(self, mode='human'):
         """Sam added this function.
@@ -149,11 +146,17 @@ class GridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
            observation NOT state
         """
         if mode == 'human':
-            obs = self.renderEnv() # self.state would seem to be better code, but self.state doesn't seem to be updated in step() and I don't want to mess w the source
-            plt.imshow(obs, interpolation="nearest")
+            state = self.renderEnv() # self.state would seem to be better code, I'm not 100% sure that self.state is updated when it should be
+            plt.imshow(state, interpolation="nearest")
             # plt.ion() # this wasn't working for me
             plt.show() # show() is a blocking function: code will hang until you x the matplotlib popup window
             # sleep(1)
             # plt.close()
         else:
             raise NotImplementedError("Haven't specified what rendering not in human mode means")
+
+    def _get_obs(self):
+        """
+        Returns same as processState function used in https://github.com/awjuliani/DeepRL-Agents/blob/master/Double-Dueling-DQN.ipynb (see In[5]...)
+        """
+        return np.reshape(self.state,[21168]) # 21168 = 84*84*3
