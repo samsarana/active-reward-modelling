@@ -57,7 +57,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
             test_returns = test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round, sub_round)
             mean_ret_true = log_tested_policy(test_returns, writers, returns_summary, args, i_run, i_train_round, sub_round, env)
             # Possibly end training if mean_ret_true is above the threshold
-            if not args.continue_once_solved:
+            if not args.continue_once_solved and env.spec.reward_threshold != None:
                 if mean_ret_true >= env.spec.reward_threshold:
                     raise SystemExit("Environment solved, moving onto next run.")
 
