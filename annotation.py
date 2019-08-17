@@ -25,6 +25,7 @@ def generate_rand_clip_pairing(agent_experience, num_labels_requested, args):
 
 def make_acquisitions(rand_clip_data, reward_model, prefs_buffer, args, writers, mu_counts_total, i_label):
     # Stage 1.2: Sample `batch_size_acq` clip pairs without replacement from recent rollouts and label them (synthetically)
+    logging.info("Acquisition {}: acquiring {} clip pair(s) in a single batch".format(i_label, args.batch_size_acq))
     rand_clip_pairs, rand_rews, rand_mus = rand_clip_data
     idx, info_per_clip_pair = args.acquistion_func(rand_clip_pairs, args.batch_size_acq, args, reward_model)
     # idx, info_per_clip_pair = acquire_labels_by_index(rand_clip_pairs, args.batch_size_acq, args, reward_model)
@@ -46,29 +47,34 @@ class AgentExperience():
     """For collecting experience from rollouts in a way that is
        friendly to downstream processes.
     """
-    def __init__(self, experience_shape, force_label_choice=False, n_repeats_of_pair0=1):
-        self.num_clips, self.clip_length, self.obs_act_size = experience_shape
-        self.force_label_choice = force_label_choice
-        self.clips = np.zeros(shape=experience_shape) # default dtype=np.float64. OK for torching later?
-        self.clip_rewards = np.zeros(shape=(self.num_clips, self.clip_length))
+    def __init__(self, num_clips, args):
+        self.num_clips = num_clips
+        self.clip_length = args.clip_length
+        self.oa_shape = args.obs_act_shape
+        self.oa_data_type = args.oa_dtype
+        experience_shape = (num_clips, self.clip_length, self.oa_shape)
+        self.clips = np.zeros(shape=experience_shape, dtype=self.oa_data_type)
+        self.clip_rewards = np.zeros(shape=(num_clips, self.clip_length))#, dtype=self.oa_data_type)
         self.i = 0 # maintain pointer to where to add next clip
-        self.n_repeats_of_pair0 = n_repeats_of_pair0
+        self.force_label_choice = args.force_label_choice
+        self.n_sample_reps = args.n_sample_reps
 
     def add(self, oa_pair, reward):
         """Takes oa_pair of type torch.tensor(dtype=torch.float)
            and adds it to the current clip
            (or the next clip if the current clip is full)
            Also adds corresponding reward to return of current clip
-           self.clips.shape = num_clips, clip_length, obs_act_size
-           self.clip_returns.shape = num_clips
+           self.clips.shape = num_clips, clip_length, oa_shape
+           self.clip_rewards.shape = num_clips, self.clip_length
         """
-        assert len(oa_pair) == self.obs_act_size
+        assert len(oa_pair) == self.oa_shape
         i_clip = self.i // self.clip_length
         i_step = self.i % self.clip_length
+        # the following assert should be redundant due to checking same thing in main training loop
+        assert oa_pair.dtype == self.oa_data_type, "Trying to add oa_pair of dtype {} to array made for dtype {}".format(oa_pair.dtype, self.oa_data_type)
         try:
             self.clips[i_clip, i_step] = oa_pair
             self.clip_rewards[i_clip, i_step] = reward
-            # self.clip_returns[i_clip] += reward
             self.i += 1 # increment pointer
         except IndexError:
             raise RuntimeError('Oopsie, agent_experience buffer (self.clips) is full!')
@@ -104,20 +110,18 @@ class AgentExperience():
             "Trying to sample {} clips ({} labels/clip_pairs) but agent_experience only has {} clips!".format(
             batch_size*2, batch_size, self.clips.shape[0])
         rows_i = np.random.choice(batch_size*2, size=(batch_size,2), replace=False)
-        if self.n_repeats_of_pair0 > 1:
+        if self.n_sample_reps > 1:
             logging.info('DEBUGGING: {} exact copies of the first clip pair to be sampled from AgentExperience will also be given to the acq func. Total clip pairs sampled = {}'.format(
-                self.n_repeats_of_pair0, batch_size + self.n_repeats_of_pair0))
-            # rows_i = np.tile(rows_i, (self.n_repeats_of_pair0, 1)) # tile the rows to sample `self.n_repeats_of_pair0` times in 0th dim (and 1 time--i.e. don't tile--in 1st dim)
-            rows_i = np.concatenate((rows_i, np.tile(rows_i[0], (self.n_repeats_of_pair0,1))), axis=0) # repeat the first pair clips to be sampled `self.n_repeats_of_pair0` times (along 0th dim)
+                self.n_sample_reps, batch_size + self.n_sample_reps))
+            # rows_i = np.tile(rows_i, (self.n_sample_reps, 1)) # tile the rows to sample `self.n_sample_reps` times in 0th dim (and 1 time--i.e. don't tile--in 1st dim)
+            rows_i = np.concatenate((rows_i, np.tile(rows_i[0], (self.n_sample_reps,1))), axis=0) # repeat the first pair clips to be sampled `self.n_sample_reps` times (along 0th dim)
         clip_pairs = self.clips[rows_i] # TODO fancy indexing is slow. is this a bottleneck?
         rewards = self.clip_rewards[rows_i]
         returns = rewards.sum(axis=-1)
-        # returns2 = self.clip_returns[rows_i] # removed clip_returns as an attr of AgentExperience; it was just wasting computation
-        # assert (returns == returns2).all()
         if self.force_label_choice:
             mus = np.where(returns[:, 0] > returns[:, 1], 1, 
                             np.where(returns[:, 0] == returns[:, 1], random.choice([0, 1]), 0))
-        else: # allow clips to be labeled as 0.5
+        else: # allow clips to be labeled as 0.5 (default)
             mus = np.where(returns[:, 0] > returns[:, 1], 1, 
                            np.where(returns[:, 0] == returns[:, 1], 0.5, 0))
         return clip_pairs, rewards, mus
