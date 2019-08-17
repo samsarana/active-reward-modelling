@@ -21,7 +21,8 @@ def training_protocol(env, args, writers, returns_summary, i_run):
     """
     # SET UP: instantiate reward model + buffers and optimizers for training DQN and reward model
     reward_model, optimizer_rm = init_rm(args)
-    prefs_buffer = PrefsBuffer(capacity=args.prefs_buffer_size, clip_shape=(args.clip_length, args.obs_act_shape))
+    # prefs_buffer = PrefsBuffer(capacity=args.prefs_buffer_size, clip_shape=(args.clip_length, args.obs_act_shape))
+    prefs_buffer = PrefsBuffer(args)
     q_net, q_target, replay_buffer, optimizer_agent = init_agent(args)
     
     # BEGIN PRETRAINING
@@ -39,16 +40,14 @@ def training_protocol(env, args, writers, returns_summary, i_run):
     # BEGIN TRAINING
     for i_train_round in range(args.n_rounds):
         logging.info('[Start Round {}]'.format(i_train_round))
-        # TODO when prefs_buffer is small, reward_stats may be weird and hinder performance..?
-        # (in Ibarz, it always has at least 50 or 100 examples...)
         # Stage 1.1a: Reinforcement learning with (normalised) rewards from current reward model
         log_agent_training_info(args, i_train_round)
         if args.reinit_agent:
             q_net, q_target, _, optimizer_agent = init_agent(args) # keep replay buffer experience -- OK as long as we use the new rewards
         # set up buffer to collect agent_experience for possible annotation
         num_clips = int(args.n_agent_steps // args.clip_length)
-        agent_experience = AgentExperience((num_clips, args.clip_length, args.obs_act_shape), args.force_label_choice, args.n_sample_reps) # since episodes do not end we collect one long trajectory then sample clips from it
-        for sub_round in range(args.agent_test_frequency):
+        agent_experience = AgentExperience(num_clips, args) # since episodes do not end we collect one long trajectory then sample clips from it
+        for sub_round in range(args.agent_test_frequency): # code more readable if this for-loop converted to if-statement
             logging.info("Begin train {}".format(sub_round))
             q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
                                                                      agent_experience, reward_model, prefs_buffer,
@@ -96,7 +95,7 @@ def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, op
 
 
 def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
-          agent_experience, reward_model, prefs_buffer,
+          agent_experience, reward_model, prefs_buffer, #TODO prefs_buffer unused in function
           reward_stats, args, writers, i_train_round, sub_round):
     writer1, writer2 = writers
     dummy_returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
@@ -114,7 +113,9 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
         assert env.action_space.contains(action)
         next_state, r_true, done, _ = env.step(action) # one continuing episode
         # record step info
-        sa_pair = torch.tensor(np.append(state, action)).float()
+        # sa_pair = torch.tensor(np.append(state, action)).float()
+        sa_pair = np.append(state, action).astype(args.oa_dtype, casting='unsafe')
+        assert (sa_pair == np.append(state, action)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
         agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
         replay_buffer.push(state, action, r_true, next_state, False) # done=False since agent thinks the task is continual; r_true used only when args.RL baseline
         dummy_returns = log_agent_step(sa_pair, r_true, dummy_returns, reward_stats, reward_model, args)
@@ -169,10 +170,14 @@ def do_pretraining_rollouts(q_net, env, args):
        a single function that I can use for agent-environment
        interaction (with or without training).
     """
-    n_initial_steps = args.selection_factor * args.n_labels_per_round * 2 * args.clip_length
-    num_clips       = args.selection_factor * args.n_labels_per_round * 2
+    n_steps_to_collect_enough_clips = args.selection_factor * args.n_labels_per_round * 2 * args.clip_length
+    n_initial_steps = max(args.n_agent_steps_pretrain, n_steps_to_collect_enough_clips)
+    assert n_initial_steps % args.clip_length == 0,\
+        "You should specify a number of initial steps ({}) that is divisible by args.clip_length ({})".format(
+            n_initial_steps, args.clip_length)
+    num_clips = n_initial_steps // args.clip_length
     logging.info('Stage -1.1: Collecting rollouts from untrained policy, {} agent steps'.format(n_initial_steps))
-    agent_experience = AgentExperience((num_clips, args.clip_length, args.obs_act_shape), args.force_label_choice, args.n_sample_reps)
+    agent_experience = AgentExperience(num_clips, args)
     epsilon_pretrain = 0.5 # for now I'll use a constant epilson during pretraining
     state = env.reset()
     for _ in range(n_initial_steps):
@@ -180,7 +185,9 @@ def do_pretraining_rollouts(q_net, env, args):
         assert env.action_space.contains(action)
         next_state, r_true, done, _ = env.step(action)    
         # record step information
-        sa_pair = torch.tensor(np.append(state, action)).float()
+        # sa_pair = torch.tensor(np.append(state, action)).float() # old code. float32s used too much memory when observation shape too large
+        sa_pair = np.append(state, action).astype(args.oa_dtype, casting='unsafe') # casting='unsafe' is default; i want to make explicit that this could be a dangerous line
+        assert (sa_pair == np.append(state, action)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
         agent_experience.add(sa_pair, r_true) # add reward too in order to produce synthetic prefs
         state = next_state
         if done:
