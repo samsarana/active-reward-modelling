@@ -1,5 +1,5 @@
 import numpy as np
-import logging
+import torch, logging
 
 def log_agent_step(sa_pair, r_true, rets, reward_stats, reward_model, args):
     rt_mean, rt_var = reward_stats
@@ -8,8 +8,9 @@ def log_agent_step(sa_pair, r_true, rets, reward_stats, reward_model, args):
     # also log reward the agent thinks it's getting according to current reward_model
     if not args.RL_baseline:
         reward_model.eval() # dropout off at 'test' time i.e. when logging performance
-        r_pred = reward_model(sa_pair).detach().item()
-        r_pred_norm = reward_model(sa_pair, normalise=True).detach().item()
+        sa_tensor = torch.tensor(sa_pair).float()
+        r_pred = reward_model(sa_tensor).detach().item()
+        r_pred_norm = reward_model(sa_tensor, normalise=True).detach().item()
         rets['ep']['pred'] += r_pred
         rets['ep']['pred_norm'] += r_pred_norm
     return rets
@@ -89,6 +90,7 @@ def log_agent_training_info(args, i_train_round):
     else:
         logging.info('**Agent will receive non-normalised rewards**')
     logging.info('Agent takes {} steps'.format(args.n_agent_steps))
-    logging.info('We make a learning update every {} steps(s), after the {}th step'.format(
+    logging.info('We make a learning update every {} steps(s), from the {}th step onwards'.format(
         args.agent_gdt_step_period, args.agent_learning_starts))
-    logging.info('Mean episode return will be tested {} time(s) over the course of this training'.format(args.agent_test_frequency))
+    logging.info('Mean episode return will be tested {} time(s) over the course of this training i.e. every {} agent steps'.format(
+        args.agent_test_frequency, args.n_agent_steps // args.agent_test_frequency))
