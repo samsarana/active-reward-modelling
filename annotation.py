@@ -54,7 +54,7 @@ class AgentExperience():
         self.oa_data_type = args.oa_dtype
         experience_shape = (num_clips, self.clip_length, self.oa_shape)
         self.clips = np.zeros(shape=experience_shape, dtype=self.oa_data_type)
-        self.clip_rewards = np.zeros(shape=(num_clips, self.clip_length))#, dtype=self.oa_data_type)
+        self.clip_rewards = np.zeros(shape=(num_clips, self.clip_length))
         self.i = 0 # maintain pointer to where to add next clip
         self.force_label_choice = args.force_label_choice
         self.n_sample_reps = args.n_sample_reps
