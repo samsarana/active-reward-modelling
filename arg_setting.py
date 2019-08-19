@@ -22,6 +22,7 @@ def parse_arguments():
     parser.add_argument('--reinit_rm_when_q_learning', action='store_true', help='For debugging: this will do the crazy thing of reinitialising reward model every time we want to use it to send rewards to DQN')
 
     # agent hyperparams
+    parser.add_argument('--dqn_archi', type=str, default='mlp', help='Is deep Q-network an mlp or cnn?')
     parser.add_argument('--h1_agent', type=int, default=32)
     parser.add_argument('--h2_agent', type=int, default=64)
     parser.add_argument('--batch_size_agent', type=int, default=32)
@@ -74,6 +75,12 @@ def parse_arguments():
     parser.add_argument('--acq_search_strategy', type=str, default='christiano', help='Whether to use christiano or all_pairs strategy to search for clip pairs. `angelos` is deprecated')
     parser.add_argument('--size_rm_ensemble', type=int, default=1, help='If active_method == ensemble then this must be >= 2')
     parser.add_argument('--selection_factor', type=int, default=10, help='when doing active learning, 1/selection_factor of the randomly sampled clip pairs are sent to human for evaluation')
+
+    # settings that apply only to gridworld
+    parser.add_argument('--grid_partial_obs', action='store_true', help='Is environment only partially observable to agent?')
+    parser.add_argument('--grid_size', type=int, default=5, help='Length and width of grid')
+    parser.add_argument('--grid_deterministic_reset', action='store_true', help='Do objects in grid reset to same positions once episode terminates?')
+    parser.add_argument('--grid_terminate_ep_if_done', action='store_true', help='Does env.step() give done=True when agent reaches goal or lava?')
     args = parser.parse_args()
     args = make_arg_changes(args)
     return args
@@ -101,6 +108,7 @@ def make_arg_changes(args):
                                       initial_p=args.epsilon_start,
                                       final_p=args.epsilon_stop)
     
+    # get environment ID
     envs_to_ids = { 'cartpole': {'id': 'gym_barm:CartPoleContinual-v0',
                                 'id_test': 'CartPole-v0',
                                 },
@@ -146,6 +154,14 @@ def make_arg_changes(args):
         args.env_ID_test = envs_to_ids[args.env_str]['id_test']
     except KeyError:
         raise KeyError("You specified {} as the env_str. I don't know what that is!".format(args.env_str))
+    
+    # get environment kwargs for gridworld
+    args.env_kwargs = {}
+    if args.env_str == 'gridworld':
+        args.env_kwargs['partial']              = args.grid_partial_obs
+        args.env_kwargs['size']                 = args.grid_size
+        args.env_kwargs['random_resets']        = not args.grid_deterministic_reset
+        args.env_kwargs['terminate_ep_if_done'] = args.grid_terminate_ep_if_done
 
     # check some things about RL training
     assert args.n_agent_steps % args.clip_length == 0,\
