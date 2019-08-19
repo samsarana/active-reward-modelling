@@ -95,7 +95,8 @@ def make_arg_changes(args):
             'acrobot_sam': acrobot_sam_defaults,
             'openai': openai_defaults,
             'openai_atari': openai_atari_defaults,
-            'gridworld': gridworld_defaults
+            'gridworld_nb': gridworld_nb_defaults,
+            'gridworld_zac': gridworld_zac_defaults
         }
         args = default_args_map[args.default_settings](args)
 

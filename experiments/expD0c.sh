@@ -1,2 +1,2 @@
 #!/bin/bash
-python main.py --info=grid_RL_conv_det_dones --env_str=gridworld_det_term --RL_baseline --default_settings=gridworld --grid_deterministic_reset --grid_terminate_ep_if_done --no_normalise_rewards --agent_gets_dones --dqn_archi=cnn
+python main.py --info=grid_RL_cnn_term_dones      --env_str=gridworld --RL_baseline --default_settings=gridworld_nb --no_normalise_rewards --agent_gets_dones --dqn_archi=cnn --grid_terminate_ep_if_done
