@@ -100,26 +100,34 @@ def openai_atari_defaults(args):
 
 def gridworld_defaults(args):
     """
+    Used a combination of hyerparams given in:
     https://github.com/awjuliani/DeepRL-Agents/blob/master/Double-Dueling-DQN.ipynb
+    and used by Zac in the function dqn()
+    I've commented which ones I used.
+    In hindsight, I think it was silly to use a combination.
+    The model archi used by Zac and notebook are very different
+    and since I used Zac's archi, I think I should have just copied
+    Zac's hyperparams exactly.
+    NB Zac uses RMSProp as optimizer.
+    Notebook uses Adam, which I also used for the first attempt
     """
-    args.batch_size_agent = 32 # NB Zac uses 64
-    args.agent_gdt_step_period = 4
-    args.gamma = 0.99
-    args.episilon_start = 1.0
-    args.epsilon_stop = 0.1 # this is a bit of a non-standard choice by them... Zac uses 0.05
-    # the next 2 lines are not quite accurate since they assume each episode
-    # in their training lasts max_epLen steps, but it should be fine??
+    # These values I got from the notebook
+    args.batch_size_agent = 32 # Zac uses 64
+    args.agent_gdt_step_period = 4 # I couldn't find the value Zac uses
+    args.gamma = 0.99 # Zac and notebook
+    args.episilon_start = 1.0 # Zac and notebook
+    args.epsilon_stop = 0.1 # Zac uses 0.05
     args.exploration_fraction = 0.02 # annealing_steps / n_agent_steps = 10k / 500k = 0.02
-    args.n_agent_steps = int(500e3) # num_episodes * max_epLen = 10k * 50 = 500k
-    args.n_agent_steps_pretrain = 10000
-    args.target_update_tau = 0.001 # Zac uses hard updates (I guess?)
+    # NB Zac does exponential annealing & I haven't checked how these compare
+    args.n_agent_steps = int(500e3) # num_episodes * max_epLen = 10k * 50 = 500k. Zac uses 100k
+    args.n_agent_steps_pretrain = 10000 # not sure if Zac does pretraining
+    args.target_update_tau = 0.001 # Nig difference here: Zac uses hard updates (I guess?)
     args.target_update_period = 4 # Zac uses 5
     # from here on, I got the values from Zac's defaults
-    args.h1_agent = 128 # used by Zac. online has 4 conv layers followed by size 512 layer,
+    args.h1_agent = 128 # used by Zac. noteboook has 4 conv layers followed by size 512 layer,
     args.h2_agent = 128 # then "split into separate advantage and value streams." (they use dueling DQN)
-    args.replay_buffer_size = int(20e3) # used by Zac. NB online uses 50e3
-    args.lr_agent = 1e-3 # used by Zac. NB online uses 1e-4 but I'll start w Zac's since my archi is same as his, not theirs
-    # the rest of these I made up
+    args.replay_buffer_size = int(20e3) # used by Zac. NB noteboook uses 50e3
+    args.lr_agent = 1e-3 # used by Zac. NB noteboook uses 1e-4 but I'll start w Zac's since my archi is same as his, not theirs
     args.agent_test_frequency = 50 # test every 10k agent steps (50 times in total)
     # TODO think about these reward modelling settings
     args.n_epochs_pretrain_rm = 2000 # not yet tested
