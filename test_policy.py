@@ -46,8 +46,10 @@ def test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round,
                 env.close() # stop saving video (unsure whether this unwraps the env or just forces video to stop by closing render window, but it works.)
             state = env.reset()
         step += 1
-
     assert len(returns['all']['true']) == num_episodes
+
+    # save model
+    save_policy(q_net, i_train_round, sub_round, args)
     return returns['all']
 
 
