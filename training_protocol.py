@@ -137,7 +137,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
                 env = wrappers.Monitor(env, args.logdir + '/videos/train/' + str(time()) + '/')
                 is_saving_video = True # don't call the env wrapper again
             # if is_saving_video and step >= args.n_agent_train_steps_before_test: # don't need this anymore as i take non-training steps at start
-            #     env = gym.make(args.env_ID) # unwrap Monitor wrapper during non-training steps
+            #     env = gym.make(args.env_ID, **args.env_kwargs) # unwrap Monitor wrapper during non-training steps
             #     env.seed(args.random_seed)
             #     done_saving_video = True
             state = env.reset()

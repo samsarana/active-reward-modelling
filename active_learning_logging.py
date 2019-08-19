@@ -53,7 +53,7 @@ def log_acquisition(idx, info_per_clip_pair, clip_pairs, rews, mus, rand_clip_pa
         for i_batch in range(batch_size):
             for pair_num in range(2):
                 clip = clip_pairs[i_batch][pair_num]
-                env = gym.make(args.env_ID)
+                env = gym.make(args.env_ID, **args.env_kwargs)
                 fname = '{}/videos/clip_pairs/i_label={}i_batch={}pair={}time={}/'.format(
                     args.logdir, i_label, i_batch, pair_num, str(time()))
                 # debugging START

@@ -14,7 +14,7 @@ def test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round,
        Also log predicted and normalised return
     """
     # set up testing
-    env = gym.make(args.env_ID_test)
+    env = gym.make(args.env_ID_test, **args.env_kwargs)
     # if isinstance(env.env, gym.envs.atari.AtariEnv):
     if args.env_str == 'frozen_lake':
         env = DiscreteToBox(env)
@@ -68,7 +68,7 @@ def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_ro
        and using/not using GT rewards
     """
     # set up testing
-    env = gym.make(args.env_ID_test)
+    env = gym.make(args.env_ID_test, **args.env_kwargs)
     env.seed(args.random_seed)
     env.reset()
     n = 0
