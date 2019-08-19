@@ -34,11 +34,8 @@ def run_experiment(args, i_run, returns_summary):
     if args.env_str == 'frozen_lake':
         env = DiscreteToBox(env)
     # if isinstance(env.env, gym.envs.atari.AtariEnv):
-    if args.env_str == 'pong':
-        env = preprocess_atari_env(env)
-        args.dqn_archi = 'conv'
-    else:
-        args.dqn_archi = 'mlp'
+    # if args.env_str == 'pong':
+    #     env = preprocess_atari_env(env)
     env.seed(args.random_seed)
     if isinstance(env.observation_space, gym.spaces.Box):
         args.obs_shape = env.observation_space.shape[0] # env.observation_space is Box(4,) and calling .shape returns (4,) [gym can be ugly]
