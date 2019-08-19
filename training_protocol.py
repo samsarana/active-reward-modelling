@@ -21,7 +21,6 @@ def training_protocol(env, args, writers, returns_summary, i_run):
     """
     # SET UP: instantiate reward model + buffers and optimizers for training DQN and reward model
     reward_model, optimizer_rm = init_rm(args)
-    # prefs_buffer = PrefsBuffer(capacity=args.prefs_buffer_size, clip_shape=(args.clip_length, args.obs_act_shape))
     prefs_buffer = PrefsBuffer(args)
     q_net, q_target, replay_buffer, optimizer_agent = init_agent(args)
     
@@ -102,8 +101,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
                     'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
     # Do RL!
     state = env.reset()
-    is_saving_video = False
-    done_saving_video = False
+    is_saving_video, done_saving_video = False, False
     start_step = sub_round * args.n_agent_steps_before_test
     step_range = range(start_step, start_step + args.n_agent_steps_before_test)
     for step in step_range:
