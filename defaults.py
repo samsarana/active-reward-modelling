@@ -117,11 +117,11 @@ def gridworld_defaults(args):
     args.gamma = 0.99 # Zac and notebook
     args.episilon_start = 1.0 # Zac and notebook
     args.epsilon_stop = 0.1 # Zac uses 0.05
-    args.exploration_fraction = 0.02 # annealing_steps / n_agent_steps = 10k / 500k = 0.02
+    args.exploration_fraction = 0.1 # annealing_steps / n_agent_steps = 10k / 500k = 0.02. NB I increased this after first (failed) experiment
     # NB Zac does exponential annealing & I haven't checked how these compare
     args.n_agent_steps = int(500e3) # num_episodes * max_epLen = 10k * 50 = 500k. Zac uses 100k
     args.n_agent_steps_pretrain = 10000 # not sure if Zac does pretraining
-    args.target_update_tau = 0.001 # Nig difference here: Zac uses hard updates (I guess?)
+    args.target_update_tau = 0.001 # Big difference here: Zac uses hard updates (I guess?)
     args.target_update_period = 4 # Zac uses 5
     # from here on, I got the values from Zac's defaults
     args.h1_agent = 128 # used by Zac. noteboook has 4 conv layers followed by size 512 layer,
