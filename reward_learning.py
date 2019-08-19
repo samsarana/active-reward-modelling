@@ -304,14 +304,14 @@ class PrefsBuffer():
         return mean, var
 
 
-def compute_reward_stats(reward_model, prefs_buffer):
-    """Returns mean and variance of true and predicted reward
-       over the current examples in `prefs_buffer`
-       (for normalising rewards sent to agent)
-    """
-    rt_mean, rt_var = prefs_buffer.compute_mean_var_GT()
-    reward_model = compute_mean_var(reward_model, prefs_buffer)
-    return (rt_mean, rt_var), reward_model
+# def compute_reward_stats(reward_model, prefs_buffer):
+#     """Returns mean and variance of true and predicted reward
+#        over the current examples in `prefs_buffer`
+#        (for normalising rewards sent to agent)
+#     """
+#     rt_mean, rt_var = prefs_buffer.compute_mean_var_GT()
+#     reward_model = compute_mean_var(reward_model, prefs_buffer)
+#     return (rt_mean, rt_var), reward_model
 
 
 def compute_mean_var(reward_model, prefs_buffer):
