@@ -86,6 +86,16 @@ def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_ro
     return mean_ret_true
 
 
+def save_policy(q_net, i_round, i_sub_round, args):
+    path = '{}/checkpts/agent/{}-{}'.format(args.logdir, i_round, i_sub_round)
+    torch.save({
+        'round': i_round,
+        'test_no': i_sub_round,
+        'policy_state_dict': q_net.state_dict()
+        # 'optimizer_state_dict': optimizer.state_dict(),
+        }, path)
+
+
 def log_agent_training_info(args, i_train_round):
     if args.RL_baseline:
         logging.info('Stage {}.1: RL using *true reward*'.format(i_train_round))
