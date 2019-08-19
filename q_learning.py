@@ -196,7 +196,7 @@ def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
     next_q_value, _  = next_q_values.max(-1) # max returns a (named)tuple (values, indices) where values is the maximum value of each row of the input tensor in the given dimension dim. And indices is the index location of each maximum value found (argmax).
     expected_q_value = rew + q_net.gamma * next_q_value * (1 - done)
     
-    # TODO clip the error term
+    # TODO clip the error term / try Huber loss
     loss = (q_value - expected_q_value).pow(2).mean() # mean is across batch dimension
     return loss
 

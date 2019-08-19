@@ -29,9 +29,14 @@ def training_protocol(env, args, writers, returns_summary, i_run):
     agent_experience, replay_buffer = do_pretraining_rollouts(q_net, replay_buffer, env, args)
     # Stage 0.2: Sample without replacement from those rollouts and label them (synthetically)
     mu_counts_total = np.zeros((2,3))
-    reward_model, reward_stats, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
-        agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round=-1)
+    if not args.RL_baseline:
+        reward_model, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
+            agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round=-1)
 
+        # Compute mean and variance of true and predicted reward after training (for normalising rewards sent to agent)
+        reward_model = compute_mean_var(reward_model, prefs_buffer) # saves mean and var of reward model as attributes
+    true_reward_stats = prefs_buffer.compute_mean_var_GT() if args.normalise_rewards else None
+    
     # evaluate reward model correlation after pretraining (currently not interested)
     # if not args.RL_baseline:
     #     test_correlation(reward_model, env, q_net, args, writers[0], i_train_round=-1)
@@ -49,28 +54,31 @@ def training_protocol(env, args, writers, returns_summary, i_run):
         for sub_round in range(args.agent_test_frequency): # code more readable if this for-loop converted to if-statement
             logging.info("Begin train {}".format(sub_round))
             q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
-                                                                     agent_experience, reward_model, reward_stats, args,
+                                                                     agent_experience, reward_model, true_reward_stats, args,
                                                                      writers, i_train_round, sub_round)
             # Stage 1.1b: Evalulate RL agent performance
             logging.info("Begin test {}".format(sub_round))
-            test_returns = test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round, sub_round)
+            test_returns = test_policy(q_net, reward_model, true_reward_stats, args, writers, i_train_round, sub_round)
             mean_ret_true = log_tested_policy(test_returns, writers, returns_summary, args, i_run, i_train_round, sub_round, env)
             # Possibly end training if mean_ret_true is above the threshold
-            if not args.continue_once_solved and env.spec.reward_threshold != None:
-                if mean_ret_true >= env.spec.reward_threshold:
-                    raise SystemExit("Environment solved, moving onto next run.")
+            if not args.continue_once_solved and env.spec.reward_threshold != None and mean_ret_true >= env.spec.reward_threshold:
+                raise SystemExit("Environment solved, moving onto next run.")
 
         # Stage 1.2 - 1.3: acquire labels from recent rollouts and train reward model on current dataset
-        reward_model, reward_stats, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
-            agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round)
+        if not args.RL_baseline:
+            reward_model, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
+                agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round)
+            # Compute mean and variance of true and predicted reward after training (for normalising rewards sent to agent)
+            reward_model = compute_mean_var(reward_model, prefs_buffer) # saves mean and var of reward model as attributes
+        true_reward_stats = prefs_buffer.compute_mean_var_GT() if args.normalise_rewards else None
         
         pd.DataFrame(returns_summary).to_csv('./logs/{}.csv'.format(args.info), index_label=['ep return type', 'round no.', 'test no.'])
-            # Evaluate reward model correlation (currently not interested)
+        # Evaluate reward model correlation (currently not interested)
         # if not args.RL_baseline:
         #     test_correlation(reward_model, env, q_net, args, writers[0], i_train_round)
 
     # log mu_counts for this run
-    log_total_mu_counts(mu_counts_total, writers, args)
+    if not args.RL_baseline: log_total_mu_counts(mu_counts_total, writers, args)
 
 
 def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round):
@@ -88,13 +96,11 @@ def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, op
         # Train reward model!
         # if prefs_buffer.current_length >= 10: # prevent gradient updates if too few training examples
         reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_label)
-    # Compute mean and variance of true and predicted reward after training (for normalising rewards sent to agent)
-    reward_stats, reward_model = compute_reward_stats(reward_model, prefs_buffer)
-    return reward_model, reward_stats, prefs_buffer, mu_counts_total
+    return reward_model, prefs_buffer, mu_counts_total
 
 
 def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
-          agent_experience, reward_model, reward_stats, args,
+          agent_experience, reward_model, true_reward_stats, args,
           writers, i_train_round, sub_round):
     writer1, writer2 = writers
     dummy_returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
@@ -114,9 +120,9 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
         # sa_pair = torch.tensor(np.append(state, action)).float()
         sa_pair = np.append(state, action).astype(args.oa_dtype, casting='unsafe')
         assert (sa_pair == np.append(state, action)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
-        agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
+        if not args.RL_baseline: agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
         replay_buffer.push(state, action, r_true, next_state, False) # done=False since agent thinks the task is continual; r_true used only when args.RL baseline
-        dummy_returns = log_agent_step(sa_pair, r_true, dummy_returns, reward_stats, reward_model, args)
+        dummy_returns = log_agent_step(sa_pair, r_true, dummy_returns, true_reward_stats, reward_model, args)
         # prepare for next step
         state = next_state
         if done:
@@ -135,7 +141,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
         if step >= args.agent_learning_starts and step % args.agent_gdt_step_period == 0 and \
                 len(replay_buffer) >= 3*args.batch_size_agent:
             if args.RL_baseline:
-                loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, normalise_rewards=args.normalise_rewards, true_reward_stats=reward_stats)
+                loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, normalise_rewards=args.normalise_rewards, true_reward_stats=true_reward_stats)
             else:
                 loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=reward_model, normalise_rewards=args.normalise_rewards)
             optimizer_agent.zero_grad()

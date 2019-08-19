@@ -2,9 +2,11 @@ import numpy as np
 import torch, logging
 
 def log_agent_step(sa_pair, r_true, rets, reward_stats, reward_model, args):
-    rt_mean, rt_var = reward_stats
     rets['ep']['true'] += r_true
-    rets['ep']['true_norm'] += (r_true - rt_mean) / np.sqrt(rt_var + 1e-8)
+    if args.normalise_rewards:
+        assert reward_stats != None, "You told me to normalise true reward but haven't told me their mean and var!"
+        rt_mean, rt_var = reward_stats
+        rets['ep']['true_norm'] += (r_true - rt_mean) / np.sqrt(rt_var + 1e-8)
     # also log reward the agent thinks it's getting according to current reward_model
     if not args.RL_baseline:
         reward_model.eval() # dropout off at 'test' time i.e. when logging performance
@@ -25,7 +27,8 @@ def log_agent_episode(rets, writers, step, i_train_round, sub_round, args, is_te
         tag_norm = '4b.train_ep_return_per_step_normalised/round_{}'.format(i_train_round)
     # interpreting writers: 1 == blue == true!
     writer1.add_scalar(tag, rets['ep']['true'], step)
-    writer1.add_scalar(tag_norm, rets['ep']['true_norm'], step)
+    if args.normalise_rewards:
+        writer1.add_scalar(tag_norm, rets['ep']['true_norm'], step)
     if not args.RL_baseline:
         writer2.add_scalar(tag, rets['ep']['pred'], step)
         writer2.add_scalar(tag_norm, rets['ep']['pred_norm'], step)
@@ -42,7 +45,8 @@ def log_RL_loop(returns, args, i_train_round, sub_round, writers):
     mean_true_returns = np.sum(np.array(returns['all']['true'])) / len(returns['all']['true'])
     mean_true_returns_norm = np.sum(np.array(returns['all']['true_norm'])) / len(returns['all']['true_norm'])
     writer1.add_scalar('3a.train_mean_ep_return_per_sub_round', mean_true_returns, i_train_sub_round)
-    writer1.add_scalar('3b.train_mean_ep_return_per_sub_round_normalised', mean_true_returns_norm, i_train_sub_round)
+    if args.normalise_rewards:
+        writer1.add_scalar('3b.train_mean_ep_return_per_sub_round_normalised', mean_true_returns_norm, i_train_sub_round)
     if not args.RL_baseline:
         mean_pred_returns = np.sum(np.array(returns['all']['pred'])) / len(returns['all']['pred'])
         mean_pred_returns_norm = np.sum(np.array(returns['all']['pred_norm'])) / len(returns['all']['pred_norm'])
@@ -61,11 +65,12 @@ def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_ro
     i_train_sub_round = args.agent_test_frequency * i_train_round + sub_round
     num_test_episodes = len(returns['true'])
     mean_ret_true = np.sum(np.array(returns['true'])) / num_test_episodes
-    mean_ret_true_norm = np.sum(np.array(returns['true_norm'])) / num_test_episodes
     returns_summary[i_run][('1.true', i_train_round, sub_round)] = mean_ret_true # dict format that is friendly to creating a multiindex pd.DataFrame downstream
-    returns_summary[i_run][('3.true_norm', i_train_round, sub_round)] = mean_ret_true_norm
     writer1.add_scalar('1a.test_mean_ep_return_per_sub_round', mean_ret_true, i_train_sub_round)
-    writer1.add_scalar('1b.test_mean_ep_return_per_sub_round_normalised', mean_ret_true_norm, i_train_sub_round)
+    if args.normalise_rewards:
+        mean_ret_true_norm = np.sum(np.array(returns['true_norm'])) / num_test_episodes
+        returns_summary[i_run][('3.true_norm', i_train_round, sub_round)] = mean_ret_true_norm
+        writer1.add_scalar('1b.test_mean_ep_return_per_sub_round_normalised', mean_ret_true_norm, i_train_sub_round)
     if not args.RL_baseline:
         mean_ret_pred = np.sum(np.array(returns['pred'])) / num_test_episodes
         mean_ret_pred_norm = np.sum(np.array(returns['pred_norm'])) / num_test_episodes
