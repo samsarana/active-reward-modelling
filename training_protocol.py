@@ -50,8 +50,8 @@ def training_protocol(env, args, writers, returns_summary, i_run):
         for sub_round in range(args.agent_test_frequency): # code more readable if this for-loop converted to if-statement
             logging.info("Begin train {}".format(sub_round))
             q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
-                                                                     agent_experience, reward_model, prefs_buffer,
-                                                                     reward_stats, args, writers, i_train_round, sub_round)
+                                                                     agent_experience, reward_model, reward_stats, args,
+                                                                     writers, i_train_round, sub_round)
             # Stage 1.1b: Evalulate RL agent performance
             logging.info("Begin test {}".format(sub_round))
             test_returns = test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round, sub_round)
@@ -95,8 +95,8 @@ def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, op
 
 
 def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
-          agent_experience, reward_model, prefs_buffer, #TODO prefs_buffer unused in function
-          reward_stats, args, writers, i_train_round, sub_round):
+          agent_experience, reward_model, reward_stats, args,
+          writers, i_train_round, sub_round):
     writer1, writer2 = writers
     dummy_returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
                     'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
