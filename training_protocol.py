@@ -124,7 +124,10 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
         sa_pair = np.append(state, action).astype(args.oa_dtype, casting='unsafe')
         assert (sa_pair == np.append(state, action)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
         if not args.RL_baseline: agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
-        replay_buffer.push(state, action, r_true, next_state, False) # done=False since agent thinks the task is continual; r_true used only when args.RL baseline
+        if args.agent_gets_dones:
+            replay_buffer.push(state, action, r_true, next_state, done)
+        else:
+            replay_buffer.push(state, action, r_true, next_state, False) # done=False since agent thinks the task is continual; r_true used only when args.RL baseline
         dummy_returns = log_agent_step(sa_pair, r_true, dummy_returns, true_reward_stats, reward_model, args)
         # prepare for next step
         state = next_state
@@ -196,7 +199,10 @@ def do_pretraining_rollouts(q_net, replay_buffer, env, args):
         sa_pair = np.append(state, action).astype(args.oa_dtype, casting='unsafe') # casting='unsafe' is default; i want to make explicit that this could be a dangerous line
         assert (sa_pair == np.append(state, action)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
         agent_experience.add(sa_pair, r_true) # add reward too in order to produce synthetic prefs
-        replay_buffer.push(state, action, r_true, next_state, False) # done=False since agent thinks the task is continual; r_true used only when args.RL baseline
+        if args.agent_gets_dones:
+            replay_buffer.push(state, action, r_true, next_state, done)
+        else:
+            replay_buffer.push(state, action, r_true, next_state, False) # done=False since agent thinks the task is continual; r_true used only when args.RL baseline
         state = next_state
         if done:
             state = env.reset()
