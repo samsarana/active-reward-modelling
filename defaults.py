@@ -122,7 +122,7 @@ def gridworld_zac_defaults(args):
     args.n_agent_steps = int(500e3) # num_episodes * max_epLen = 10k * 50 = 500k. Zac uses 100k
     args.n_agent_steps_pretrain = 10000 # not sure if Zac does pretraining
     args.target_update_tau = 0.001 # Big difference here: Zac uses hard updates (I guess?)
-    args.target_update_period = 4 # Zac uses 5
+    args.target_update_period = 4 # Zac uses 5. but wait, in their paper, they use 1K...
     # from here on, I got the values from Zac's defaults
     args.h1_agent = 128 # used by Zac. noteboook has 4 conv layers followed by size 512 layer,
     args.h2_agent = 128 # then "split into separate advantage and value streams." (they use dueling DQN)
@@ -149,22 +149,19 @@ def gridworld_nb_defaults(args):
     Notebook uses Adam, which I also used for the first attempt
     """
     # These values I got from the notebook
-    args.batch_size_agent = 32 # Zac uses 64
-    args.agent_gdt_step_period = 4 # I couldn't find the value Zac uses
-    args.gamma = 0.99 # Zac and notebook
-    args.episilon_start = 1.0 # Zac and notebook
-    args.epsilon_stop = 0.1 # Zac uses 0.05
+    args.batch_size_agent = 32
+    args.agent_gdt_step_period = 4 
+    args.gamma = 0.99
+    args.episilon_start = 1.0
+    args.epsilon_stop = 0.1
     args.exploration_fraction = 0.1 # annealing_steps / n_agent_steps = 10k / 500k = 0.02. NB I increased this after first (failed) experiment
-    # NB Zac does exponential annealing & I haven't checked how these compare
     args.n_agent_steps = int(500e3) # num_episodes * max_epLen = 10k * 50 = 500k. Zac uses 100k
-    args.n_agent_steps_pretrain = 10000 # not sure if Zac does pretraining
-    args.target_update_tau = 0.001 # Big difference here: Zac uses hard updates (I guess?)
-    args.target_update_period = 4 # Zac uses 5
+    args.n_agent_steps_pretrain = 10000
+    args.target_update_tau = 0.001
+    args.target_update_period = 4
     # from here on, I got the values from Zac's defaults
-    args.h1_agent = 128 # used by Zac. noteboook has 4 conv layers followed by size 512 layer,
-    args.h2_agent = 128 # then "split into separate advantage and value streams." (they use dueling DQN)
-    args.replay_buffer_size = int(20e3) # used by Zac. NB noteboook uses 50e3
-    args.lr_agent = 1e-3 # used by Zac. NB noteboook uses 1e-4 but I'll start w Zac's since my archi is same as his, not theirs
+    args.replay_buffer_size = int(50e3)
+    args.lr_agent = 1e-4
     args.agent_test_frequency = 50 # test every 10k agent steps (50 times in total)
     # TODO think about these reward modelling settings
     args.n_epochs_pretrain_rm = 2000 # not yet tested
