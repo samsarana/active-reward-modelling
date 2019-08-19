@@ -27,7 +27,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
     
     # BEGIN PRETRAINING
     # Stage 0.1: Do some rollouts from the randomly initialised policy
-    agent_experience = do_pretraining_rollouts(q_net, env, args)
+    agent_experience, replay_buffer = do_pretraining_rollouts(q_net, replay_buffer, env, args)
     # Stage 0.2: Sample without replacement from those rollouts and label them (synthetically)
     mu_counts_total = np.zeros((2,3))
     reward_model, reward_stats, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
@@ -161,7 +161,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
     return q_net, q_target, replay_buffer, agent_experience
 
 
-def do_pretraining_rollouts(q_net, env, args):
+def do_pretraining_rollouts(q_net, replay_buffer, env, args):
     """Agent interact with environment and collect experience.
        Number of steps taken determined by `args.n_labels_per_round`.
        NB Used to be determined by `args.n_labels_pretraining` until
@@ -189,10 +189,11 @@ def do_pretraining_rollouts(q_net, env, args):
         sa_pair = np.append(state, action).astype(args.oa_dtype, casting='unsafe') # casting='unsafe' is default; i want to make explicit that this could be a dangerous line
         assert (sa_pair == np.append(state, action)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
         agent_experience.add(sa_pair, r_true) # add reward too in order to produce synthetic prefs
+        replay_buffer.push(state, action, r_true, next_state, False) # done=False since agent thinks the task is continual; r_true used only when args.RL baseline
         state = next_state
         if done:
             state = env.reset()
-    return agent_experience
+    return agent_experience, replay_buffer
 
 
 def do_random_experiment(env, args, returns_summary, writers, i_run):
