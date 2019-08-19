@@ -161,7 +161,6 @@ def gridworld_nb_defaults(args):
     args.target_update_period = 4
     # from here on, I got the values from Zac's defaults
     args.replay_buffer_size = int(50e3)
-    args.lr_agent = 1e-4
     args.agent_test_frequency = 50 # test every 10k agent steps (50 times in total)
     # TODO think about these reward modelling settings
     args.n_epochs_pretrain_rm = 2000 # not yet tested
