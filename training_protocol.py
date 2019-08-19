@@ -235,7 +235,6 @@ def do_random_experiment(env, args, returns_summary, writers, i_run):
                 dummy_returns['ep'] = 0
 
         # log mean recent return this training round
-        # mean_dummy_true_returns = np.sum(np.array(dummy_returns['all'][-3:])) / 3. # 3 dummy eps is the final 3*200/2000 == 3/10 eps in the round
         mean_dummy_true_returns = np.sum(np.array(dummy_returns['all'])) / len(dummy_returns['all'])
         writer1.add_scalar('4a.train_mean_ep_return_per_round', mean_dummy_true_returns, i_train_round)
         test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_round)
