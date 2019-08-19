@@ -27,7 +27,7 @@ def run_experiment(args, i_run, returns_summary):
     writers = [writer1, writer2]
 
     # make environment
-    env = gym.make(args.env_ID)
+    env = gym.make(args.env_ID, **args.env_kwargs)
     if args.env_str == 'frozen_lake':
         env = DiscreteToBox(env)
     # if isinstance(env.env, gym.envs.atari.AtariEnv):
@@ -101,7 +101,7 @@ def main():
             logging.info('RUN {}/{} SUCCEEDED\n'.format(i_run, args.n_runs - 1))
             pd.DataFrame(returns_summary).to_csv('./logs/{}.csv'.format(args.info), index_label=['ep return type', 'round no.', 'test no.'])
         except:
-            logging.exception('RUN {}/{} FAILED with the following traceback:\n'.format(i_run, args.n_runs))
+            logging.exception('RUN {}/{} FAILED with the following traceback:\n'.format(i_run, args.n_runs - 1))
 
 if __name__ == '__main__':
     main()
