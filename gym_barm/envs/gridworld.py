@@ -203,5 +203,7 @@ class GridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
     def _get_obs(self):
         """
         Returns same as processState function used in https://github.com/awjuliani/DeepRL-Agents/blob/master/Double-Dueling-DQN.ipynb (see In[5]...)
+        EXCEPT channel is moved to dim to (in order to use with pytorch-style cnn)
         """
-        return np.reshape(self.state,[21168]) # 21168 = 84*84*3
+        return np.moveaxis(self.state, -1, 0)
+        # return np.reshape(self.state,[21168]) # 21168 = 84*84*3
