@@ -87,7 +87,7 @@ def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_ro
 
 
 def save_policy(q_net, i_round, i_sub_round, args):
-    path = '{}/checkpts/agent/{}-{}'.format(args.logdir, i_round, i_sub_round)
+    path = '{}/checkpts/agent/{}-{}.pt'.format(args.logdir, i_round, i_sub_round)
     torch.save({
         'round': i_round,
         'test_no': i_sub_round,

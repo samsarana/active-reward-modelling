@@ -40,7 +40,7 @@ def compute_mean_var(reward_model, prefs_buffer):
 
 
 def save_reward_model(reward_model, i_round, args):
-    path = '{}/checkpts/rm/{}'.format(args.logdir, i_round)
+    path = '{}/checkpts/rm/{}.pt'.format(args.logdir, i_round)
     torch.save({
         'round': i_round,
         'rm_state_dict': reward_model.state_dict()
