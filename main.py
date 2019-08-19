@@ -26,8 +26,8 @@ def run_experiment(args, i_run, returns_summary):
     writer2 = SummaryWriter(log_dir=args.logdir+'/pred')
     writers = [writer1, writer2]
     # make dirs for saving models at checkpoints
-    os.makedirs('{}/checkpts/agent/', exist_ok=True)
-    os.makedirs('{}/checkpts/rm/', exist_ok=True)
+    os.makedirs('{}/checkpts/agent/'.format(args.logdir), exist_ok=True)
+    os.makedirs('{}/checkpts/rm/'.format(args.logdir), exist_ok=True)
 
     # make environment
     env = gym.make(args.env_ID, **args.env_kwargs)
