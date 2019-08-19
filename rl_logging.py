@@ -59,7 +59,7 @@ def log_RL_loop(returns, args, i_train_round, sub_round, writers):
 
 
 def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_round, sub_round, env):
-    """Write test returns to Tensborboard and DataFrame
+    """Write test returns to Tensorboard and `returns_summary` DataFrame.
     """
     writer1, writer2 = writers
     i_train_sub_round = args.agent_test_frequency * i_train_round + sub_round
