@@ -46,6 +46,7 @@ def parse_arguments():
     parser.add_argument('--agent_learning_starts', type=int, default=0, help='After how many steps does the agent start making learning updates? This replaced the functionality of n_agent_total_steps.')
     parser.add_argument('--no_reinit_agent', dest='reinit_agent', action='store_false', help='Flag not to reinitialise the agent before every training round')
     parser.add_argument('--no_normalise_rewards', dest='normalise_rewards', action='store_false', help='Flag not to normalise rewards sent to the agent (either true or predicted, depending on args.RL_baseline)')
+    parser.add_argument('--agent_gets_dones', action='store_true', help='Flag to store done=True signals in replay buffer (Christiano/Ibarz say not to do this, but we want to see how it affects performance)')
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
 
     # reward model hyperparamas
