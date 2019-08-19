@@ -7,6 +7,7 @@ import pandas as pd
 from gym import wrappers
 from q_learning import *
 from reward_learning import *
+from reward_learning_utils import *
 from active_learning import *
 from test_policy import *
 from annotation import *
@@ -77,7 +78,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
         # if not args.RL_baseline:
         #     test_correlation(reward_model, env, q_net, args, writers[0], i_train_round)
 
-    # log mu_counts for this run
+    # log mu_counts for this experiment
     if not args.RL_baseline: log_total_mu_counts(mu_counts_total, writers, args)
 
 
@@ -96,6 +97,8 @@ def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, op
         # Train reward model!
         # if prefs_buffer.current_length >= 10: # prevent gradient updates if too few training examples
         reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_label)
+    # save reward_model for loading later
+    save_reward_model(reward_model, i_train_round, args)
     return reward_model, prefs_buffer, mu_counts_total
 
 
