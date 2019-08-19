@@ -66,6 +66,6 @@ register(
 register(
      id='Gridworld-v0',
      entry_point='gym_barm.envs:GridworldEnv', 
-     max_episode_steps=200, # TODO Zac's code had 1000 here, but the dqn hyperparams used max_episode_steps=200. work out what this "should be"
+     max_episode_steps=50, # TODO Zac's code had 1000 here, but the dqn hyperparams used max_episode_steps=200. work out what this "should be"
      # TODO NB https://github.com/awjuliani/DeepRL-Agents/blob/master/Double-Dueling-DQN.ipynb uses max_epLength = 50 !!
 )
