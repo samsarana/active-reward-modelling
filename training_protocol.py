@@ -30,7 +30,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
     agent_experience, replay_buffer = do_pretraining_rollouts(q_net, replay_buffer, env, args)
     # Stage 0.2: Sample without replacement from those rollouts and label them (synthetically)
     mu_counts_total = np.zeros((2,3))
-    if not args.RL_baseline:
+    if not args.RL_baseline or args.normalise_rewards:
         reward_model, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
             agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round=-1)
 
@@ -66,7 +66,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
                 raise SystemExit("Environment solved, moving onto next run.")
 
         # Stage 1.2 - 1.3: acquire labels from recent rollouts and train reward model on current dataset
-        if not args.RL_baseline:
+        if not args.RL_baseline or args.normalise_rewards:
             reward_model, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
                 agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round)
             # Compute mean and variance of true and predicted reward after training (for normalising rewards sent to agent)
