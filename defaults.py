@@ -149,6 +149,7 @@ def gridworld_nb_defaults(args):
     Notebook uses Adam, which I also used for the first attempt
     """
     # These values I got from the notebook
+    args.dqn_archi = 'cnn'
     args.batch_size_agent = 32
     args.agent_gdt_step_period = 4 
     args.gamma = 0.99
@@ -163,6 +164,7 @@ def gridworld_nb_defaults(args):
     args.replay_buffer_size = int(50e3)
     args.agent_test_frequency = 50 # test every 10k agent steps (50 times in total)
     # TODO think about these reward modelling settings
+    args.rm_archi = 'cnn'
     args.n_epochs_pretrain_rm = 2000 # not yet tested
     args.n_epochs_train_rm = 2000 # not yet tested
     return args
