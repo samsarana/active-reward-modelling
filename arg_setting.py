@@ -23,6 +23,7 @@ def parse_arguments():
 
     # agent hyperparams
     parser.add_argument('--dqn_archi', type=str, default='mlp', help='Is deep Q-network an mlp or cnn?')
+    parser.add_argument('--dqn_loss', type=str, default='mse', help='Use mse or huber loss function?')
     parser.add_argument('--h1_agent', type=int, default=32)
     parser.add_argument('--h2_agent', type=int, default=64)
     parser.add_argument('--batch_size_agent', type=int, default=32)
@@ -51,6 +52,7 @@ def parse_arguments():
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
 
     # reward model hyperparamas
+    parser.add_argument('--rm_archi', type=str, default='mlp', help='Is reward model an mlp or cnn')
     parser.add_argument('--hid_units_rm', type=int, default=64)
     parser.add_argument('--batch_size_rm', type=int, default=16) # same as Ibarz
     parser.add_argument('--lr_rm', type=float, default=1e-4)
