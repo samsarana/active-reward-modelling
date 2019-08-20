@@ -53,7 +53,7 @@ class CnnDQN(nn.Module):
         self.batch_size = args.batch_size_agent
         self.gamma = args.gamma
         self.tau = args.target_update_tau
-        self.obs_shape = args.obs_shape_all
+        # self.obs_shape = args.obs_shape_all
         self.convolutions = nn.Sequential(
             nn.Conv2d(3, 32, kernel_size=8, stride=4), # num_inputs == env.observation_space.shape[0] == (84,84,4)[0]. Still not sure this is going to work -- can other 2 input dims be left implicitly wtih Conv2d layers? Maybe need to use Conv3d..?
             nn.ReLU(),
@@ -62,6 +62,7 @@ class CnnDQN(nn.Module):
             nn.Conv2d(64, 64, kernel_size=3, stride=1),
             nn.ReLU(),
             nn.Conv2d(64, 512, kernel_size=7, stride=1),
+            nn.ReLU(), # TODO should there be a ReLU here? (just added) it. NB notebook has no ReLUs...???
         )
         self.fc = nn.Sequential(
             nn.Linear(512, 512),
