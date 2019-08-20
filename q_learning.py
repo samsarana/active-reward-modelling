@@ -45,12 +45,6 @@ class DQN(nn.Module):
             action = random.randrange(0, self.num_actions)
         return action
 
-# TODO understand convolutions properly, and where the stack dimension should be
-# Then go through rest of code and see what will break when obs.shape == (84,84,4)
-# some things clearly will e.g. AgentExperience
-# reward model (hmm, Christiano r^ : S x A -> R but it's a convnet...? now i can see
-# why it made sense for Ibarz to parameterise as r^ : S -> R instead...)
-# use the debugger to check the dims of everything
 
 class CnnDQN(nn.Module):
     def __init__(self, num_inputs, num_actions, args):
@@ -183,8 +177,13 @@ def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
     next_q_value, _  = next_q_values.max(-1) # max returns a (named)tuple (values, indices) where values is the maximum value of each row of the input tensor in the given dimension dim. And indices is the index location of each maximum value found (argmax).
     expected_q_value = rew + q_net.gamma * next_q_value * (1 - done)
     
-    # TODO clip the error term / try Huber loss
-    loss = (q_value - expected_q_value).pow(2).mean() # mean is across batch dimension
+    # TODO perhaps clip the error term?
+    if args.dqn_loss == 'mse':
+        loss = F.mse_loss(q_value, expected_q_value)
+        # loss = (q_value - expected_q_value).pow(2).mean() # mean is across batch dimension
+    else:
+        assert args.dqn_loss == 'huber'
+        loss = F.smooth_l1_loss(q_value, expected_q_value)
     return loss
 
 
