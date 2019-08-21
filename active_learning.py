@@ -162,11 +162,12 @@ def sample_reward_model(reward_model, clips, args):
     if args.uncert_method == 'MC':
         reward_model.train() # MC dropout
         r_preds_per_oa_pair = torch.cat([
-            reward_model(clips_tensor).detach() for _ in range(args.num_MC_samples)
+            reward_model(clips_tensor, mode='batch').detach() for _ in range(args.num_MC_samples)
         ], dim=-1) # concatenate r_preds for same s-a pairs together
         check_num_samples = args.num_MC_samples
     elif args.uncert_method == 'ensemble':
-        r_preds_per_oa_pair = reward_model.forward_all(clips_tensor).detach() # TODO check this line
+        reward_model.eval() # dropout off at 'test' time i.e. when each model in ensemble to get uncertainty estimate. TODO check if this is correct
+        r_preds_per_oa_pair = reward_model.forward_all(clips_tensor, mode='batch').detach() # TODO check this line
         check_num_samples = reward_model.ensemble_size
     else:
         raise NotImplementedError("You specified {} as the `uncert_method`, but I don't know what that is!".format(args.uncert_method))
