@@ -56,10 +56,6 @@ def log_acquisition(idx, info_per_clip_pair, clip_pairs, rews, mus, rand_clip_pa
                 env = gym.make(args.env_ID, **args.env_kwargs)
                 fname = '{}/videos/clip_pairs/i_label={}i_batch={}pair={}time={}/'.format(
                     args.logdir, i_label, i_batch, pair_num, str(time()))
-                # debugging START
-                # import ipdb
-                # ipdb.set_trace()
-                # debugging END
                 env = wrappers.Monitor(env, fname)
                 # env._before_reset()
                 env.reset()
@@ -82,8 +78,6 @@ def log_acquisition(idx, info_per_clip_pair, clip_pairs, rews, mus, rand_clip_pa
                     else:
                         raise NotImplementedError("You haven't told me how to map observations to states for environment {}".format(args.env_ID))
                     # env._before_step(action)
-                    # import ipdb
-                    # ipdb.set_trace()
                     env.state = state
                     # env._flush(force=True)
                     env.video_recorder.capture_frame()
