@@ -137,16 +137,8 @@ def gridworld_zac_defaults(args):
 
 def gridworld_nb_defaults(args):
     """
-    Used a combination of hyerparams given in:
+    Sets hyerparams to be those given in:
     https://github.com/awjuliani/DeepRL-Agents/blob/master/Double-Dueling-DQN.ipynb
-    and used by Zac in the function dqn()
-    I've commented which ones I used.
-    In hindsight, I think it was silly to use a combination.
-    The model archi used by Zac and notebook are very different
-    and since I used Zac's archi, I think I should have just copied
-    Zac's hyperparams exactly.
-    NB Zac uses RMSProp as optimizer.
-    Notebook uses Adam, which I also used for the first attempt
     """
     # These values I got from the notebook
     args.dqn_archi = 'cnn'
@@ -155,16 +147,14 @@ def gridworld_nb_defaults(args):
     args.gamma = 0.99
     args.episilon_start = 1.0
     args.epsilon_stop = 0.1
-    args.exploration_fraction = 0.1 # annealing_steps / n_agent_steps = 10k / 500k = 0.02. NB I increased this after first (failed) experiment
-    args.n_agent_steps = int(500e3) # num_episodes * max_epLen = 10k * 50 = 500k. Zac uses 100k
+    # args.exploration_fraction = 0.1 # annealing_steps / n_agent_steps = 10k / 500k = 0.02. NB I increased this after first (failed) experiment
+    # args.n_agent_steps = int(500e3) # num_episodes * max_epLen = 10k * 50 = 500k. Zac uses 100k TODO
     args.n_agent_steps_pretrain = 10000
     args.target_update_tau = 0.001
     args.target_update_period = 4
-    # from here on, I got the values from Zac's defaults
     args.replay_buffer_size = int(50e3)
-    args.agent_test_frequency = 50 # test every 10k agent steps (50 times in total)
+    # args.agent_test_frequency = 15 # test every 10k agent steps (we take 150k steps each round) (or 30k each round in reduced condn -> test every 2000 steps)
     # TODO think about these reward modelling settings
-    args.rm_archi = 'cnn'
-    args.n_epochs_pretrain_rm = 2000 # not yet tested
-    args.n_epochs_train_rm = 2000 # not yet tested
+    # args.rm_archi = 'cnn'
+    args.n_epochs_train_rm = 5000 # not yet sure if this will train to convergence... check plots!
     return args
