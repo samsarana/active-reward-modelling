@@ -24,11 +24,10 @@ def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, 
                 # loss_rm = compute_loss_rm(r_hats_batch, mu_batch)
             else:
                 if isinstance(reward_model, RewardModelEnsemble):
-                    r_hats_batch_draw = reward_model.forward_all(clip_pair_batch, normalise=False).squeeze(-1)
+                    r_hats_batch_draw = reward_model.forward_all(clip_pair_batch, mode='clip_pair_batch', normalise=False).squeeze(-1)
                     loss_rm = compute_loss_rm_ensemble(r_hats_batch_draw, mu_batch)
-                else:
-                    assert isinstance(reward_model, RewardModel)
-                    r_hats_batch = reward_model(clip_pair_batch, normalise=False).squeeze(-1)
+                elif isinstance(reward_model, RewardModel) or isinstance(reward_model, CnnRewardModel):
+                    r_hats_batch = reward_model(clip_pair_batch, mode='clip_pair_batch', normalise=False).squeeze(-1)
                     loss_rm = compute_loss_rm(r_hats_batch, mu_batch)
             # assert clip_pair_batch.shape == (args.batch_size_rm, 2, args.clip_length, args.obs_act_shape)
             # loss_rm = compute_loss_rm_wchecks(r_hats_batch, mu_batch, args, args.obs_shape, args.act_shape)
@@ -49,12 +48,169 @@ def init_rm(args):
        reward learning: reward model and optimizer.
     """
     logging.info('Initialising reward model')
-    if args.size_rm_ensemble >= 2:
-        reward_model = RewardModelEnsemble(args.obs_shape, args.act_shape, args)
+    if args.rm_archi == 'mlp':
+        if args.size_rm_ensemble >= 2:
+            reward_model = RewardModelEnsemble(args.obs_shape, args.act_shape, args)
+        else:
+            reward_model = RewardModel(args.obs_shape, args.act_shape, args)
     else:
-        reward_model = RewardModel(args.obs_shape, args.act_shape, args)
+        assert args.rm_archi == 'cnn' or args.rm_archi == 'cnn_mod'
+        if args.size_rm_ensemble >= 2:
+            raise NotImplementedError("U haven't yet implemented ensemble of CNN reward models!")
+        else:
+            reward_model = CnnRewardModel(args.obs_shape, args.act_shape, args)
     optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm)
     return reward_model, optimizer_rm
+
+
+class CnnRewardModel(nn.Module):
+    """Parameterises r_hat : states x actions -> real rewards
+       Use a convolutional NN for the states, then append action
+       before pass through fully connected layer (as done in MIRI
+       Atari extension of Tom Brown's implemenation).
+    """
+    def __init__(self, state_size, action_size, args):
+        """Feedforward NN with 2 hidden layers"""
+        super().__init__()
+        if args.rm_archi == 'cnn':
+            self.convolutions = nn.Sequential(
+                nn.Conv2d(3, 32, kernel_size=8, stride=4),
+                nn.ReLU(), # NB TODO Christiano uses leaky ReLU
+                nn.Conv2d(32, 64, kernel_size=4, stride=2),
+                nn.ReLU(),
+                nn.Conv2d(64, 64, kernel_size=3, stride=1),
+                nn.ReLU(),
+                nn.Conv2d(64, 512, kernel_size=7, stride=1),
+                nn.ReLU(),
+            )
+        else:
+            assert args.rm_archi == 'cnn_mod'
+            self.convolutions = nn.Sequential(
+                nn.Conv2d(3, 32, kernel_size=8, stride=4),
+                nn.ReLU(), # NB TODO Christiano uses leaky ReLU
+                nn.BatchNorm2d(32), # TODO some debate as to order of these layers https://stackoverflow.com/questions/39691902/ordering-of-batch-normalization-and-dropout
+                nn.Dropout(args.p_dropout_rm),
+                nn.Conv2d(32, 64, kernel_size=4, stride=2),
+                nn.ReLU(),
+                nn.BatchNorm2d(64),
+                nn.Dropout(args.p_dropout_rm),
+                nn.Conv2d(64, 64, kernel_size=3, stride=1),
+                nn.ReLU(),
+                nn.BatchNorm2d(64),
+                nn.Dropout(args.p_dropout_rm),
+                nn.Conv2d(64, 512, kernel_size=7, stride=1),
+                nn.ReLU(),
+                nn.BatchNorm2d(512),
+                nn.Dropout(args.p_dropout_rm),
+            )
+        self.fc = nn.Sequential(
+            nn.Linear(512 + action_size, 512), # NB TODO Christiano uses 64 unit hidden layer
+            nn.ReLU(),
+            nn.Linear(512, 1)
+        ) 
+        self.mean_prefs = 0 # mean of reward model across prefs_buffer
+        self.var_prefs = 1 # var of reward model across prefs_buffer
+        self.state_size = state_size
+        self.action_size = action_size
+        self.clip_length = args.clip_length
+
+    def forward(self, sa_pair, mode, normalise=False):
+        """Forward pass for a batch of state-action pairs
+           input shape = (B, oa_shape)
+           TODO cleaner code design would be to have reward
+           model take state, action rather than state-action
+           pair. THis would avoid the ugly if-else
+           statemenet at the start of this function.
+           But I'm running out of time, and this would
+           be a relatively major change which would
+           force me to test all the code again.
+           The simpler version is to still store experience
+           in pairs then split it up when we call reward_model()
+           according to whether we're passing it single, batch 
+           or clip pair batch. But this isn't worth the time
+           right now, either.
+        """
+        if mode == 'single':
+            state, action = sa_pair[:self.state_size], sa_pair[-self.action_size:]
+        elif mode == 'batch':
+            state, action = sa_pair[:, :self.state_size], sa_pair[:, -self.action_size:]
+            batch_size = sa_pair.shape[0] # used only in assert
+        elif mode == 'clip_pair_batch':
+            state, action = sa_pair[:,:,:,:self.state_size], sa_pair[:,:,:,-self.action_size:]
+            batch_size = sa_pair.shape[0] # used only in assert
+        else:
+            raise RuntimeError("I don't know what mode {} is!".format(mode))
+
+        x = state.view(-1, 3, 84, 84) # conv2d needs 4d input so even in the clip_pair_batch case we have to take a view, then reconstruct batch, pair, clip length dims
+        x = self.convolutions(x)
+        if mode == 'single':
+            x = x.view(512)
+        elif mode == 'batch':
+            x = x.view(-1, 512)
+        elif mode == 'clip_pair_batch':
+            x = x.view(-1, 2, self.clip_length, 512) # get batch size, pair and clip length dims back
+            # TODO I'm far from certain that these reshapes preserve the dimensions. use debugger to check. but how?
+            assert action.shape == (batch_size, 2, self.clip_length, self.action_size)
+        x = torch.cat((x, action), dim=-1)
+        assert x.shape[-1] == (512 + self.action_size)
+        r_hat = self.fc(x)
+        if normalise:
+            r_hat = (r_hat - self.mean_prefs) / np.sqrt(self.var_prefs + 1e-8)
+        return r_hat   
+
+    # def forward(self, sa_pair, normalise=False):
+    #     """Forward pass for a batch of state-action pairs
+    #        input shape = (B, oa_shape)
+    #     """
+    #     # r_hat = self.layers(x)
+    #     batch_size = sa_pair.shape[0] # used only in assert
+    #     state, action = sa_pair[:, :self.state_size], sa_pair[:, -self.action_size:]
+    #     x = state.view(-1, 3, 84, 84)
+    #     x = self.convolutions(x)
+    #     x = x.view(-1, 512)
+    #     x = torch.cat((x, action), dim=-1)
+    #     assert x.shape == (batch_size, 512 + self.action_size)
+    #     r_hat = self.fc(x)
+    #     if normalise:
+    #         r_hat = (r_hat - self.mean_prefs) / np.sqrt(self.var_prefs + 1e-8)
+    #     return r_hat
+
+    # def forward_sa_pair(self, sa_pair, normalise=False):
+    #     """Forward pass for a single state-action pair
+    #        input shape = (oa_shape)
+    #     """
+    #     # r_hat = self.layers(x)
+    #     state, action = sa_pair[:self.state_size], sa_pair[-self.action_size:]
+    #     x = state.view(-1, 3, 84, 84)
+    #     x = self.convolutions(x)
+    #     x = x.view(512)
+    #     x = torch.cat((x, action), dim=-1)
+    #     assert x.shape == (512 + self.action_size,)
+    #     r_hat = self.fc(x)
+    #     if normalise:
+    #         r_hat = (r_hat - self.mean_prefs) / np.sqrt(self.var_prefs + 1e-8)
+    #     return r_hat
+
+    # def forward_batch(self, clip_pair_batch, normalise=False):
+    #     """Forward pass for a batch of clip pairs
+    #        input shape = (B, 2, clip_shape, oa_shape)
+    #     """
+    #     # r_hat = self.layers(x)
+    #     batch_size = clip_pair_batch.shape[0] # used only in asserts
+    #     state, action = clip_pair_batch[:,:,:,:self.state_size], clip_pair_batch[:,:,:,-self.action_size:]
+    #     # x = state.view(-1, 3, 84, 84)
+    #     # x = state.view(-1, 2, self.clip_length, 3, 84, 84) # 2 b/c clip *pair*
+    #     x = state.view(-1, 3, 84, 84) # conv2d needs 4d input so we have to take a view then reconstruct batch, pair, clip length dims
+    #     x = self.convolutions(x)
+    #     x = x.view(-1, 2, self.clip_length, 512) # get batch size, pair and clip length dims back
+    #     # TODO I'm far from 100% sure that this stuff preserves the dimensions
+    #     assert action.shape == (batch_size, 2, self.clip_length, self.action_size)
+    #     x = torch.cat((x, action), dim=-1)
+    #     assert x.shape == (batch_size, 2, self.clip_length, 512 + self.action_size)
+    #     r_hat = self.fc(x)
+    #     if normalise:
+    #         r_hat = (r_hat - self.mean_prefs) / np.sqrt(self.var_prefs + 1e-8)
+    #     return r_hat
 
 
 class RewardModel(nn.Module):
@@ -77,7 +233,12 @@ class RewardModel(nn.Module):
         self.mean_prefs = 0 # mean of reward model across prefs_buffer
         self.var_prefs = 1 # var of reward model across prefs_buffer
 
-    def forward(self, x, normalise=False):
+    def forward(self, x, mode=None, normalise=False):
+        """
+        `mode` is unused... this is silly code but see docstr
+        of CnnRewardModel.forward() for why I'm doing it this
+        way
+        """
         r_hat = self.layers(x)
         if normalise:
             r_hat = (r_hat - self.mean_prefs) / np.sqrt(self.var_prefs + 1e-8)
@@ -111,7 +272,7 @@ class RewardModelEnsemble(nn.Module):
             setattr(self, 'mean_prefs{}'.format(ensemble_num), 0) # mean of each net in ensemble across prefs_buffer
             setattr(self, 'var_prefs{}'.format(ensemble_num), 1) # var of each net in ensemble across prefs_buffer
         
-    def forward(self, x, normalise=False):
+    def forward(self, x, mode=None, normalise=False):
         """Returns the average output from forward pass
            through each network in the ensemble.
         """
@@ -126,7 +287,7 @@ class RewardModelEnsemble(nn.Module):
             output += r_hat
         return output / self.ensemble_size
 
-    def forward_all(self, x, normalise=False):
+    def forward_all(self, x, mode=None, normalise=False):
         """Instead of averaging output across `ensemble_size`
            networks, return tensor of the output from each network
            in ensemble. Results from different ensembles are
@@ -144,7 +305,7 @@ class RewardModelEnsemble(nn.Module):
             outputs.append(r_hat)
         return torch.cat(outputs, dim=-1)
 
-    def forward_single(self, x, normalise=False):
+    def forward_single(self, x, mode=None, normalise=False):
         """Instead of averaging output across `ensemble_size`
            networks, return output from just one of the forward
            passes, selected u.a.r. from all nets in ensemble.
@@ -189,8 +350,6 @@ def compute_loss_rm_wchecks(r_hats_batch, mu_batch, args, obs_shape, act_shape):
 def compute_loss_rm(r_hats_batch, mu_batch):
     """Clean, assert-free version of the above.
     """
-    # import ipdb
-    # ipdb.set_trace()
     exp_sum_r_hats_batch = r_hats_batch.sum(dim=2).exp()
     p_hat_12_batch = exp_sum_r_hats_batch[:, 0] / exp_sum_r_hats_batch.sum(dim=1)
     return F.binary_cross_entropy(input=p_hat_12_batch, target=mu_batch, reduction='sum')
@@ -202,8 +361,6 @@ def compute_loss_rm_ensemble(r_hats_batch_draw, mu_batch):
        this effectively does the normalisation
        per reward model for free (via the softmax)!
     """
-    # import ipdb
-    # ipdb.set_trace()
     batch_size, _, clip_length, num_samples = r_hats_batch_draw.shape
     assert r_hats_batch_draw.shape[1] == 2
     exp_sum_r_hats_batch_draw = r_hats_batch_draw.sum(dim=2).exp()
@@ -239,6 +396,7 @@ class PrefsBuffer():
         self.clip_pairs = np.roll(self.clip_pairs, len_new_pairs, axis=0)
         self.rewards = np.roll(self.rewards, len_new_pairs, axis=0)
         self.mus = np.roll(self.mus, len_new_pairs)
+        assert (self.clip_pairs[:len_new_pairs]).all() == 0, "You are about to throw away labels from prefs_buffer!"
         self.clip_pairs[:len_new_pairs] = new_clip_pairs
         self.rewards[:len_new_pairs] = new_rews
         self.mus[:len_new_pairs] = new_mus
