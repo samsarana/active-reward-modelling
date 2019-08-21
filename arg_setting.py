@@ -52,7 +52,7 @@ def parse_arguments():
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
 
     # reward model hyperparamas
-    parser.add_argument('--rm_archi', type=str, default='mlp', help='Is reward model an mlp or cnn')
+    parser.add_argument('--rm_archi', type=str, default='mlp', help='Is reward model an mlp, cnn or cnn_mod?')
     parser.add_argument('--hid_units_rm', type=int, default=64)
     parser.add_argument('--batch_size_rm', type=int, default=16) # same as Ibarz
     parser.add_argument('--lr_rm', type=float, default=1e-4)
@@ -60,7 +60,7 @@ def parse_arguments():
     parser.add_argument('--lambda_rm', type=float, default=1e-4, help='coefficient for L2 regularization for reward_model optimization')
     parser.add_argument('--n_epochs_pretrain_rm', type=int, default=-1, help='No. epochs to train rm on preferences collected during initial rollouts. If -1 (default) then this will be set to n_epochs_train_rm') # Ibarz: 50e3
     parser.add_argument('--n_epochs_train_rm', type=int, default=2000, help='No. epochs to train reward model per round in main training loop') # Ibarz: 6250
-    parser.add_argument('--prefs_buffer_size', type=int, default=1000) # Ibarz: 6800. since currently we collect fewer than 1000 labels in total, this doesn't matter (Ibarz never throw away labels. Christiano does.)
+    # parser.add_argument('--prefs_buffer_size', type=int, default=1000) # Ibarz: 6800. since currently we collect fewer than 1000 labels in total, this doesn't matter (Ibarz never throw away labels. Christiano does.)
     # NB using 5000 with obs_act_shape of (21168,) gives MemoryError. So if I do need to increase its size much more, I may need to change the implementation somehow...
     parser.add_argument('--clip_length', type=int, default=25) # as per Ibarz/Christiano; i'm interested in changing this
     parser.add_argument('--force_label_choice', action='store_true', help='Does synthetic annotator label clips about which it is indifferent as 0.5? If `True`, label equally good clips randomly')
@@ -69,6 +69,7 @@ def parse_arguments():
     parser.add_argument('--no_ensemble_for_reward_pred', action='store_true', help='If true, then use ensemble for uncertainty estimates but pick a random net to compute rewards sent to DQN')
     parser.add_argument('--no_reinit_rm', dest='reinit_rm', action='store_false', help='Flag not to reinitialise reward model before every training round')
     parser.add_argument('--normalise_rm_while_training', action='store_true', help='Flag to normalise output of reward predictors while training them (only while testing)')
+    parser.add_argument('--no_train_reward_model', action='store_true', help='Flag not train reward model. Sets lr_rm to zero')
 
     # active learning
     parser.add_argument('--active_method', type=str, default=None, help='Choice of: BALD, var_ratios, max_entropy, mean_std')
@@ -110,6 +111,8 @@ def make_arg_changes(args):
     args.exploration = LinearSchedule(schedule_timesteps=int(args.exploration_fraction * args.n_agent_steps),
                                       initial_p=args.epsilon_start,
                                       final_p=args.epsilon_stop)
+
+    args.prefs_buffer_size = args.n_labels_per_round * args.n_rounds
     
     # get environment ID
     envs_to_ids = { 'cartpole': {'id': 'gym_barm:CartPoleContinual-v0',
@@ -184,9 +187,9 @@ def make_arg_changes(args):
         args.selection_factor = 2
     if args.n_epochs_pretrain_rm == -1:
         args.n_epochs_pretrain_rm = args.n_epochs_train_rm
-    if args.RL_baseline:
+    if args.RL_baseline or args.no_train_reward_model:
         args.n_epochs_pretrain_rm = 0
-        args.n_epochs_train_rm = 0
+        args.n_epochs_train_rm    = 0
     if args.uncert_method == 'ensemble':
         assert args.size_rm_ensemble >= 2
     return args
