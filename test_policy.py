@@ -53,8 +53,8 @@ def test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round,
     return returns['all']
 
 
-def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_round, num_episodes=100):
-    """Using the non-continuous version of the environment,
+def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_round, sub_round, num_episodes=100):
+    """Using the non-continual version of the environment,
        take random steps for `num_episodes`
        and log mean episode return.
        Also log predicted and normalised return.
@@ -73,6 +73,7 @@ def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_ro
     env.reset()
     n = 0
     returns = {'ep': 0, 'all': []}
+    i_train_sub_round = args.agent_test_frequency * i_train_round + sub_round
     while n < num_episodes:
         # agent interact with env
         action = env.action_space.sample()
@@ -90,5 +91,5 @@ def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_ro
     assert len(returns['all']) == num_episodes
     writer1, writer2 = writers
     mean_ret_true = np.sum(np.array(returns['all'])) / num_episodes
-    returns_summary[i_run][('true', i_train_round, 0)] = mean_ret_true # 0 b/c sub_round=0 when using random policy
-    writer1.add_scalar('1a.test_mean_ep_return_per_round', mean_ret_true, i_train_round)
+    returns_summary[i_run][('true', i_train_round, sub_round)] = mean_ret_true
+    writer1.add_scalar('1a.test_mean_ep_return_per_sub_round', mean_ret_true, i_train_sub_round)
