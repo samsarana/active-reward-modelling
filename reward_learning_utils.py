@@ -17,7 +17,7 @@ def compute_mean_var(reward_model, prefs_buffer):
     if isinstance(reward_model, RewardModelEnsemble):
         for ensemble_num in range(reward_model.ensemble_size):
             net = getattr(reward_model, 'layers{}'.format(ensemble_num))
-            r_hats = net(sa_pairs).detach().squeeze()
+            r_hats = net(sa_pairs).detach().squeeze() # TODO call net(., mode='batch' instead)
             assert r_hats.shape == (prefs_buffer.current_length * 2 * prefs_buffer.clip_length,)
             mean, var = r_hats.mean().item(), r_hats.var().item()
             if var == 0:
@@ -26,8 +26,8 @@ def compute_mean_var(reward_model, prefs_buffer):
                 logging.warning("HACK: to save you, I set reward_model.var_prefs to 1, but be warned!")
             setattr(reward_model, 'mean_prefs{}'.format(ensemble_num), mean)
             setattr(reward_model, 'var_prefs{}'.format(ensemble_num), var)
-    elif isinstance(reward_model, RewardModel):
-        r_hats = reward_model(sa_pairs).detach().squeeze()
+    elif isinstance(reward_model, RewardModel) or isinstance(reward_model, CnnRewardModel):
+        r_hats = reward_model(sa_pairs, mode='batch').detach().squeeze()
         assert r_hats.shape == (prefs_buffer.current_length * 2 * prefs_buffer.clip_length,)
         mean, var = r_hats.mean().item(), r_hats.var().item()
         if var == 0:
@@ -100,7 +100,7 @@ def eval_rm_correlation(reward_model, env, agent, args, obs_shape, act_shape, ro
     
     # 1. compute r_xy
     reward_model.eval() # dropout off
-    r_pred = reward_model(sa_pairs).detach().squeeze().numpy()
+    r_pred = reward_model(sa_pairs, mode='batch').detach().squeeze().numpy() # TODO this line will now break with CnnRewardModel. Pass a batch of flat pairs thru
     assert r_true.shape == (num_rollouts * rollout_steps,)
     assert r_pred.shape == (num_rollouts * rollout_steps,)
     r_xy = np.corrcoef(r_true, r_pred)[0][1]
