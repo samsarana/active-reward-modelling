@@ -56,7 +56,7 @@ class CnnDQN(nn.Module):
         # self.obs_shape = args.obs_shape_all
         self.convolutions = nn.Sequential(
             nn.Conv2d(3, 32, kernel_size=8, stride=4), # num_inputs == env.observation_space.shape[0] == (84,84,4)[0]. Still not sure this is going to work -- can other 2 input dims be left implicitly wtih Conv2d layers? Maybe need to use Conv3d..?
-            nn.ReLU(),
+            nn.ReLU(), # TODO should we use dropout and/or batchnorm in between conv layers, as in reward model?
             nn.Conv2d(32, 64, kernel_size=4, stride=2),
             nn.ReLU(),
             nn.Conv2d(64, 64, kernel_size=3, stride=1),
@@ -71,7 +71,6 @@ class CnnDQN(nn.Module):
         )
 
     def forward(self, x):
-        # import ipdb; ipdb.set_trace()
         x = x.view(-1, 3, 84, 84)
         x = self.convolutions(x)
         x = x.view(-1, 512)
@@ -143,25 +142,22 @@ def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
                        each transition, rather than action taken by agent
        expected_q_value : batch_dim. implements y_i.
     """
-    # import ipdb; ipdb.set_trace()
     state, action, true_reward, next_state, done = replay_buffer.sample(q_net.batch_size)
     # compute r_hats according to current reward_model and/or normalise rewards
     if reward_model: # RL from preferences
         if args.reinit_rm_when_q_learning:
             # logging.debug("Getting rew in q_learning_loss from reinitialised reward_model")
             reward_model, optimizer_rm = init_rm(args)
-        sa_pair = torch.cat((state, action.unsqueeze(1).float()), dim=1)
+        sa_pair = torch.cat((state.view(-1, args.obs_shape), action.unsqueeze(1).float()), dim=1) # dim 0 = batch, dim 1 = state-action
         assert isinstance(reward_model, nn.Module)
         reward_model.eval() # turn off dropout at 'test' time i.e. when getting rewards to send to DQN
         
         if args.no_ensemble_for_reward_pred:
             assert isinstance(reward_model, RewardModelEnsemble)
-            rew = reward_model.forward_single(sa_pair, normalise=normalise_rewards).detach()
+            rew = reward_model.forward_single(sa_pair, mode='batch', normalise=normalise_rewards).detach()
         else:
-            rew = reward_model(sa_pair, normalise=normalise_rewards).detach()
+            rew = reward_model(sa_pair, mode='batch', normalise=normalise_rewards).detach()
         rew = rew.squeeze()
-        # import ipdb
-        # ipdb.set_trace()
     else:
         # logging.debug("Using TRUE REWARD")
         if normalise_rewards: # RL w normalised rewards
@@ -174,7 +170,7 @@ def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
     q_values         = q_net(state)
     next_q_values    = q_target(next_state).detach() # params from target network held fixed when optimizing loss func
 
-    q_value          = q_values.gather(1, action.unsqueeze(1)).squeeze(1) # see https://colab.research.google.com/drive/1-6aNmf16JcytKw3BJ2UfGq5zkik1QLFm or https://stackoverflow.com/questions/50999977/what-does-the-gather-function-do-in-pytorch-in-layman-terms
+    q_value          = q_values.gather(1, action.unsqueeze(1)).squeeze() # see https://colab.research.google.com/drive/1-6aNmf16JcytKw3BJ2UfGq5zkik1QLFm or https://stackoverflow.com/questions/50999977/what-does-the-gather-function-do-in-pytorch-in-layman-terms
     next_q_value, _  = next_q_values.max(-1) # max returns a (named)tuple (values, indices) where values is the maximum value of each row of the input tensor in the given dimension dim. And indices is the index location of each maximum value found (argmax).
     expected_q_value = rew + q_net.gamma * next_q_value * (1 - done)
     
