@@ -11,8 +11,8 @@ def log_agent_step(sa_pair, r_true, rets, reward_stats, reward_model, args):
     if not args.RL_baseline:
         reward_model.eval() # dropout off at 'test' time i.e. when logging performance
         sa_tensor = torch.tensor(sa_pair).float()
-        r_pred = reward_model(sa_tensor).detach().item()
-        r_pred_norm = reward_model(sa_tensor, normalise=True).detach().item()
+        r_pred = reward_model(sa_tensor, mode='single').detach().item()
+        r_pred_norm = reward_model(sa_tensor, mode='single', normalise=True).detach().item()
         rets['ep']['pred'] += r_pred
         rets['ep']['pred_norm'] += r_pred_norm
     return rets
@@ -52,10 +52,10 @@ def log_RL_loop(returns, args, i_train_round, sub_round, writers):
         mean_pred_returns_norm = np.sum(np.array(returns['all']['pred_norm'])) / len(returns['all']['pred_norm'])
         writer2.add_scalar('3a.train_mean_ep_return_per_sub_round', mean_pred_returns, i_train_sub_round)
         writer2.add_scalar('3b.train_mean_ep_return_per_sub_round_normalised', mean_pred_returns_norm, i_train_sub_round)
-    if sub_round == args.agent_test_frequency - 1: # final sub_round of the round
-        writer1.add_scalar('3_.train_mean_ep_return_per_round', mean_true_returns, i_train_round)
-        if not args.RL_baseline:
-            writer2.add_scalar('3_.train_mean_ep_return_per_round', mean_pred_returns, i_train_round)
+    # if sub_round == args.agent_test_frequency - 1: # final sub_round of the round
+    #     writer1.add_scalar('3_.train_mean_ep_return_per_round', mean_true_returns, i_train_round)
+    #     if not args.RL_baseline:
+    #         writer2.add_scalar('3_.train_mean_ep_return_per_round', mean_pred_returns, i_train_round)
 
 
 def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_round, sub_round, env):
@@ -78,11 +78,11 @@ def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_ro
         returns_summary[i_run][('4.pred_norm', i_train_round, sub_round)] = mean_ret_pred_norm
         writer2.add_scalar('1a.test_mean_ep_return_per_sub_round', mean_ret_pred, i_train_sub_round)
         writer2.add_scalar('1b.test_mean_ep_return_per_sub_round_normalised', mean_ret_pred_norm, i_train_sub_round)
-    if sub_round == args.agent_test_frequency - 1 or (not args.continue_once_solved \
-        and env.spec.reward_threshold != None and mean_ret_true >= env.spec.reward_threshold): # final sub_round of the round
-        writer1.add_scalar('1_.test_mean_ep_return_per_round', mean_ret_true, i_train_round)
-        if not args.RL_baseline:
-            writer2.add_scalar('1_.test_mean_ep_return_per_round', mean_ret_pred, i_train_round)
+    # if sub_round == args.agent_test_frequency - 1 or (not args.continue_once_solved \
+    #     and env.spec.reward_threshold != None and mean_ret_true >= env.spec.reward_threshold): # final sub_round of the round
+    #     writer1.add_scalar('1_.test_mean_ep_return_per_round', mean_ret_true, i_train_round)
+    #     if not args.RL_baseline:
+    #         writer2.add_scalar('1_.test_mean_ep_return_per_round', mean_ret_pred, i_train_round)
     return mean_ret_true
 
 
