@@ -106,12 +106,15 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
           agent_experience, reward_model, true_reward_stats, args,
           writers, i_train_round, sub_round):
     writer1, writer2 = writers
-    dummy_returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
+    returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
                     'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
     # Do RL!
     state = env.reset()
     is_saving_video, done_saving_video = False, False
-    start_step = sub_round * args.n_agent_steps_before_test
+    if args.reinit_agent:
+        start_step = sub_round * args.n_agent_steps_before_test
+    else:
+        start_step = i_train_round * args.n_agent_steps + sub_round * args.n_agent_steps_before_test
     step_range = range(start_step, start_step + args.n_agent_steps_before_test)
     for step in step_range:
         # agent interact with env
@@ -121,14 +124,14 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
         next_state, r_true, done, _ = env.step(action) # one continuing episode
         # record step info
         # sa_pair = torch.tensor(np.append(state, action)).float()
-        sa_pair = np.append(state, action).astype(args.oa_dtype, casting='unsafe')
+        sa_pair = np.append(state, action).astype(args.oa_dtype, casting='unsafe') # in case len(state.shape) > 1 (gridworld, atari), np.append will flatten it
         assert (sa_pair == np.append(state, action)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
         if not args.RL_baseline: agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
         if args.agent_gets_dones:
             replay_buffer.push(state, action, r_true, next_state, done)
         else:
             replay_buffer.push(state, action, r_true, next_state, False) # done=False since agent thinks the task is continual; r_true used only when args.RL baseline
-        dummy_returns = log_agent_step(sa_pair, r_true, dummy_returns, true_reward_stats, reward_model, args)
+        returns = log_agent_step(sa_pair, r_true, returns, true_reward_stats, reward_model, args)
         # prepare for next step
         state = next_state
         if done:
@@ -141,7 +144,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
             #     env.seed(args.random_seed)
             #     done_saving_video = True
             state = env.reset()
-            dummy_returns = log_agent_episode(dummy_returns, writers, step, i_train_round, sub_round, args, is_test=False)
+            returns = log_agent_episode(returns, writers, step, i_train_round, sub_round, args, is_test=False)
 
         # q_net gradient step
         if step >= args.agent_learning_starts and step % args.agent_gdt_step_period == 0 and \
@@ -166,7 +169,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
             # q_target.load_state_dict(q_net.state_dict()) # old hard update code            
 
     # log mean return this training round
-    log_RL_loop(dummy_returns, args, i_train_round, sub_round, writers)
+    log_RL_loop(returns, args, i_train_round, sub_round, writers)
     
     return q_net, q_target, replay_buffer, agent_experience
 
@@ -218,23 +221,27 @@ def do_random_experiment(env, args, returns_summary, writers, i_run):
     writer1, _ = writers
     for i_train_round in range(args.n_rounds):
         logging.info('[Start Round {}]'.format(i_train_round))
-        dummy_returns = {'ep': 0, 'all': []}
-        env.reset()
+        returns = {'ep': 0, 'all': []}
         logging.info('Taking random actions for {} steps'.format(args.n_agent_steps))
-        for step in range(args.n_agent_steps):
-            # agent interact with env
-            action = env.action_space.sample()
-            assert env.action_space.contains(action)
-            _, r_true, done, _ = env.step(action) # one continuous episode
-            dummy_returns['ep'] += r_true # record step info
+        for sub_round in range(args.agent_test_frequency):
+            start_step = sub_round * args.n_agent_steps_before_test
+            step_range = range(start_step, start_step + args.n_agent_steps_before_test)
+            env.reset()
+            for step in step_range:
+                # agent interact with env
+                action = env.action_space.sample()
+                assert env.action_space.contains(action)
+                _, r_true, done, _ = env.step(action)
+                returns['ep'] += r_true # record step info
 
-            if done:
-                state = env.reset()
-                writer1.add_scalar('4a.train_ep_return_per_step/round_{}'.format(i_train_round), dummy_returns['ep'], step)
-                dummy_returns['all'].append(dummy_returns['ep'])
-                dummy_returns['ep'] = 0
+                if done:
+                    state = env.reset()
+                    writer1.add_scalar('4a.train_ep_return_per_step/round_{}'.format(i_train_round), returns['ep'], step)
+                    returns['all'].append(returns['ep'])
+                    returns['ep'] = 0
 
-        # log mean recent return this training round
-        mean_dummy_true_returns = np.sum(np.array(dummy_returns['all'])) / len(dummy_returns['all'])
-        writer1.add_scalar('4a.train_mean_ep_return_per_round', mean_dummy_true_returns, i_train_round)
-        test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_round)
+            # log mean recent return this sub round
+            mean_true_return = np.sum(np.array(returns['all'])) / len(returns['all'])
+            i_train_sub_round = args.agent_test_frequency * i_train_round + sub_round
+            writer1.add_scalar('3a.train_mean_ep_return_per_sub_round', mean_true_return, i_train_sub_round)
+            test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_round, sub_round)
