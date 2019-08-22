@@ -184,7 +184,7 @@ def make_arg_changes(args):
         "clip_length ({}) should be a factor of n_agent_steps ({})".format(
         args.clip_length, args.n_agent_steps)
     assert args.n_agent_steps % args.agent_test_frequency == 0,\
-        "agent_test_frequency ({}} should be a factor of n_agent_steps ({})".format(
+        "agent_test_frequency ({}) should be a factor of n_agent_steps ({})".format(
             args.agent_test_frequency, args.n_agent_steps)
     args.n_agent_steps_before_test = args.n_agent_steps // args.agent_test_frequency
 
