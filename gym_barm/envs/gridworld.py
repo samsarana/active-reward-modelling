@@ -182,7 +182,7 @@ class GridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
         return self._get_obs(), (reward + penalty), done, {} # sam added {} - empty info
 
 
-    def render(self, mode='human'):
+    def render(self, mode):
         """Sam added this function.
            Not sure it does quite what gym does...
            In particular, I can't recall if gym
@@ -190,15 +190,16 @@ class GridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
            Also, if partial=True, this renders
            observation NOT state
         """
+        state = self.renderEnv() # self.state would seem to be better code, I'm not 100% sure that self.state is updated when it should be
+        plt.imshow(state, interpolation="nearest")
         if mode == 'human':
-            state = self.renderEnv() # self.state would seem to be better code, I'm not 100% sure that self.state is updated when it should be
-            plt.imshow(state, interpolation="nearest")
-            # plt.ion() # this wasn't working for me
             plt.show() # show() is a blocking function: code will hang until you x the matplotlib popup window
-            # sleep(1)
-            # plt.close()
+        elif mode == 'nonblock':
+            plt.show(block=False)
+            plt.pause(1)
+            plt.close()
         else:
-            raise NotImplementedError("Haven't specified what rendering not in human mode means")
+            raise NotImplementedError("Haven't specified what rendering in mode {} means".format(mode))
 
     def _get_obs(self):
         """
