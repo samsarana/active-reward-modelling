@@ -1,12 +1,12 @@
 import numpy as np
 import torch, logging
 
-def log_agent_step(sa_pair, r_true, rets, reward_stats, reward_model, args):
+def log_agent_step(sa_pair, r_true, rets, true_reward_stats, reward_model, args):
     rets['ep']['true'] += r_true
     if args.normalise_rewards:
-        assert reward_stats != None, "You told me to normalise true reward but haven't told me their mean and var!"
-        rt_mean, rt_var = reward_stats
-        rets['ep']['true_norm'] += (r_true - rt_mean) / np.sqrt(rt_var + 1e-8)
+        assert true_reward_stats != None, "You told me to normalise true reward but haven't told me their mean and var!"
+        # rt_mean, rt_var = reward_stats
+        rets['ep']['true_norm'] += (r_true - true_reward_stats.mean) / np.sqrt(true_reward_stats.var + 1e-8)
     # also log reward the agent thinks it's getting according to current reward_model
     if not args.RL_baseline:
         reward_model.eval() # dropout off at 'test' time i.e. when logging performance

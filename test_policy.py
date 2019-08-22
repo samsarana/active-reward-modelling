@@ -7,7 +7,7 @@ from time import time, sleep
 from rl_logging import *
 from atari_preprocessing import *
 
-def test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round, sub_round, num_episodes=100):
+def test_policy(q_net, reward_model, true_reward_stats, args, writers, i_train_round, sub_round, num_episodes=100):
     """Using the non-continuous version of the environment and q_net
        with argmax policy (deterministic), run the polcy for
        `num_episodes` and log mean episode return.
@@ -36,7 +36,7 @@ def test_policy(q_net, reward_model, reward_stats, args, writers, i_train_round,
         # sa_pair = torch.tensor(np.append(state, action)).float()
         sa_pair = np.append(state, action).astype(args.oa_dtype, casting='unsafe')
         assert (sa_pair == np.append(state, action)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
-        returns = log_agent_step(sa_pair, r_true, returns, reward_stats, reward_model, args)   
+        returns = log_agent_step(sa_pair, r_true, returns, true_reward_stats, reward_model, args)   
         # prepare for next step
         state = next_state
         if done:

@@ -12,6 +12,7 @@ from active_learning import *
 from test_policy import *
 from annotation import *
 from rl_logging import *
+from utils import *
 
 def training_protocol(env, args, writers, returns_summary, i_run):
     """Implements Algorithm 1 in Ibarz et al. (2018)
@@ -24,6 +25,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
     reward_model, optimizer_rm = init_rm(args)
     prefs_buffer = PrefsBuffer(args)
     q_net, q_target, replay_buffer, optimizer_agent = init_agent(args)
+    true_reward_stats = TrueRewardRunningStat()
     
     # BEGIN PRETRAINING
     # Stage 0.1: Do some rollouts from the randomly initialised policy
@@ -31,12 +33,13 @@ def training_protocol(env, args, writers, returns_summary, i_run):
     # Stage 0.2: Sample without replacement from those rollouts and label them (synthetically)
     mu_counts_total = np.zeros((2,3))
     if not args.RL_baseline or args.normalise_rewards:
-        reward_model, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
-            agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round=0)
+        reward_model, prefs_buffer, mu_counts_total, true_reward_stats = acquire_labels_and_train_rm(
+            agent_experience, reward_model, prefs_buffer, optimizer_rm,
+            args, writers, mu_counts_total, true_reward_stats, i_train_round=0)
 
         # Compute mean and variance of true and predicted reward after training (for normalising rewards sent to agent)
         # reward_model = compute_mean_var(reward_model, prefs_buffer) # saves mean and var of reward model as attributes
-    true_reward_stats = prefs_buffer.compute_mean_var_GT() if args.normalise_rewards else None
+    # true_reward_stats = prefs_buffer.compute_mean_var_GT() if args.normalise_rewards else None
     
     # evaluate reward model correlation after pretraining (currently not interested)
     # if not args.RL_baseline:
@@ -67,11 +70,12 @@ def training_protocol(env, args, writers, returns_summary, i_run):
 
         # Stage 1.2 - 1.3: acquire labels from recent rollouts and train reward model on current dataset
         if not args.RL_baseline or args.normalise_rewards:
-            reward_model, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
-                agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round)
+            reward_model, prefs_buffer, mu_counts_total, true_reward_stats = acquire_labels_and_train_rm(
+                agent_experience, reward_model, prefs_buffer, optimizer_rm,
+                args, writers, mu_counts_total, true_reward_stats, i_train_round)
             # Compute mean and variance of true and predicted reward after training (for normalising rewards sent to agent)
             # reward_model = compute_mean_var(reward_model, prefs_buffer) # saves mean and var of reward model as attributes
-        true_reward_stats = prefs_buffer.compute_mean_var_GT() if args.normalise_rewards else None
+        # true_reward_stats = prefs_buffer.compute_mean_var_GT() if args.normalise_rewards else None
         
         pd.DataFrame(returns_summary).to_csv('./logs/{}.csv'.format(args.info), index_label=['ep return type', 'round no.', 'test no.'])
         # Evaluate reward model correlation (currently not interested)
@@ -82,7 +86,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
     if not args.RL_baseline: log_total_mu_counts(mu_counts_total, writers, args)
 
 
-def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round):
+def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, true_reward_stats, i_train_round):
     n_labels = args.n_labels_per_round[i_train_round]
     batch_size_acq = args.batch_size_acq[i_train_round]
     n_acq_batches = args.n_acq_batches_per_round[i_train_round]
@@ -107,9 +111,10 @@ def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, op
         logging.info('Update running mean and variance with {} acquired clip pairs'.format(
             len(acquired_clip_data[0])))
         reward_model = update_running_mean_var(reward_model, acquired_clip_data)
+        true_reward_stats.push_clip_pairs(acquired_clip_data)
     # save reward_model for loading later
     save_reward_model(reward_model, i_train_round, args)
-    return reward_model, prefs_buffer, mu_counts_total
+    return reward_model, prefs_buffer, mu_counts_total, true_reward_stats
 
 
 def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,

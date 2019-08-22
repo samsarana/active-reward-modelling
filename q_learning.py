@@ -162,8 +162,9 @@ def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
         # logging.debug("Using TRUE REWARD")
         if normalise_rewards: # RL w normalised rewards
             assert true_reward_stats is not None, "You told me to normalise rewards for RL but you haven't specified mean and variance of reward function w.r.t. examples in prefs_buffer!"
-            rt_mean, rt_var = true_reward_stats
-            rew = (true_reward - rt_mean) / np.sqrt(rt_var + 1e-8)
+            # rt_mean, rt_var = true_reward_stats
+            # rew = (true_reward - rt_mean) / np.sqrt(rt_var + 1e-8)
+            rew = (true_reward - true_reward_stats.mean) / np.sqrt(true_reward_stats.var + 1e-8)
         else: # RL wo normalised rewards
             rew = true_reward
 
