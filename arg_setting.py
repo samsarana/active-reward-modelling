@@ -41,7 +41,7 @@ def parse_arguments():
     parser.add_argument('--exploration_fraction', type=float, default=0.1, help='Over what fraction of entire training period is epsilon annealed (linearly)?')
     # parser.add_argument('--n_labels_per_round', type=int, default=5, help='How many labels to acquire per round?')
     # parser.add_argument('--n_labels_pretraining', type=int, default=500, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining. If -1 (default), it will be set to n_labels_per_round') # Ibarz: 25k. Removed support for diff no. labels in pretraining
-    parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[500,3000,1500,750,750,500], help='How many labels to acquire per round? (in main training loop). len should be n_rounds + 1, since 0th is pretraining labels')
+    parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[500,2400,1200,600,300,150], help='How many labels to acquire per round? (in main training loop). len should be n_rounds + 1, since 0th is pretraining labels')
     parser.add_argument('--batch_size_acq', type=int, default=-1, help='In acquiring `n_labels_per_round`, what batch size are these acquired in? Reward model is trained after every acquisition batch. If -1 (default), `batch_size_acq` == `n_labels_per_round`, as in Christiano/Ibarz')
     parser.add_argument('--n_agent_steps', type=int, default=150000, help='No. of steps that agent takes per round in environment, while training every agent_gdt_step_period steps') # Ibarz: 100k
     parser.add_argument('--n_agent_steps_pretrain', type=int, default=-1, help='No. of steps that agent takes before main training loop begins. epsilon=0.5 for these steps. If -1 (default) then n_agent_steps_pretrain will be determined by n_labels_per_round (will collect just enough)')
@@ -61,7 +61,7 @@ def parse_arguments():
     parser.add_argument('--lambda_rm', type=float, default=1e-4, help='coefficient for L2 regularization for reward_model optimization')
     parser.add_argument('--n_epochs_pretrain_rm', type=int, default=-1, help='No. epochs to train rm on preferences collected during initial rollouts. If -1 (default) then this will be set to n_epochs_train_rm') # Ibarz: 50e3
     parser.add_argument('--n_epochs_train_rm', type=int, default=3000, help='No. epochs to train reward model per round in main training loop') # Ibarz: 6250
-    # parser.add_argument('--prefs_buffer_size', type=int, default=1000) # Ibarz: 6800. since currently we collect fewer than 1000 labels in total, this doesn't matter (Ibarz never throw away labels. Christiano does.)
+    parser.add_argument('--prefs_buffer_size', type=int, default=5000) # Ibarz: 6800. since currently we collect fewer than 1000 labels in total, this doesn't matter (Ibarz never throw away labels. Christiano does.)
     # NB using 5000 with obs_act_shape of (21168,) gives MemoryError. So if I do need to increase its size much more, I may need to change the implementation somehow...
     parser.add_argument('--clip_length', type=int, default=25) # as per Ibarz/Christiano; i'm interested in changing this
     parser.add_argument('--force_label_choice', action='store_true', help='Does synthetic annotator label clips about which it is indifferent as 0.5? If `True`, label equally good clips randomly')
@@ -122,7 +122,7 @@ def make_arg_changes(args):
                                       initial_p=args.epsilon_start,
                                       final_p=args.epsilon_stop)
 
-    args.prefs_buffer_size = sum(args.n_labels_per_round)
+    # args.prefs_buffer_size = sum(args.n_labels_per_round)
     
     # get environment ID
     envs_to_ids = { 'cartpole': {'id': 'gym_barm:CartPoleContinual-v0',
