@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from utils import RunningStat
 
 def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_label):
     writer1, writer2 = writers
@@ -36,31 +37,12 @@ def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, 
             optimizer_rm.step()
             writer1.add_scalar('6.reward_model_loss/label_{}'.format(i_label), loss_rm, epoch)
             # compute lower bound for loss_rm and plot this too. TODO check this is bug free
+            # import ipdb; ipdb.set_trace()
             n_indifferent_labels = Counter(mu_batch).get(0.5, 0)
             loss_lower_bound = n_indifferent_labels * math.log(2)
             writer2.add_scalar('6.reward_model_loss/label_{}'.format(i_label), loss_lower_bound, epoch)
     # logging.info("reward_model weight after  train {}: {}".format(i_label, list(reward_model.parameters())[0][0][0]))
     return reward_model
-    
-
-def init_rm(args):
-    """Intitialises and returns the necessary objects for
-       reward learning: reward model and optimizer.
-    """
-    logging.info('Initialising reward model')
-    if args.rm_archi == 'mlp':
-        if args.size_rm_ensemble >= 2:
-            reward_model = RewardModelEnsemble(args.obs_shape, args.act_shape, args)
-        else:
-            reward_model = RewardModel(args.obs_shape, args.act_shape, args)
-    else:
-        assert args.rm_archi == 'cnn' or args.rm_archi == 'cnn_mod'
-        if args.size_rm_ensemble >= 2:
-            raise NotImplementedError("U haven't yet implemented ensemble of CNN reward models!")
-        else:
-            reward_model = CnnRewardModel(args.obs_shape, args.act_shape, args)
-    optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm)
-    return reward_model, optimizer_rm
 
 
 class CnnRewardModel(nn.Module):
@@ -70,7 +52,6 @@ class CnnRewardModel(nn.Module):
        Atari extension of Tom Brown's implemenation).
     """
     def __init__(self, state_size, action_size, args):
-        """Feedforward NN with 2 hidden layers"""
         super().__init__()
         if args.rm_archi == 'cnn':
             self.convolutions = nn.Sequential(
@@ -110,6 +91,7 @@ class CnnRewardModel(nn.Module):
         ) 
         self.mean_prefs = 0 # mean of reward model across prefs_buffer
         self.var_prefs = 1 # var of reward model across prefs_buffer
+        self.running_stats = RunningStat()
         self.state_size = state_size
         self.action_size = action_size
         self.clip_length = args.clip_length
@@ -370,6 +352,27 @@ def compute_loss_rm_ensemble(r_hats_batch_draw, mu_batch):
     p_hat_12_batch = p_hat_12_batch_draw.mean(1)
     assert p_hat_12_batch.shape == mu_batch.shape
     return F.binary_cross_entropy(input=p_hat_12_batch, target=mu_batch, reduction='sum')
+
+
+def init_rm(args):
+    """Intitialises and returns the necessary objects for
+       reward learning: reward model and optimizer.
+    """
+    logging.info('Initialising reward model')
+    if args.rm_archi == 'mlp':
+        if args.size_rm_ensemble >= 2:
+            reward_model = RewardModelEnsemble(args.obs_shape, args.act_shape, args)
+        else:
+            reward_model = RewardModel(args.obs_shape, args.act_shape, args)
+    else:
+        assert args.rm_archi == 'cnn' or args.rm_archi == 'cnn_mod'
+        if args.size_rm_ensemble >= 2:
+            raise NotImplementedError("U haven't yet implemented ensemble of CNN reward models!")
+        else:
+            reward_model = CnnRewardModel(args.obs_shape, args.act_shape, args)
+    optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm)
+    return reward_model, optimizer_rm
+
 
 
 class PrefsBuffer():
