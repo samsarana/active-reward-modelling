@@ -118,8 +118,6 @@ def make_arg_changes(args):
             
     args.n_acq_batches_per_round = np.array(args.n_labels_per_round) // np.array(args.batch_size_acq)
 
-
-
     args.exploration = LinearSchedule(schedule_timesteps=int(args.exploration_fraction * args.n_agent_steps),
                                       initial_p=args.epsilon_start,
                                       final_p=args.epsilon_stop)
