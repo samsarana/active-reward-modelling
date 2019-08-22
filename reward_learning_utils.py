@@ -1,7 +1,26 @@
-import torch, logging
 import numpy as np
 import matplotlib.pyplot as plt
-from reward_learning import *
+import torch, logging
+import torch.optim as optim
+from reward_learning import RewardModel, RewardModelEnsemble, CnnRewardModel
+
+def update_running_mean_var(reward_model, acquired_clip_data):
+    reward_model.eval() # turn off dropout
+    clip_pairs, _, _ = acquired_clip_data
+    _, _, clip_length, obs_act_shape = clip_pairs.shape
+    for clip_pair in clip_pairs:
+        clip_pair_tensor = torch.from_numpy(clip_pair).unsqueeze(0).float() # unsqueeze first to get batch dimension so it's compatible with mode='clip_pair_batch'
+        if isinstance(reward_model, RewardModelEnsemble):
+            raise NotImplementedError
+        elif isinstance(reward_model, RewardModel) or isinstance(reward_model, CnnRewardModel):
+            r_hats = reward_model(clip_pair_tensor, mode='clip_pair_batch').detach().reshape(-1).numpy()
+            assert r_hats.shape == (2 * clip_length,)
+            for r_hat in r_hats:
+                reward_model.running_stats.push(r_hat)
+        else:
+            raise NotImplementedError("I don't understand reward models of type {}".format(type(reward_model)))
+    return reward_model
+
 
 def compute_mean_var(reward_model, prefs_buffer):
     """Given reward function r and an instance of PrefsBuffer,
@@ -11,6 +30,7 @@ def compute_mean_var(reward_model, prefs_buffer):
        Saves them as the appropriate attributes of `reward_model` and
        returns it.
     """
+    assert False, "This function is deprecated!"
     # flatten the clip_pairs and chuck them through the reward function
     sa_pairs = prefs_buffer.all_flat_sa_pairs()
     reward_model.eval() # turn off dropout
