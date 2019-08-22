@@ -32,7 +32,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
     mu_counts_total = np.zeros((2,3))
     if not args.RL_baseline or args.normalise_rewards:
         reward_model, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
-            agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round=-1)
+            agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round=0)
 
         # Compute mean and variance of true and predicted reward after training (for normalising rewards sent to agent)
         # reward_model = compute_mean_var(reward_model, prefs_buffer) # saves mean and var of reward model as attributes
@@ -43,7 +43,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
     #     test_correlation(reward_model, env, q_net, args, writers[0], i_train_round=-1)
 
     # BEGIN TRAINING
-    for i_train_round in range(args.n_rounds):
+    for i_train_round in range(1, args.n_rounds+1):
         logging.info('[Start Round {}]'.format(i_train_round))
         # Stage 1.1a: Reinforcement learning with (normalised) rewards from current reward model
         log_agent_training_info(args, i_train_round)
@@ -83,14 +83,9 @@ def training_protocol(env, args, writers, returns_summary, i_run):
 
 
 def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round):
-    if i_train_round >= 0:
-        n_labels = args.n_labels_per_round[i_train_round]
-        n_acq_batches = args.n_acq_batches_per_round[i_train_round]
-        n_labels_so_far = sum(args.n_labels_per_round[:i_train_round]) + args.n_labels_pretraining
-    else:
-        n_labels = args.n_labels_pretraining
-        n_acq_batches = args.n_acq_batches_pretraining
-        n_labels_so_far = 0
+    n_labels = args.n_labels_per_round[i_train_round]
+    n_acq_batches = args.n_acq_batches_per_round[i_train_round]
+    n_labels_so_far = sum(args.n_labels_per_round[:i_train_round])
     logging.info('Stage {}.2: Sample without replacement from those rollouts to collect {} labels/preference tuples'.format(i_train_round, n_labels))
     logging.info('The reward model will be retrained after every batch of label acquisitions')
     logging.info('Making {} acquisitions, consisting of {} batches of acquisitions of size {}'.format(
@@ -190,12 +185,13 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
 
 def do_pretraining_rollouts(q_net, replay_buffer, env, args):
     """Agent interact with environment and collect experience.
-       Number of steps taken determined by `args.n_labels_pretraining`.
+       Number of steps taken determined by `n_labels_pretraining`.
        Currently used only in pretraining, but I might refactor s.t. there's
        a single function that I can use for agent-environment
        interaction (with or without training).
     """
-    n_steps_to_collect_enough_clips = args.selection_factor * args.n_labels_pretraining * 2 * args.clip_length
+    n_labels_pretraining = args.n_labels_per_round[0]
+    n_steps_to_collect_enough_clips = args.selection_factor * n_labels_pretraining * 2 * args.clip_length
     n_initial_steps = max(args.n_agent_steps_pretrain, n_steps_to_collect_enough_clips)
     assert n_initial_steps % args.clip_length == 0,\
         "You should specify a number of initial steps ({}) that is divisible by args.clip_length ({})".format(
