@@ -89,8 +89,8 @@ class CnnRewardModel(nn.Module):
             nn.ReLU(),
             nn.Linear(512, 1)
         ) 
-        self.mean_prefs = 0 # mean of reward model across prefs_buffer
-        self.var_prefs = 1 # var of reward model across prefs_buffer
+        # self.mean_prefs = 0 # mean of reward model across prefs_buffer
+        # self.var_prefs = 1 # var of reward model across prefs_buffer
         self.running_stats = RunningStat()
         self.state_size = state_size
         self.action_size = action_size
@@ -137,7 +137,7 @@ class CnnRewardModel(nn.Module):
         assert x.shape[-1] == (512 + self.action_size)
         r_hat = self.fc(x)
         if normalise:
-            r_hat = (r_hat - self.mean_prefs) / np.sqrt(self.var_prefs + 1e-8)
+            r_hat = (r_hat - self.running_stats.mean) / np.sqrt(self.running_stats.var + 1e-8)
         return r_hat   
 
     # def forward(self, sa_pair, normalise=False):
