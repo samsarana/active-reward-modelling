@@ -35,7 +35,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
             agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round=-1)
 
         # Compute mean and variance of true and predicted reward after training (for normalising rewards sent to agent)
-        reward_model = compute_mean_var(reward_model, prefs_buffer) # saves mean and var of reward model as attributes
+        # reward_model = compute_mean_var(reward_model, prefs_buffer) # saves mean and var of reward model as attributes
     true_reward_stats = prefs_buffer.compute_mean_var_GT() if args.normalise_rewards else None
     
     # evaluate reward model correlation after pretraining (currently not interested)
@@ -70,7 +70,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
             reward_model, prefs_buffer, mu_counts_total = acquire_labels_and_train_rm(
                 agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round)
             # Compute mean and variance of true and predicted reward after training (for normalising rewards sent to agent)
-            reward_model = compute_mean_var(reward_model, prefs_buffer) # saves mean and var of reward model as attributes
+            # reward_model = compute_mean_var(reward_model, prefs_buffer) # saves mean and var of reward model as attributes
         true_reward_stats = prefs_buffer.compute_mean_var_GT() if args.normalise_rewards else None
         
         pd.DataFrame(returns_summary).to_csv('./logs/{}.csv'.format(args.info), index_label=['ep return type', 'round no.', 'test no.'])
@@ -91,12 +91,18 @@ def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, op
     logging.info('Stage {}.3: Training reward model for {} sets of batches on those preferences'.format(i_train_round, args.n_acq_batches_per_round))
     for i_acq_batch in range(args.n_acq_batches_per_round):
         i_label = args.n_acq_batches_per_round * i_train_round + i_acq_batch
-        prefs_buffer, rand_clip_data, mu_counts_total = make_acquisitions(rand_clip_data, reward_model, prefs_buffer, args, writers, mu_counts_total, i_label)
+        acquired_clip_data, idx, mu_counts_total = make_acquisitions(
+            rand_clip_data, reward_model, args, writers, mu_counts_total, i_label)
+        prefs_buffer.push(*acquired_clip_data)
+        rand_clip_data = remove_acquisitions(idx, rand_clip_data)
         if args.reinit_rm:
             reward_model, optimizer_rm = init_rm(args)
         # Train reward model!
-        # if prefs_buffer.current_length >= 10: # prevent gradient updates if too few training examples
         reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_label)
+        # update running mean and variance of reward model based on these acquisitions
+        logging.info('Update running mean and variance with {} acquired clip pairs'.format(
+            len(acquired_clip_data[0])))
+        reward_model = update_running_mean_var(reward_model, acquired_clip_data)
     # save reward_model for loading later
     save_reward_model(reward_model, i_train_round, args)
     return reward_model, prefs_buffer, mu_counts_total

@@ -23,24 +23,33 @@ def generate_rand_clip_pairing(agent_experience, num_labels_requested, args):
     return rand_clip_data
 
 
-def make_acquisitions(rand_clip_data, reward_model, prefs_buffer, args, writers, mu_counts_total, i_label):
+def make_acquisitions(rand_clip_data, reward_model, args, writers, mu_counts_total, i_label):
+    """
+    Returns: tuple of acquired clip pairs along with their rews and mus
+             indices of acquired clip pairs
+             running total of each type of label acquired (0, 0.5 or 1)
+    """
     # Stage 1.2: Sample `batch_size_acq` clip pairs without replacement from recent rollouts and label them (synthetically)
     logging.info("Acquisition {}: acquiring {} clip pair(s) in a single batch".format(i_label, args.batch_size_acq))
     rand_clip_pairs, rand_rews, rand_mus = rand_clip_data
     idx, info_per_clip_pair = args.acquistion_func(rand_clip_pairs, args.batch_size_acq, args, reward_model)
-    # idx, info_per_clip_pair = acquire_labels_by_index(rand_clip_pairs, args.batch_size_acq, args, reward_model)
     # put labelled clip_pairs into prefs_buffer and accumulate count of each label acquired
     clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx]
-    prefs_buffer.push(clip_pairs, rews, mus)
+    # prefs_buffer.push(clip_pairs, rews, mus)
     # log this acquistion
     mu_counts_acq = log_acquisition(idx, info_per_clip_pair, clip_pairs, rews, mus, rand_clip_pairs, rand_rews, rand_mus, i_label, args, writers)
     mu_counts_total += mu_counts_acq
-    # remove sampled clip pairs
-    rand_clip_pairs = np.delete(rand_clip_pairs, idx, axis=0)
-    rand_rews = np.delete(rand_rews, idx, axis=0)
-    rand_mus = np.delete(rand_mus, idx, axis=0)
-    rand_clip_data = rand_clip_pairs, rand_rews, rand_mus
-    return prefs_buffer, rand_clip_data, mu_counts_total
+    return (clip_pairs, rews, mus), idx, mu_counts_total
+
+
+def remove_acquisitions(idx, rand_clip_data):
+    # remove acquired clip pairs (by index); we don't want to sample them again
+    rand_clip_pairs, rand_rews, rand_mus = rand_clip_data
+    remaining_clip_pairs = np.delete(rand_clip_pairs, idx, axis=0)
+    remaining_rews = np.delete(rand_rews, idx, axis=0)
+    remaining_mus = np.delete(rand_mus, idx, axis=0)
+    remaining_clip_data = remaining_clip_pairs, remaining_rews, remaining_mus
+    return remaining_clip_data
 
 
 class AgentExperience():
