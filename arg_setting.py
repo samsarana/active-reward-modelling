@@ -40,8 +40,8 @@ def parse_arguments():
     parser.add_argument('--epsilon_stop', type=float, default=0.01)
     parser.add_argument('--exploration_fraction', type=float, default=0.1, help='Over what fraction of entire training period is epsilon annealed (linearly)?')
     # parser.add_argument('--n_labels_per_round', type=int, default=5, help='How many labels to acquire per round?')
-    parser.add_argument('--n_labels_pretraining', type=int, default=500, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining. If -1 (default), it will be set to n_labels_per_round') # Ibarz: 25k. Removed support for diff no. labels in pretraining
-    parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[3000,1500,750,750,500], help='How many labels to acquire per round? (in main training loop). len should be same as n_rounds')
+    # parser.add_argument('--n_labels_pretraining', type=int, default=500, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining. If -1 (default), it will be set to n_labels_per_round') # Ibarz: 25k. Removed support for diff no. labels in pretraining
+    parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[500,3000,1500,750,750,500], help='How many labels to acquire per round? (in main training loop). len should be n_rounds + 1, since 0th is pretraining labels')
     parser.add_argument('--batch_size_acq', type=int, default=-1, help='In acquiring `n_labels_per_round`, what batch size are these acquired in? Reward model is trained after every acquisition batch. If -1 (default), `batch_size_acq` == `n_labels_per_round`, as in Christiano/Ibarz')
     parser.add_argument('--n_agent_steps', type=int, default=150000, help='No. of steps that agent takes per round in environment, while training every agent_gdt_step_period steps') # Ibarz: 100k
     parser.add_argument('--n_agent_steps_pretrain', type=int, default=-1, help='No. of steps that agent takes before main training loop begins. epsilon=0.5 for these steps. If -1 (default) then n_agent_steps_pretrain will be determined by n_labels_per_round (will collect just enough)')
@@ -105,9 +105,9 @@ def make_arg_changes(args):
         args = default_args_map[args.default_settings](args)
 
     if len(args.n_labels_per_round) == 1:
-        args.n_labels_per_round = [args.n_labels_per_round] * args.n_rounds
+        args.n_labels_per_round = [args.n_labels_per_round] * (args.n_rounds + 1)
 
-    assert len(args.n_labels_per_round) == args.n_rounds
+    assert len(args.n_labels_per_round) == args.n_rounds + 1
 
     if args.batch_size_acq == -1:
         args.batch_size_acq = args.n_labels_per_round
