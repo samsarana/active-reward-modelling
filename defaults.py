@@ -147,14 +147,13 @@ def gridworld_nb_defaults(args):
     args.gamma = 0.99
     args.episilon_start = 1.0
     args.epsilon_stop = 0.1
-    # args.exploration_fraction = 0.1 # annealing_steps / n_agent_steps = 10k / 500k = 0.02. NB I increased this after first (failed) experiment
+    args.exploration_fraction = 0.33 # annealing_steps / n_agent_steps = 10k / 500k = 0.02. NB I increased this after first (failed) experiment
     # args.n_agent_steps = int(500e3) # num_episodes * max_epLen = 10k * 50 = 500k. Zac uses 100k TODO
-    args.n_agent_steps_pretrain = 10000
+    # args.n_agent_steps_pretrain = 10000 # TODO revert
     args.target_update_tau = 0.001
     args.target_update_period = 4
     args.replay_buffer_size = int(50e3)
-    # args.agent_test_frequency = 15 # test every 10k agent steps (we take 150k steps each round) (or 30k each round in reduced condn -> test every 2000 steps)
-    # TODO think about these reward modelling settings
-    # args.rm_archi = 'cnn'
-    args.n_epochs_train_rm = 5000 # not yet sure if this will train to convergence... check plots!
+    args.agent_test_frequency = 15 # test every 10k agent steps (we take 150k steps each round)
+    args.rm_archi = 'cnn_mod'
+    args.n_epochs_train_rm = 2500 # not yet sure if this will train to convergence... check plots! TODO revert
     return args
