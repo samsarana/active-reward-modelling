@@ -45,7 +45,7 @@ def parse_arguments():
     parser.add_argument('--batch_size_acq', type=int, default=-1, help='In acquiring `n_labels_per_round`, what batch size are these acquired in? Reward model is trained after every acquisition batch. If -1 (default), `batch_size_acq` == `n_labels_per_round`, as in Christiano/Ibarz')
     parser.add_argument('--n_agent_steps', type=int, default=150000, help='No. of steps that agent takes per round in environment, while training every agent_gdt_step_period steps') # Ibarz: 100k
     parser.add_argument('--n_agent_steps_pretrain', type=int, default=-1, help='No. of steps that agent takes before main training loop begins. epsilon=0.5 for these steps. If -1 (default) then n_agent_steps_pretrain will be determined by n_labels_per_round (will collect just enough)')
-    parser.add_argument('--agent_test_frequency', type=int, default=1, help='Over the course of its n_agent_[train|total]_steps, how many times is agent performance tested? (and the run terminated if `terminate_once_solved == True`')
+    parser.add_argument('--agent_test_frequency', type=int, default=15, help='Over the course of its n_agent_[train|total]_steps, how many times is agent performance tested? (and the run terminated if `terminate_once_solved == True`')
     parser.add_argument('--agent_learning_starts', type=int, default=0, help='After how many steps does the agent start making learning updates? This replaced the functionality of n_agent_total_steps.')
     parser.add_argument('--no_reinit_agent', dest='reinit_agent', action='store_false', help='Flag not to reinitialise the agent before every training round')
     parser.add_argument('--no_normalise_rewards', dest='normalise_rewards', action='store_false', help='Flag not to normalise rewards sent to the agent (either true or predicted, depending on args.RL_baseline)')
@@ -60,7 +60,7 @@ def parse_arguments():
     parser.add_argument('--p_dropout_rm', type=float, default=0.5)
     parser.add_argument('--lambda_rm', type=float, default=1e-4, help='coefficient for L2 regularization for reward_model optimization')
     parser.add_argument('--n_epochs_pretrain_rm', type=int, default=-1, help='No. epochs to train rm on preferences collected during initial rollouts. If -1 (default) then this will be set to n_epochs_train_rm') # Ibarz: 50e3
-    parser.add_argument('--n_epochs_train_rm', type=int, default=2000, help='No. epochs to train reward model per round in main training loop') # Ibarz: 6250
+    parser.add_argument('--n_epochs_train_rm', type=int, default=3000, help='No. epochs to train reward model per round in main training loop') # Ibarz: 6250
     # parser.add_argument('--prefs_buffer_size', type=int, default=1000) # Ibarz: 6800. since currently we collect fewer than 1000 labels in total, this doesn't matter (Ibarz never throw away labels. Christiano does.)
     # NB using 5000 with obs_act_shape of (21168,) gives MemoryError. So if I do need to increase its size much more, I may need to change the implementation somehow...
     parser.add_argument('--clip_length', type=int, default=25) # as per Ibarz/Christiano; i'm interested in changing this
