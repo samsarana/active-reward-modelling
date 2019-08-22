@@ -155,5 +155,5 @@ def gridworld_nb_defaults(args):
     args.replay_buffer_size = int(50e3)
     args.agent_test_frequency = 15 # test every 10k agent steps (we take 150k steps each round)
     args.rm_archi = 'cnn_mod'
-    args.n_epochs_train_rm = 2500 # not yet sure if this will train to convergence... check plots! TODO revert
+    args.n_epochs_train_rm = 3000 # not yet sure if this will train to convergence... check plots! TODO revert
     return args
