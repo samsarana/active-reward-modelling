@@ -1,4 +1,5 @@
 import argparse
+import numpy as np
 from defaults import *
 from q_learning import LinearSchedule
 
@@ -9,7 +10,7 @@ def parse_arguments():
     parser.add_argument('--default_settings', type=str, default=None, help='Flag to override args with those in default.py. Choice of: acrobot_sam, openai, openai_atari, cartpole, gridworld')
     parser.add_argument('--env_str', type=str, default=None, help='Choice of: acrobot, mountain_car, cartpole, cartpole_old, cartpole_old_rich, frozen_lake, gridworld')
     parser.add_argument('--n_runs', type=int, default=1, help='number of runs to repeat the experiment')
-    parser.add_argument('--n_rounds', type=int, default=1, help='number of rounds to repeat main training loop')
+    parser.add_argument('--n_rounds', type=int, default=5, help='number of rounds to repeat main training loop')
     parser.add_argument('--RL_baseline', action='store_true', help='Do RL baseline instead of reward learning?')
     parser.add_argument('--random_policy', action='store_true', help='Do the experiments with an entirely random policy, to benchmark performance')
     parser.add_argument('--test', action='store_true', help='Flag to make training procedure very short (to check for errors)')
@@ -38,11 +39,11 @@ def parse_arguments():
     # parser.add_argument('--epsilon_decay', type=float, default=0.999, help='`epsilon *= epsilon * epsilon_decay` every learning step, until `epsilon_stop`') 
     parser.add_argument('--epsilon_stop', type=float, default=0.01)
     parser.add_argument('--exploration_fraction', type=float, default=0.1, help='Over what fraction of entire training period is epsilon annealed (linearly)?')
-    parser.add_argument('--n_labels_per_round', type=int, default=5, help='How many labels to acquire per round?')
-    # parser.add_argument('--n_labels_pretraining', type=int, default=-1, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining. If -1 (default), it will be set to n_labels_per_round') # Ibarz: 25k. Removed support for diff no. labels in pretraining
-    # parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[5]*20, help='How many labels to acquire per round? (in main training loop). len should be same as n_rounds')
-    parser.add_argument('--batch_size_acq', type=int, default=1, help='In acquiring `n_labels_per_round`, what batch size are these acquired in? Reward model is trained after every acquisition batch. `batch_size_acq` == `n_labels_per_round`, is used in Christiano/Ibarz')
-    parser.add_argument('--n_agent_steps', type=int, default=3000, help='No. of steps that agent takes per round in environment, while training every agent_gdt_step_period steps') # Ibarz: 100k
+    # parser.add_argument('--n_labels_per_round', type=int, default=5, help='How many labels to acquire per round?')
+    parser.add_argument('--n_labels_pretraining', type=int, default=500, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining. If -1 (default), it will be set to n_labels_per_round') # Ibarz: 25k. Removed support for diff no. labels in pretraining
+    parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[3000,1500,750,750,500], help='How many labels to acquire per round? (in main training loop). len should be same as n_rounds')
+    parser.add_argument('--batch_size_acq', type=int, default=-1, help='In acquiring `n_labels_per_round`, what batch size are these acquired in? Reward model is trained after every acquisition batch. If -1 (default), `batch_size_acq` == `n_labels_per_round`, as in Christiano/Ibarz')
+    parser.add_argument('--n_agent_steps', type=int, default=150000, help='No. of steps that agent takes per round in environment, while training every agent_gdt_step_period steps') # Ibarz: 100k
     parser.add_argument('--n_agent_steps_pretrain', type=int, default=-1, help='No. of steps that agent takes before main training loop begins. epsilon=0.5 for these steps. If -1 (default) then n_agent_steps_pretrain will be determined by n_labels_per_round (will collect just enough)')
     parser.add_argument('--agent_test_frequency', type=int, default=1, help='Over the course of its n_agent_[train|total]_steps, how many times is agent performance tested? (and the run terminated if `terminate_once_solved == True`')
     parser.add_argument('--agent_learning_starts', type=int, default=0, help='After how many steps does the agent start making learning updates? This replaced the functionality of n_agent_total_steps.')
@@ -56,7 +57,7 @@ def parse_arguments():
     parser.add_argument('--hid_units_rm', type=int, default=64)
     parser.add_argument('--batch_size_rm', type=int, default=16) # same as Ibarz
     parser.add_argument('--lr_rm', type=float, default=1e-4)
-    parser.add_argument('--p_dropout_rm', type=float, default=0.2)
+    parser.add_argument('--p_dropout_rm', type=float, default=0.5)
     parser.add_argument('--lambda_rm', type=float, default=1e-4, help='coefficient for L2 regularization for reward_model optimization')
     parser.add_argument('--n_epochs_pretrain_rm', type=int, default=-1, help='No. epochs to train rm on preferences collected during initial rollouts. If -1 (default) then this will be set to n_epochs_train_rm') # Ibarz: 50e3
     parser.add_argument('--n_epochs_train_rm', type=int, default=2000, help='No. epochs to train reward model per round in main training loop') # Ibarz: 6250
@@ -103,16 +104,27 @@ def make_arg_changes(args):
         }
         args = default_args_map[args.default_settings](args)
 
-    assert args.n_labels_per_round % args.batch_size_acq == 0,\
+    if len(args.n_labels_per_round) == 1:
+        args.n_labels_per_round = [args.n_labels_per_round] * args.n_rounds
+
+    assert len(args.n_labels_per_round) == args.n_rounds
+
+    if args.batch_size_acq == -1:
+        args.batch_size_acq = args.n_labels_per_round
+    
+    assert (np.array(args.n_labels_per_round) % np.array(args.batch_size_acq) == 0).all(),\
         "Acquisition batch size is {}, but it should divide n_labels_per_round, which is {}".format(
             args.batch_size_acq, args.n_labels_per_round)
-    args.n_acq_batches_per_round = args.n_labels_per_round // args.batch_size_acq
+            
+    args.n_acq_batches_per_round = np.array(args.n_labels_per_round) // np.array(args.batch_size_acq)
+
+
 
     args.exploration = LinearSchedule(schedule_timesteps=int(args.exploration_fraction * args.n_agent_steps),
                                       initial_p=args.epsilon_start,
                                       final_p=args.epsilon_stop)
 
-    args.prefs_buffer_size = args.n_labels_per_round * args.n_rounds
+    args.prefs_buffer_size = sum(args.n_labels_per_round)
     
     # get environment ID
     envs_to_ids = { 'cartpole': {'id': 'gym_barm:CartPoleContinual-v0',
