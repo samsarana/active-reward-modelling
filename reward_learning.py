@@ -212,8 +212,9 @@ class RewardModel(nn.Module):
             nn.Dropout(args.p_dropout_rm),
             nn.Linear(args.hid_units_rm, 1),
         )
-        self.mean_prefs = 0 # mean of reward model across prefs_buffer
-        self.var_prefs = 1 # var of reward model across prefs_buffer
+        # self.mean_prefs = 0 # mean of reward model across prefs_buffer
+        # self.var_prefs = 1 # var of reward model across prefs_buffer
+        self.running_stats = RunningStat()
 
     def forward(self, x, mode=None, normalise=False):
         """
@@ -223,7 +224,7 @@ class RewardModel(nn.Module):
         """
         r_hat = self.layers(x)
         if normalise:
-            r_hat = (r_hat - self.mean_prefs) / np.sqrt(self.var_prefs + 1e-8)
+            r_hat = (r_hat - self.running_stats.mean) / np.sqrt(self.running_stats.var + 1e-8)
         return r_hat
 
 
