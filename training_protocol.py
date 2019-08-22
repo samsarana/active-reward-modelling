@@ -84,18 +84,19 @@ def training_protocol(env, args, writers, returns_summary, i_run):
 
 def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round):
     n_labels = args.n_labels_per_round[i_train_round]
+    batch_size_acq = args.batch_size_acq[i_train_round]
     n_acq_batches = args.n_acq_batches_per_round[i_train_round]
     n_labels_so_far = sum(args.n_labels_per_round[:i_train_round])
     logging.info('Stage {}.2: Sample without replacement from those rollouts to collect {} labels/preference tuples'.format(i_train_round, n_labels))
     logging.info('The reward model will be retrained after every batch of label acquisitions')
     logging.info('Making {} acquisitions, consisting of {} batches of acquisitions of size {}'.format(
-        n_labels, n_acq_batches, args.batch_size_acq))
+        n_labels, n_acq_batches, batch_size_acq))
     rand_clip_data = generate_rand_clip_pairing(agent_experience, n_labels, args)
     logging.info('Stage {}.3: Training reward model for {} sets of batches on those preferences'.format(i_train_round, n_acq_batches))
     for i_acq_batch in range(n_acq_batches):
         i_acq = n_labels_so_far + i_acq_batch
         acquired_clip_data, idx, mu_counts_total = make_acquisitions(
-            rand_clip_data, reward_model, args, writers, mu_counts_total, i_acq)
+            rand_clip_data, batch_size_acq, reward_model, args, writers, mu_counts_total, i_acq)
         prefs_buffer.push(*acquired_clip_data)
         rand_clip_data = remove_acquisitions(idx, rand_clip_data)
         if args.reinit_rm:

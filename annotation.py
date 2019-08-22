@@ -23,16 +23,16 @@ def generate_rand_clip_pairing(agent_experience, num_labels_requested, args):
     return rand_clip_data
 
 
-def make_acquisitions(rand_clip_data, reward_model, args, writers, mu_counts_total, i_label):
+def make_acquisitions(rand_clip_data, n_acqs, reward_model, args, writers, mu_counts_total, i_label):
     """
     Returns: tuple of acquired clip pairs along with their rews and mus
              indices of acquired clip pairs
              running total of each type of label acquired (0, 0.5 or 1)
     """
     # Stage 1.2: Sample `batch_size_acq` clip pairs without replacement from recent rollouts and label them (synthetically)
-    logging.info("Acquisition {}: acquiring {} clip pair(s) in a single batch".format(i_label, args.batch_size_acq))
+    logging.info("Acquisition {}: acquiring {} clip pair(s) in a single batch".format(i_label, n_acqs))
     rand_clip_pairs, rand_rews, rand_mus = rand_clip_data
-    idx, info_per_clip_pair = args.acquistion_func(rand_clip_pairs, args.batch_size_acq, args, reward_model)
+    idx, info_per_clip_pair = args.acquistion_func(rand_clip_pairs, n_acqs, args, reward_model)
     # put labelled clip_pairs into prefs_buffer and accumulate count of each label acquired
     clip_pairs, rews, mus = rand_clip_pairs[idx], rand_rews[idx], rand_mus[idx]
     # prefs_buffer.push(clip_pairs, rews, mus)
