@@ -83,22 +83,30 @@ def training_protocol(env, args, writers, returns_summary, i_run):
 
 
 def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, optimizer_rm, args, writers, mu_counts_total, i_train_round):
-    logging.info('Stage {}.2: Sample without replacement from those rollouts to collect {} labels/preference tuples'.format(i_train_round, args.n_labels_per_round))
+    if i_train_round >= 0:
+        n_labels = args.n_labels_per_round[i_train_round]
+        n_acq_batches = args.n_acq_batches_per_round[i_train_round]
+        n_labels_so_far = sum(args.n_labels_per_round[:i_train_round]) + args.n_labels_pretraining
+    else:
+        n_labels = args.n_labels_pretraining
+        n_acq_batches = args.n_acq_batches_pretraining
+        n_labels_so_far = 0
+    logging.info('Stage {}.2: Sample without replacement from those rollouts to collect {} labels/preference tuples'.format(i_train_round, n_labels))
     logging.info('The reward model will be retrained after every batch of label acquisitions')
     logging.info('Making {} acquisitions, consisting of {} batches of acquisitions of size {}'.format(
-        args.n_labels_per_round, args.n_acq_batches_per_round, args.batch_size_acq))
-    rand_clip_data = generate_rand_clip_pairing(agent_experience, args.n_labels_per_round, args)
-    logging.info('Stage {}.3: Training reward model for {} sets of batches on those preferences'.format(i_train_round, args.n_acq_batches_per_round))
-    for i_acq_batch in range(args.n_acq_batches_per_round):
-        i_label = args.n_acq_batches_per_round * i_train_round + i_acq_batch
+        n_labels, n_acq_batches, args.batch_size_acq))
+    rand_clip_data = generate_rand_clip_pairing(agent_experience, n_labels, args)
+    logging.info('Stage {}.3: Training reward model for {} sets of batches on those preferences'.format(i_train_round, n_acq_batches))
+    for i_acq_batch in range(n_acq_batches):
+        i_acq = n_labels_so_far + i_acq_batch
         acquired_clip_data, idx, mu_counts_total = make_acquisitions(
-            rand_clip_data, reward_model, args, writers, mu_counts_total, i_label)
+            rand_clip_data, reward_model, args, writers, mu_counts_total, i_acq)
         prefs_buffer.push(*acquired_clip_data)
         rand_clip_data = remove_acquisitions(idx, rand_clip_data)
         if args.reinit_rm:
             reward_model, optimizer_rm = init_rm(args)
         # Train reward model!
-        reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_label)
+        reward_model = train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_acq)
         # update running mean and variance of reward model based on these acquisitions
         logging.info('Update running mean and variance with {} acquired clip pairs'.format(
             len(acquired_clip_data[0])))
@@ -182,14 +190,12 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
 
 def do_pretraining_rollouts(q_net, replay_buffer, env, args):
     """Agent interact with environment and collect experience.
-       Number of steps taken determined by `args.n_labels_per_round`.
-       NB Used to be determined by `args.n_labels_pretraining` until
-       I dropped support for that.
+       Number of steps taken determined by `args.n_labels_pretraining`.
        Currently used only in pretraining, but I might refactor s.t. there's
        a single function that I can use for agent-environment
        interaction (with or without training).
     """
-    n_steps_to_collect_enough_clips = args.selection_factor * args.n_labels_per_round * 2 * args.clip_length
+    n_steps_to_collect_enough_clips = args.selection_factor * args.n_labels_pretraining * 2 * args.clip_length
     n_initial_steps = max(args.n_agent_steps_pretrain, n_steps_to_collect_enough_clips)
     assert n_initial_steps % args.clip_length == 0,\
         "You should specify a number of initial steps ({}) that is divisible by args.clip_length ({})".format(
