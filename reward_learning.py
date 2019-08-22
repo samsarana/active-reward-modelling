@@ -394,15 +394,23 @@ class PrefsBuffer():
             and self.mus
         """
         len_new_pairs = len(new_clip_pairs)
+        i_start = self.current_length
+        i_stop = self.current_length + len_new_pairs
+        assert i_stop <= self.capacity, "You're trying to add more clips than prefs_buffer has space for!"
         assert len_new_pairs == len(new_mus)
         assert new_clip_pairs.dtype == self.oa_dtype, "Trying to add clip pair with dtype {} but PrefsBuffer only takes dtype {}".format(new_clip_pairs.dtype, self.oa_dtype)
-        self.clip_pairs = np.roll(self.clip_pairs, len_new_pairs, axis=0)
-        self.rewards = np.roll(self.rewards, len_new_pairs, axis=0)
-        self.mus = np.roll(self.mus, len_new_pairs)
-        assert (self.clip_pairs[:len_new_pairs]).all() == 0, "You are about to throw away labels from prefs_buffer!"
-        self.clip_pairs[:len_new_pairs] = new_clip_pairs
-        self.rewards[:len_new_pairs] = new_rews
-        self.mus[:len_new_pairs] = new_mus
+        # self.clip_pairs = np.roll(self.clip_pairs, len_new_pairs, axis=0)
+        # self.rewards = np.roll(self.rewards, len_new_pairs, axis=0)
+        # self.mus = np.roll(self.mus, len_new_pairs)
+        # assert (self.clip_pairs[:len_new_pairs]).all() == 0, "You are about to throw away labels from prefs_buffer!"
+        # self.clip_pairs[:len_new_pairs] = new_clip_pairs
+        # self.rewards[:len_new_pairs] = new_rews
+        # self.mus[:len_new_pairs] = new_mus
+
+        self.clip_pairs[i_start:i_stop] = new_clip_pairs
+        self.rewards[i_start:i_stop] = new_rews
+        self.mus[i_start:i_stop] = new_mus
+
         if self.current_length < self.capacity:
             self.current_length += len_new_pairs
 
