@@ -52,6 +52,7 @@ def parse_arguments():
     parser.add_argument('--no_reinit_agent', dest='reinit_agent', action='store_false', help='Flag not to reinitialise the agent before every training round')
     parser.add_argument('--no_normalise_rewards', dest='normalise_rewards', action='store_false', help='Flag not to normalise rewards sent to the agent (either true or predicted, depending on args.RL_baseline)')
     parser.add_argument('--agent_gets_dones', action='store_true', help='Flag to store done=True signals in replay buffer (Christiano/Ibarz say not to do this, but we want to see how it affects performance)')
+    parser.add_argument('--path_to_agent_state_dict', type=str, default=None, help='If you want to load a policy rather than training from scratch, provide it here')
     # parser.add_argument('--period_half_lr', type=int, default=1750) # lr is halved every period_half_lr optimizer steps
 
     # reward model hyperparamas
