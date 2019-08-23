@@ -114,18 +114,18 @@ def gridworld_zac_defaults(args):
     args.target_update_tau = 1 # I'm guessing they used hard updates
     # zac uses exponential annealing but this scheme is roughly equivalent
     # log_0.999(0.05) = 2994 ~ 3000
-    # learning update 3000 = 12k agent steps (assuming learning update every 4 steps)
-    # train for 150k RL steps (may need to increase this if it doesn't converge)
-    # so exploration fraction is 12/150 = 0.08
+    # learning update 3000 = 9k agent steps (assuming learning update every 3 steps)
+    # train for 3M RL steps
+    # so exploration fraction is 9000/3e6 = 0.003. This doesn't seem like enough, let's use 0.1
     args.episilon_start = 1.0
     args.epsilon_stop = 0.05
-    args.exploration_fraction = 0.08
+    args.exploration_fraction = 0.1
     # from here on, they don't mention their values
-    args.agent_gdt_step_period = 4 # I couldn't find the value Zac uses
+    # args.agent_gdt_step_period = 4 # Zac makes gradient updates at the end of each episode. My code now does the same
     args.gamma = 0.99 # this is standard
-    args.n_agent_steps = int(150e3) # may need to increase since Zac trains for 1M *episodes*, so a lot more
+    args.n_agent_steps = int(3e6) # may need to increase since Zac trains for 1M *episodes*, so a lot more
     args.n_agent_steps_pretrain = 0 # not sure if Zac does pretraining
-    args.agent_test_frequency = 15 # test every 10k agent steps (50 times in total)
+    args.agent_test_frequency = 30 # test every 100k agent steps
     # reward modelling
     args.n_epochs_pretrain_rm = 2000 # not yet tested
     args.n_epochs_train_rm = 2000 # not yet tested
