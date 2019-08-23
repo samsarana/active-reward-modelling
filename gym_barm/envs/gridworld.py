@@ -21,7 +21,7 @@ class gameOb():
         self.reward = reward
         self.name = name
         
-class GridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
+class UpsampledGridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
     def __init__(self, partial=False, size=5, random_resets=True, terminate_ep_if_done=False): # sam added defaults
         """
         partial: does agent get partial observations or full state?
@@ -207,3 +207,92 @@ class GridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
         """
         return np.moveaxis(self.state, -1, 0)
         # return np.reshape(self.state,[21168]) # 21168 = 84*84*3
+
+
+class GridworldEnv(UpsampledGridworldEnv):
+    def __init__(self, partial=False, size=5, random_resets=True, terminate_ep_if_done=True): # sam added defaults
+        """
+        partial: does agent get partial observations or full state?
+        size: length and width of square grid.
+        random_resets: if True, upon each call to env.reset(),
+                       `gameOb`s will be placed in new random positions
+                       Else, they will be placed in the same,
+                       fixed positions.
+        """
+        super().__init__()
+        self.sizeX = size
+        self.sizeY = size
+        self.actions = 4
+        self.objects = []
+        self.partial = partial
+        self.random_resets = random_resets
+        self.action_space = spaces.Discrete(4) # Discrete(n) is a discrete space in :math:`\{ 0, 1, \\dots, n-1 \}`
+        self.observation_space = spaces.Box(low=0, high=255, shape=(75,)) # Box represents the Cartesian product of n closed intervals
+        self.determined_locations = {
+            'hero': (0,0),
+            'goal': (0,4),
+            # 'goal2': (2,3),
+            # 'goal3': (4,2),
+            # 'goal4': (4,0),
+            'fire': (1,2)
+            # 'fire2': (3,1)
+        }
+        self.terminate_ep_if_done = terminate_ep_if_done
+        if not random_resets:
+            assert terminate_ep_if_done,\
+                '''If you want to reset objects deterministically,
+                the game becomes very easy if episodes don't terminate
+                when agent reaches goal/lava'''
+        self.reset()
+
+        
+    def reset(self):
+        self.objects = []
+        hero = gameOb(self.newPosition('hero'),1,1,2,None,'hero')
+        self.objects.append(hero)
+        bug = gameOb(self.newPosition('goal'),1,1,1,1,'goal')
+        self.objects.append(bug)
+        hole = gameOb(self.newPosition('fire'),1,1,0,-1,'fire')
+        self.objects.append(hole)
+        # bug2 = gameOb(self.newPosition('goal2'),1,1,1,1,'goal2')
+        # self.objects.append(bug2)
+        # hole2 = gameOb(self.newPosition('fire2'),1,1,0,-1,'fire2')
+        # self.objects.append(hole2)
+        # bug3 = gameOb(self.newPosition('goal3'),1,1,1,1,'goal3')
+        # self.objects.append(bug3)
+        # bug4 = gameOb(self.newPosition('goal4'),1,1,1,1,'goal4')
+        # self.objects.append(bug4)
+        state = self.renderEnv()
+        self.state = state
+        self.done = False
+        return self._get_obs()
+    
+
+    def renderEnv(self):
+        a = np.zeros([self.sizeY,self.sizeX,3])
+        # a = np.ones([self.sizeY+2,self.sizeX+2,3])
+        # a[1:-1,1:-1,:] = 0
+        hero = None
+        for item in self.objects:
+            a[item.y:item.y+item.size, item.x:item.x+item.size, item.channel] = item.intensity
+            if item.name == 'hero':
+                hero = item
+        if self.partial == True:
+            a = a[hero.y:hero.y+3,hero.x:hero.x+3,:]
+        b = scipy.misc.imresize(a[:,:,0],[5,5,1],interp='nearest')
+        # b = np.array(Image.fromareray(a[:,:,0], mode='RGB').resize((5,5), resample=Image.NEAREST))
+        c = scipy.misc.imresize(a[:,:,1],[5,5,1],interp='nearest')
+        d = scipy.misc.imresize(a[:,:,2],[5,5,1],interp='nearest')
+        a = np.stack([b,c,d],axis=2)
+        return a
+
+
+    def _get_obs(self):
+        """
+        Move channel to dim 0 and flatten
+        From Zac's paper:
+        "The agent receives the observation as an array of
+        RGB pixel values flattened across the channel dimension."
+        This is what is implemented here
+        """
+        return np.moveaxis(self.state, -1, 0).reshape(-1)
