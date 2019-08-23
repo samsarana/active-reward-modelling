@@ -12,13 +12,24 @@ from reward_learning import RewardModelEnsemble, init_rm
 class DQN(nn.Module):
     def __init__(self, num_inputs, num_actions, args):
         super().__init__()
-        self.layers = nn.Sequential(
-            nn.Linear(num_inputs, args.h1_agent),
-            nn.ReLU(),
-            nn.Linear(args.h1_agent, args.h2_agent),
-            nn.ReLU(),
-            nn.Linear(args.h2_agent, num_actions)
-        )
+        if args.h3_agent: # 3 hidden layer DQN
+            self.layers = nn.Sequential(
+                nn.Linear(num_inputs, args.h1_agent),
+                nn.ReLU(),
+                nn.Linear(args.h1_agent, args.h2_agent),
+                nn.ReLU(),
+                nn.Linear(args.h2_agent, args.h3_agent),
+                nn.ReLU(),
+                nn.Linear(args.h3_agent, num_actions)
+            )
+        else: # 2 hidden layer DQN
+            self.layers = nn.Sequential(
+                nn.Linear(num_inputs, args.h1_agent),
+                nn.ReLU(),
+                nn.Linear(args.h1_agent, args.h2_agent),
+                nn.ReLU(),
+                nn.Linear(args.h2_agent, num_actions)
+            )
         self.num_actions = num_actions
         self.batch_size = args.batch_size_agent
         self.gamma = args.gamma
@@ -198,7 +209,11 @@ def init_agent(args):
         q_target = CnnDQN(args.obs_shape, args.n_actions, args)
     q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
     replay_buffer = ReplayBuffer(args.replay_buffer_size)
-    optimizer_agent = optim.Adam(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent)
+    if args.optimizer_agent == 'RMSProp':
+        optimizer_agent = optim.RMSprop(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent)
+    else:
+        assert args.optimizer_agent == 'Adam'
+        optimizer_agent = optim.Adam(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent)
     return q_net, q_target, replay_buffer, optimizer_agent
 
 class LinearSchedule(object):
