@@ -7,7 +7,7 @@ from time import time, sleep
 from rl_logging import *
 from atari_preprocessing import *
 
-def test_policy(q_net, reward_model, true_reward_stats, args, writers, i_train_round, sub_round, num_episodes=100):
+def test_policy(q_net, reward_model, true_reward_stats, args, writers, i_train_round, i_test, num_episodes=100):
     """Using the non-continuous version of the environment and q_net
        with argmax policy (deterministic), run the polcy for
        `num_episodes` and log mean episode return.
@@ -21,7 +21,7 @@ def test_policy(q_net, reward_model, true_reward_stats, args, writers, i_train_r
     if args.env_str == 'pong':
         env = preprocess_atari_env(env)
     if args.save_video:
-        fname = '{}/videos/test/round={}sub={}time={}/'.format(args.logdir, i_train_round, sub_round, str(time()))
+        fname = '{}/videos/test/round={}sub={}time={}/'.format(args.logdir, i_train_round, i_test, str(time()))
         env = wrappers.Monitor(env, fname) # save all test videos
     env.seed(args.random_seed)
     state, n, step = env.reset(), 0, 0
@@ -40,7 +40,7 @@ def test_policy(q_net, reward_model, true_reward_stats, args, writers, i_train_r
         # prepare for next step
         state = next_state
         if done:
-            returns = log_agent_episode(returns, writers, step, i_train_round, sub_round, args, is_test=True)
+            returns = log_agent_episode(returns, writers, step, i_train_round, args, i_test)
             n += 1
             if args.save_video and args.n_test_vids_to_save > -1 and n == args.n_test_vids_to_save:
                 env.close() # stop saving video (unsure whether this unwraps the env or just forces video to stop by closing render window, but it works.)
@@ -50,7 +50,7 @@ def test_policy(q_net, reward_model, true_reward_stats, args, writers, i_train_r
     return returns['all']
 
 
-def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_round, sub_round, num_episodes=100):
+def test_and_log_random_policy(returns_summary, step, i_test, i_train_round, i_run, writers, args, num_episodes=100):
     """Using the non-continual version of the environment,
        take random steps for `num_episodes`
        and log mean episode return.
@@ -70,13 +70,11 @@ def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_ro
     env.reset()
     n = 0
     returns = {'ep': 0, 'all': []}
-    i_train_sub_round = args.agent_test_frequency * i_train_round + sub_round
     while n < num_episodes:
         # agent interact with env
         action = env.action_space.sample()
         _, r_true, done, _ = env.step(action) # one continuous episode
         returns['ep'] += r_true # record step info
-        
         # prepare for next step
         if done:
             returns['all'].append(returns['ep'])
@@ -86,7 +84,7 @@ def test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_ro
     
     # log mean return
     assert len(returns['all']) == num_episodes
-    writer1, writer2 = writers
-    mean_ret_true = np.sum(np.array(returns['all'])) / num_episodes
-    returns_summary[i_run][('true', i_train_round, sub_round)] = mean_ret_true
-    writer1.add_scalar('1a.test_mean_ep_return_per_sub_round', mean_ret_true, i_train_sub_round)
+    writer1, _ = writers
+    mean_ret_true_test = np.sum(np.array(returns['all'])) / num_episodes
+    returns_summary[i_run][('1.true', i_train_round, i_test)] = mean_ret_true_test # dict format that is friendly to creating a multiindex pd.DataFrame downstream
+    writer1.add_scalar('1a.test_mean_ep_return_per_step', mean_ret_true_test, step)

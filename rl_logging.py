@@ -17,11 +17,12 @@ def log_agent_step(sa_pair, r_true, rets, true_reward_stats, reward_model, args)
         rets['ep']['pred_norm'] += r_pred_norm
     return rets
 
-def log_agent_episode(rets, writers, step, i_train_round, sub_round, args, is_test):
+
+def log_agent_episode(rets, writers, step, i_train_round, args, test_num=None):
     writer1, writer2 = writers
-    if is_test:
-        tag = '2a.test_ep_return_per_step/round_{}/test_no_{}'.format(i_train_round, sub_round)
-        tag_norm = '2b.test_ep_return_per_step_normalised/round_{}/test_no_{}'.format(i_train_round, sub_round)
+    if test_num is not None: # we're logging a test episode
+        tag = '2a.test_ep_return_per_step/round_{}/test_no_{}'.format(i_train_round, test_num)
+        tag_norm = '2b.test_ep_return_per_step_normalised/round_{}/test_no_{}'.format(i_train_round, test_num)
     else: # logging training episode
         tag = '4a.train_ep_return_per_step/round_{}'.format(i_train_round)
         tag_norm = '4b.train_ep_return_per_step_normalised/round_{}'.format(i_train_round)
@@ -37,53 +38,111 @@ def log_agent_episode(rets, writers, step, i_train_round, sub_round, args, is_te
         rets['ep'][key] = 0
     return rets
 
-def log_RL_loop(returns, args, i_train_round, sub_round, writers):
-    """TODO refactor this funciton with the next one (log_tested_policy)
-    """
-    i_train_sub_round = args.agent_test_frequency * (i_train_round-1) + sub_round
+
+def log_agent_test(train_returns, test_returns, returns_summary, step, i_test, i_train_round, i_run, writers, args):
     writer1, writer2 = writers
-    mean_true_returns = np.sum(np.array(returns['all']['true'])) / len(returns['all']['true'])
-    mean_true_returns_norm = np.sum(np.array(returns['all']['true_norm'])) / len(returns['all']['true_norm'])
-    writer1.add_scalar('3a.train_mean_ep_return_per_sub_round', mean_true_returns, i_train_sub_round)
+    # log train returns
+    mean_true_returns_train = np.sum(np.array(train_returns['all']['true'])) / len(train_returns['all']['true'])
+    writer1.add_scalar('3a.train_mean_ep_return_per_step/round_{}'.format(i_train_round), mean_true_returns_train, step)
     if args.normalise_rewards:
-        writer1.add_scalar('3b.train_mean_ep_return_per_sub_round_normalised', mean_true_returns_norm, i_train_sub_round)
+        mean_true_returns_train_norm = np.sum(np.array(train_returns['all']['true_norm'])) / len(train_returns['all']['true_norm'])
+        writer1.add_scalar('3b.train_mean_ep_return_per_step_normalised/round_{}'.format(i_train_round), mean_true_returns_train_norm, step)
     if not args.RL_baseline:
-        mean_pred_returns = np.sum(np.array(returns['all']['pred'])) / len(returns['all']['pred'])
-        mean_pred_returns_norm = np.sum(np.array(returns['all']['pred_norm'])) / len(returns['all']['pred_norm'])
-        writer2.add_scalar('3a.train_mean_ep_return_per_sub_round', mean_pred_returns, i_train_sub_round)
-        writer2.add_scalar('3b.train_mean_ep_return_per_sub_round_normalised', mean_pred_returns_norm, i_train_sub_round)
-    # if sub_round == args.agent_test_frequency - 1: # final sub_round of the round
-    #     writer1.add_scalar('3_.train_mean_ep_return_per_round', mean_true_returns, i_train_round)
-    #     if not args.RL_baseline:
-    #         writer2.add_scalar('3_.train_mean_ep_return_per_round', mean_pred_returns, i_train_round)
+        mean_pred_returns_train = np.sum(np.array(train_returns['all']['pred'])) / len(train_returns['all']['pred'])
+        mean_pred_returns_train_norm = np.sum(np.array(train_returns['all']['pred_norm'])) / len(train_returns['all']['pred_norm'])
+        writer2.add_scalar('3a.train_mean_ep_return_per_step/round_{}'.format(i_train_round), mean_pred_returns_train, step)
+        writer2.add_scalar('3b.train_mean_ep_return_per_step_normalised/round_{}'.format(i_train_round), mean_pred_returns_train_norm, step)
+    # log test returns
+    num_test_episodes = len(test_returns['true'])
+    mean_ret_true_test = np.sum(np.array(test_returns['true'])) / num_test_episodes
+    returns_summary[i_run][('1.true', i_train_round, i_test)] = mean_ret_true_test # dict format that is friendly to creating a multiindex pd.DataFrame downstream
+    writer1.add_scalar('1a.test_mean_ep_return_per_step/round_{}'.format(i_train_round), mean_ret_true_test, step)
+    if args.normalise_rewards:
+        mean_ret_true_test_norm = np.sum(np.array(test_returns['true_norm'])) / num_test_episodes
+        returns_summary[i_run][('3.true_norm', i_train_round, i_test)] = mean_ret_true_test_norm
+        writer1.add_scalar('1b.test_mean_ep_return_per_step_normalised/round_{}'.format(i_train_round), mean_ret_true_test_norm, step)
+    if not args.RL_baseline:
+        mean_ret_pred_test = np.sum(np.array(test_returns['pred'])) / num_test_episodes
+        mean_ret_pred_test_norm = np.sum(np.array(test_returns['pred_norm'])) / num_test_episodes
+        returns_summary[i_run][('2.pred', i_train_round, i_test)] = mean_ret_pred_test
+        returns_summary[i_run][('4.pred_norm', i_train_round, i_test)] = mean_ret_pred_test_norm
+        writer2.add_scalar('1a.test_mean_ep_return_per_step/round_{}'.format(i_train_round), mean_ret_pred_test, step)
+        writer2.add_scalar('1b.test_mean_ep_return_per_step_normalised/round_{}'.format(i_train_round), mean_ret_pred_test_norm, step)
+    return mean_ret_true_test
 
 
-def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_round, sub_round, env):
-    """Write test returns to Tensorboard and `returns_summary` DataFrame.
-    """
-    writer1, writer2 = writers
-    i_train_sub_round = args.agent_test_frequency * (i_train_round-1) + sub_round
-    num_test_episodes = len(returns['true'])
-    mean_ret_true = np.sum(np.array(returns['true'])) / num_test_episodes
-    returns_summary[i_run][('1.true', i_train_round, sub_round)] = mean_ret_true # dict format that is friendly to creating a multiindex pd.DataFrame downstream
-    writer1.add_scalar('1a.test_mean_ep_return_per_sub_round', mean_ret_true, i_train_sub_round)
-    if args.normalise_rewards:
-        mean_ret_true_norm = np.sum(np.array(returns['true_norm'])) / num_test_episodes
-        returns_summary[i_run][('3.true_norm', i_train_round, sub_round)] = mean_ret_true_norm
-        writer1.add_scalar('1b.test_mean_ep_return_per_sub_round_normalised', mean_ret_true_norm, i_train_sub_round)
-    if not args.RL_baseline:
-        mean_ret_pred = np.sum(np.array(returns['pred'])) / num_test_episodes
-        mean_ret_pred_norm = np.sum(np.array(returns['pred_norm'])) / num_test_episodes
-        returns_summary[i_run][('2.pred', i_train_round, sub_round)] = mean_ret_pred
-        returns_summary[i_run][('4.pred_norm', i_train_round, sub_round)] = mean_ret_pred_norm
-        writer2.add_scalar('1a.test_mean_ep_return_per_sub_round', mean_ret_pred, i_train_sub_round)
-        writer2.add_scalar('1b.test_mean_ep_return_per_sub_round_normalised', mean_ret_pred_norm, i_train_sub_round)
-    # if sub_round == args.agent_test_frequency - 1 or (not args.continue_once_solved \
-    #     and env.spec.reward_threshold != None and mean_ret_true >= env.spec.reward_threshold): # final sub_round of the round
-    #     writer1.add_scalar('1_.test_mean_ep_return_per_round', mean_ret_true, i_train_round)
-    #     if not args.RL_baseline:
-    #         writer2.add_scalar('1_.test_mean_ep_return_per_round', mean_ret_pred, i_train_round)
-    return mean_ret_true
+# def log_agent_train_loop(train_returns, test_returns, n_episodes, i_train_round, writers, args):
+#     writer1, writer2 = writers
+#     # log test returns
+#     max_true_rets_train = np.max(np.array(train_returns['all']['true']))
+#     writer1.add_scalar('3_.train_max_ep_return_per_round', max_true_rets_train, i_train_round)
+#     if args.normalise_rewards:
+#         max_true_returns_train_norm = np.max(np.array(train_returns['all']['true_norm']))
+#         writer1.add_scalar('3_.train_max_ep_return_per_round_normalised', max_true_returns_train_norm, i_train_round)
+#     if not args.RL_baseline:
+#         max_pred_returns_train = np.max(np.array(train_returns['all']['pred']))
+#         max_pred_returns_train_norm = np.max(np.array(train_returns['all']['pred_norm']))
+#         writer2.add_scalar('3_.train_max_ep_return_per_round', max_pred_returns_train, i_train_round)
+#         writer2.add_scalar('3_.train_max_ep_return_per_round_normalised', max_pred_returns_train_norm, i_train_round)
+#     # log train returns
+#     max_ret_true_test = np.max(np.array(test_returns['true']))
+#     writer1.add_scalar('1_.test_max_ep_return_per_round', max_ret_true_test, i_train_round)
+#     if args.normalise_rewards:
+#         mean_ret_true_test_norm = np.max(np.array(test_returns['true_norm']))
+#         writer1.add_scalar('1_.test_max_ep_return_per_round_normalised', mean_ret_true_test_norm, i_train_round)
+#     if not args.RL_baseline:
+#         max_ret_pred_test = np.max(np.array(test_returns['pred']))
+#         max_ret_pred_test_norm = np.max(np.array(test_returns['pred_norm']))
+#         writer2.add_scalar('1_.test_max_ep_return_per_round', max_ret_pred_test, i_train_round)
+#         writer2.add_scalar('1_.test_max_ep_return_per_round_normalised', max_ret_pred_test_norm, i_train_round)
+#     writer1.add_scalar('10.n_episodes', n_episodes, i_train_round)
+
+
+# def log_RL_loop(returns, n_episodes, args, step, i_train_round, writers):
+#     """TODO refactor this funciton with the next one (log_tested_policy)
+#     """
+#     writer1, writer2 = writers
+#     mean_true_returns = np.sum(np.array(returns['all']['true'])) / len(returns['all']['true'])
+#     mean_true_returns_norm = np.sum(np.array(returns['all']['true_norm'])) / len(returns['all']['true_norm'])
+#     writer1.add_scalar('3a.train_mean_ep_return_per_step', mean_true_returns, step)
+#     if args.normalise_rewards:
+#         writer1.add_scalar('3b.train_mean_ep_return_per_step_normalised', mean_true_returns_norm, step)
+#     if not args.RL_baseline:
+#         mean_pred_returns = np.sum(np.array(returns['all']['pred'])) / len(returns['all']['pred'])
+#         mean_pred_returns_norm = np.sum(np.array(returns['all']['pred_norm'])) / len(returns['all']['pred_norm'])
+#         writer2.add_scalar('3a.train_mean_ep_return_per_step', mean_pred_returns, step)
+#         writer2.add_scalar('3b.train_mean_ep_return_per_step_normalised', mean_pred_returns_norm, step)
+#     # if sub_round == args.agent_test_frequency - 1: # final sub_round of the round
+#     #     writer1.add_scalar('3_.train_mean_ep_return_per_round', mean_true_returns, i_train_round)
+#     #     if not args.RL_baseline:
+#     #         writer2.add_scalar('3_.train_mean_ep_return_per_round', mean_pred_returns, i_train_round)
+
+
+# def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_round, i_test, env):
+#     """Write test returns to Tensorboard and `returns_summary` DataFrame.
+#     """
+#     writer1, writer2 = writers
+#     num_test_episodes = len(returns['true'])
+#     mean_ret_true = np.sum(np.array(returns['true'])) / num_test_episodes
+#     returns_summary[i_run][('1.true', i_train_round, i_test)] = mean_ret_true # dict format that is friendly to creating a multiindex pd.DataFrame downstream
+#     writer1.add_scalar('1a.test_mean_ep_return_per_step', mean_ret_true, step)
+#     if args.normalise_rewards:
+#         mean_ret_true_norm = np.sum(np.array(returns['true_norm'])) / num_test_episodes
+#         returns_summary[i_run][('3.true_norm', i_train_round, i_test)] = mean_ret_true_norm
+#         writer1.add_scalar('1b.test_mean_ep_return_per_step_normalised', mean_ret_true_norm, step)
+#     if not args.RL_baseline:
+#         mean_ret_pred = np.sum(np.array(returns['pred'])) / num_test_episodes
+#         mean_ret_pred_norm = np.sum(np.array(returns['pred_norm'])) / num_test_episodes
+#         returns_summary[i_run][('2.pred', i_train_round, i_test)] = mean_ret_pred
+#         returns_summary[i_run][('4.pred_norm', i_train_round, i_test)] = mean_ret_pred_norm
+#         writer2.add_scalar('1a.test_mean_ep_return_per_step', mean_ret_pred, step)
+#         writer2.add_scalar('1b.test_mean_ep_return_per_step_normalised', mean_ret_pred_norm, step)
+#     # if sub_round == args.agent_test_frequency - 1 or (not args.continue_once_solved \
+#     #     and env.spec.reward_threshold != None and mean_ret_true >= env.spec.reward_threshold): # final sub_round of the round
+#     #     writer1.add_scalar('1_.test_mean_ep_return_per_round', mean_ret_true, i_train_round)
+#     #     if not args.RL_baseline:
+#     #         writer2.add_scalar('1_.test_mean_ep_return_per_round', mean_ret_pred, i_train_round)
+#     return mean_ret_true
 
 
 def save_policy(q_net, policy_optimizer, i_round, i_sub_round, args):
