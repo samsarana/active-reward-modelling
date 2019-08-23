@@ -201,19 +201,27 @@ def init_agent(args):
        Deep Q-learning:
        Q-network, target network, replay buffer and optimizer.
     """
+    logging.info("Initialisaling DQN with architecture {} and optimizer {}".format(args.dqn_archi, args.optimizer_agent))
     if args.dqn_archi == 'mlp':
         q_net = DQN(args.obs_shape, args.n_actions, args)
         q_target = DQN(args.obs_shape, args.n_actions, args)
     elif args.dqn_archi == 'cnn':
         q_net = CnnDQN(args.obs_shape, args.n_actions, args)
         q_target = CnnDQN(args.obs_shape, args.n_actions, args)
-    q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
-    replay_buffer = ReplayBuffer(args.replay_buffer_size)
     if args.optimizer_agent == 'RMSProp':
         optimizer_agent = optim.RMSprop(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent)
     else:
         assert args.optimizer_agent == 'Adam'
         optimizer_agent = optim.Adam(q_net.parameters(), lr=args.lr_agent, weight_decay=args.lambda_agent)
+    if args.path_to_agent_state_dict:
+        logging.info("Network parameters will be loaded from from {} rather than being initialised from scratch".format(
+            args.path_to_agent_state_dict))
+        checkpoint = torch.load(args.path_to_agent_state_dict)
+        q_net.load_state_dict(checkpoint['policy_state_dict'])
+        # optimizer_agent.load_state_dict(checkpoint['policy_optimizer_state_dict'])
+        # TODO may well need to load state dict of optimizer too, in order to continue training...
+    q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
+    replay_buffer = ReplayBuffer(args.replay_buffer_size)
     return q_net, q_target, replay_buffer, optimizer_agent
 
 class LinearSchedule(object):
