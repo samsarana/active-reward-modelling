@@ -64,6 +64,8 @@ def training_protocol(env, args, writers, returns_summary, i_run):
             logging.info("Begin test {}".format(sub_round))
             test_returns = test_policy(q_net, reward_model, true_reward_stats, args, writers, i_train_round, sub_round)
             mean_ret_true = log_tested_policy(test_returns, writers, returns_summary, args, i_run, i_train_round, sub_round, env)
+            # save model
+            save_policy(q_net, optimizer_agent, i_train_round, sub_round, args)
             # Possibly end training if mean_ret_true is above the threshold
             if not args.continue_once_solved and env.spec.reward_threshold != None and mean_ret_true >= env.spec.reward_threshold:
                 raise SystemExit("Environment solved, moving onto next run.")
@@ -113,7 +115,7 @@ def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, op
         reward_model = update_running_mean_var(reward_model, acquired_clip_data)
         true_reward_stats.push_clip_pairs(acquired_clip_data)
     # save reward_model for loading later
-    save_reward_model(reward_model, i_train_round, args)
+    save_reward_model(reward_model, optimizer_rm, i_train_round, args)
     return reward_model, prefs_buffer, mu_counts_total, true_reward_stats
 
 

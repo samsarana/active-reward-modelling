@@ -47,9 +47,6 @@ def test_policy(q_net, reward_model, true_reward_stats, args, writers, i_train_r
             state = env.reset()
         step += 1
     assert len(returns['all']['true']) == num_episodes
-
-    # save model
-    save_policy(q_net, i_train_round, sub_round, args)
     return returns['all']
 
 
