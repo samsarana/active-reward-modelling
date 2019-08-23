@@ -219,12 +219,15 @@ class RewardModel(nn.Module):
             self.layers = nn.Sequential(
                 nn.Linear(state_size + action_size, args.h1_rm),
                 nn.ReLU(),
+                nn.BatchNorm1d(args.h1_rm),
                 nn.Dropout(args.p_dropout_rm),
                 nn.Linear(args.h1_rm, args.h2_rm),
                 nn.ReLU(),
+                nn.BatchNorm2d(args.h2_rm),
                 nn.Dropout(args.p_dropout_rm),
                 nn.Linear(args.h2_rm, args.h3_rm),
                 nn.ReLU(),
+                nn.BatchNorm2d(args.h3_rm),
                 nn.Dropout(args.p_dropout_rm),
                 nn.Linear(args.h3_rm, 1)
             )
@@ -301,7 +304,7 @@ class RewardModelEnsemble(nn.Module):
         """
         if ensemble_num == 'random':
             ensemble_num = random.randrange(self.ensemble_size)
-        assert 0 <= ensemble_num <+ self.ensemble_size -1
+        assert 0 <= ensemble_num <= self.ensemble_size -1
         net = getattr(self, 'layers{}'.format(ensemble_num))
         r_hat = net(x)
         if normalise:
