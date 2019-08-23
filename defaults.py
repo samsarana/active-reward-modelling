@@ -128,8 +128,12 @@ def gridworld_zac_defaults(args):
     args.n_agent_steps_pretrain = 0 # not sure if Zac does pretraining
     args.agent_test_frequency = 100 # test every 500K agent steps
     # reward modelling
-    args.n_epochs_pretrain_rm = 2000 # not yet tested
-    args.n_epochs_train_rm = 2000 # not yet tested
+    args.h1_rm = 128
+    args.h2_rm = 256
+    args.h3_rm = 256
+    args.batch_size_rm = 64 # this may be too large (we train on less data than blocker, I think)
+    args.lr_rm = 5e-3
+    args.n_epochs_train_rm = 5000 # not yet tested
     return args
 
 
