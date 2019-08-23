@@ -223,11 +223,11 @@ class RewardModel(nn.Module):
                 nn.Dropout(args.p_dropout_rm),
                 nn.Linear(args.h1_rm, args.h2_rm),
                 nn.ReLU(),
-                nn.BatchNorm2d(args.h2_rm),
+                nn.BatchNorm1d(args.h2_rm),
                 nn.Dropout(args.p_dropout_rm),
                 nn.Linear(args.h2_rm, args.h3_rm),
                 nn.ReLU(),
-                nn.BatchNorm2d(args.h3_rm),
+                nn.BatchNorm1d(args.h3_rm),
                 nn.Dropout(args.p_dropout_rm),
                 nn.Linear(args.h3_rm, 1)
             )
@@ -242,6 +242,7 @@ class RewardModel(nn.Module):
                 nn.Linear(args.h2_rm, 1)
             )
         self.running_stats = RunningStat()
+        self.sa_size = state_size + action_size
 
     def forward(self, x, mode=None, normalise=False):
         """
@@ -249,10 +250,15 @@ class RewardModel(nn.Module):
         of CnnRewardModel.forward() for why I'm doing it this
         way
         """
-        r_hat = self.layers(x)
+        x = x.view(-1, self.sa_size)
+        x = self.layers(x)
         if normalise:
-            r_hat = (r_hat - self.running_stats.mean) / np.sqrt(self.running_stats.var + 1e-8)
-        return r_hat
+            x = (x - self.running_stats.mean) / np.sqrt(self.running_stats.var + 1e-8)
+        if mode == 'single' or mode == 'batch':
+            x = x.view(-1)
+        elif mode == 'clip_pair_batch':
+            x = x.view(-1, 2, 25) # 25 is BAD code
+        return x
 
 
 class RewardModelEnsemble(nn.Module):
