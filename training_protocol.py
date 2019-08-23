@@ -77,7 +77,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
         #         raise SystemExit("Environment solved, moving onto next run.")
 
         # Stage 1.2 - 1.3: acquire labels from recent rollouts and train reward model on current dataset
-        if not args.RL_baseline or args.normalise_rewards:
+        if i_train_round != args.n_rounds and (not args.RL_baseline or args.normalise_rewards):
             reward_model, prefs_buffer, mu_counts_total, true_reward_stats = acquire_labels_and_train_rm(
                 agent_experience, reward_model, prefs_buffer, optimizer_rm,
                 args, writers, mu_counts_total, true_reward_stats, i_train_round)
