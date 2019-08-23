@@ -108,6 +108,7 @@ def gridworld_zac_defaults(args):
     args.h3_agent = 512
     args.batch_size_agent = 32
     args.optimizer_agent = 'RMSProp'
+    args.lambda_agent = 0
     args.lr_agent = 1e-4
     args.replay_buffer_size = int(10e3)
     args.target_update_period = 1000
