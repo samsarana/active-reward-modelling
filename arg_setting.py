@@ -25,8 +25,10 @@ def parse_arguments():
     # agent hyperparams
     parser.add_argument('--dqn_archi', type=str, default='mlp', help='Is deep Q-network an mlp or cnn?')
     parser.add_argument('--dqn_loss', type=str, default='mse', help='Use mse or huber loss function?')
+    parser.add_argument('--optimizer_agent', type=str, default='RMSProp', help='Use RMSProp or Adam optimizer?')
     parser.add_argument('--h1_agent', type=int, default=32)
     parser.add_argument('--h2_agent', type=int, default=64)
+    parser.add_argument('--h3_agent', type=int, default=None)
     parser.add_argument('--batch_size_agent', type=int, default=32)
     parser.add_argument('--lr_agent', type=float, default=1e-3)
     parser.add_argument('--lambda_agent', type=float, default=1e-4, help='coefficient for L2 regularization for agent optimization')
@@ -104,19 +106,28 @@ def make_arg_changes(args):
         }
         args = default_args_map[args.default_settings](args)
 
+    if args.RL_baseline and not args.normalise_rewards:
+        args.n_labels_per_round = [0]
+    if args.RL_baseline or args.no_train_reward_model:
+        args.n_epochs_pretrain_rm = 0
+        args.n_epochs_train_rm    = 0
+
     if len(args.n_labels_per_round) == 1:
-        args.n_labels_per_round = [args.n_labels_per_round] * (args.n_rounds + 1)
+        args.n_labels_per_round = args.n_labels_per_round * (args.n_rounds + 1)
 
     assert len(args.n_labels_per_round) == args.n_rounds + 1
 
     if args.batch_size_acq == -1:
         args.batch_size_acq = args.n_labels_per_round
     
-    assert (np.array(args.n_labels_per_round) % np.array(args.batch_size_acq) == 0).all(),\
-        "Acquisition batch size is {}, but it should divide n_labels_per_round, which is {}".format(
-            args.batch_size_acq, args.n_labels_per_round)
-            
-    args.n_acq_batches_per_round = np.array(args.n_labels_per_round) // np.array(args.batch_size_acq)
+    if args.RL_baseline:
+        args.n_acq_batches_per_round = np.zeros_like(args.n_labels_per_round)
+    else:
+        assert (np.array(args.n_labels_per_round) % np.array(args.batch_size_acq) == 0).all(),\
+            "Acquisition batch size is {}, but it should divide n_labels_per_round, which is {}".format(
+                args.batch_size_acq, args.n_labels_per_round)
+                
+        args.n_acq_batches_per_round = np.array(args.n_labels_per_round) // np.array(args.batch_size_acq)
 
     args.exploration = LinearSchedule(schedule_timesteps=int(args.exploration_fraction * args.n_agent_steps),
                                       initial_p=args.epsilon_start,
@@ -197,9 +208,6 @@ def make_arg_changes(args):
         args.selection_factor = 2
     if args.n_epochs_pretrain_rm == -1:
         args.n_epochs_pretrain_rm = args.n_epochs_train_rm
-    if args.RL_baseline or args.no_train_reward_model:
-        args.n_epochs_pretrain_rm = 0
-        args.n_epochs_train_rm    = 0
     if args.uncert_method == 'ensemble':
         assert args.size_rm_ensemble >= 2
     return args
