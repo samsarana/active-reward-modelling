@@ -17,29 +17,42 @@ def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, 
     # logging.info("reward_model weight before train {}: {}".format(i_label, list(reward_model.parameters())[0][0][0]))
     for epoch in range(epochs):
         with torch.autograd.detect_anomaly():
-            clip_pair_batch, mu_batch = prefs_buffer.sample(args.batch_size_rm)
-            if args.normalise_rm_while_training:
-                raise RuntimeError("Normalising reward model while training is an untested idea. Why are you doing it?")
-                # reward_model = compute_mean_var(reward_model, prefs_buffer) # TODO uncertain about the speed and correctness of recomputing mean/var every gradient update
-                # r_hats_batch = reward_model(clip_pair_batch, normalise=True).squeeze(-1) # squeeze the oa_pair dimension that was passed through reward_model
-                # loss_rm = compute_loss_rm(r_hats_batch, mu_batch)
+            if args.train_rm_ensemble_independently:
+                assert isinstance(reward_model, RewardModelEnsemble)
+                # independent_train_rm_ensemble()
+                loss_total, n_indifferent_labels = 0, 0
+                for ensemble_num in range(reward_model.ensemble_size):
+                    clip_pair_batch, mu_batch = prefs_buffer.sample(args.batch_size_rm)
+                    r_hats_batch = reward_model.forward_single(clip_pair_batch, ensemble_num, mode='clip_pair_batch', normalise=False).squeeze(-1)
+                    loss_rm = compute_loss_rm(r_hats_batch, mu_batch)
+                    optimizer_rm.zero_grad()
+                    loss_rm.backward()
+                    optimizer_rm.step()
+                    # acumulate loss for logging purposes
+                    loss_total += loss_rm.detach().item()
+                    n_indifferent_labels += Counter(mu_batch.numpy()).get(0.5, 0)
+                writer1.add_scalar('6.reward_model_loss/label_{}'.format(i_label), loss_total / reward_model.ensemble_size, epoch)
+                # compute lower bound for loss_rm and plot this too
+                loss_lower_bound = n_indifferent_labels / reward_model.ensemble_size * math.log(2)
+                writer2.add_scalar('6.reward_model_loss/label_{}'.format(i_label), loss_lower_bound, epoch)
             else:
+                # get a single minibatch
+                clip_pair_batch, mu_batch = prefs_buffer.sample(args.batch_size_rm)
                 if isinstance(reward_model, RewardModelEnsemble):
                     r_hats_batch_draw = reward_model.forward_all(clip_pair_batch, mode='clip_pair_batch', normalise=False).squeeze(-1)
                     loss_rm = compute_loss_rm_ensemble(r_hats_batch_draw, mu_batch)
-                elif isinstance(reward_model, RewardModel) or isinstance(reward_model, CnnRewardModel):
+                else:
+                    assert isinstance(reward_model, RewardModel) or isinstance(reward_model, CnnRewardModel)
                     r_hats_batch = reward_model(clip_pair_batch, mode='clip_pair_batch', normalise=False).squeeze(-1)
                     loss_rm = compute_loss_rm(r_hats_batch, mu_batch)
-            # assert clip_pair_batch.shape == (args.batch_size_rm, 2, args.clip_length, args.obs_act_shape)
-            # loss_rm = compute_loss_rm_wchecks(r_hats_batch, mu_batch, args, args.obs_shape, args.act_shape)
-            optimizer_rm.zero_grad()
-            loss_rm.backward()
-            optimizer_rm.step()
-            writer1.add_scalar('6.reward_model_loss/label_{}'.format(i_label), loss_rm, epoch)
-            # compute lower bound for loss_rm and plot this too
-            n_indifferent_labels = Counter(mu_batch.numpy()).get(0.5, 0)
-            loss_lower_bound = n_indifferent_labels * math.log(2)
-            writer2.add_scalar('6.reward_model_loss/label_{}'.format(i_label), loss_lower_bound, epoch)
+                optimizer_rm.zero_grad()
+                loss_rm.backward()
+                optimizer_rm.step()
+                writer1.add_scalar('6.reward_model_loss/label_{}'.format(i_label), loss_rm, epoch)
+                # compute lower bound for loss_rm and plot this too
+                n_indifferent_labels = Counter(mu_batch.numpy()).get(0.5, 0)
+                loss_lower_bound = n_indifferent_labels * math.log(2)
+                writer2.add_scalar('6.reward_model_loss/label_{}'.format(i_label), loss_lower_bound, epoch)
     # logging.info("reward_model weight after  train {}: {}".format(i_label, list(reward_model.parameters())[0][0][0]))
     return reward_model
 
@@ -202,17 +215,29 @@ class RewardModel(nn.Module):
     def __init__(self, state_size, action_size, args):
         """Feedforward NN with 2 hidden layers"""
         super().__init__()
-        self.layers = nn.Sequential(
-            nn.Linear(state_size + action_size, args.hid_units_rm),
-            nn.ReLU(),
-            nn.Dropout(args.p_dropout_rm),
-            nn.Linear(args.hid_units_rm, args.hid_units_rm),
-            nn.ReLU(),
-            nn.Dropout(args.p_dropout_rm),
-            nn.Linear(args.hid_units_rm, 1),
-        )
-        # self.mean_prefs = 0 # mean of reward model across prefs_buffer
-        # self.var_prefs = 1 # var of reward model across prefs_buffer
+        if args.h3_rm: # 3 hidden layer reward model
+            self.layers = nn.Sequential(
+                nn.Linear(state_size + action_size, args.h1_rm),
+                nn.ReLU(),
+                nn.Dropout(args.p_dropout_rm),
+                nn.Linear(args.h1_rm, args.h2_rm),
+                nn.ReLU(),
+                nn.Dropout(args.p_dropout_rm),
+                nn.Linear(args.h2_rm, args.h3_rm),
+                nn.ReLU(),
+                nn.Dropout(args.p_dropout_rm),
+                nn.Linear(args.h3_rm, 1)
+            )
+        else: # 2 hidden layer reward model
+            self.layers = nn.Sequential(
+                nn.Linear(state_size + action_size, args.h1_rm),
+                nn.ReLU(),
+                nn.Dropout(args.p_dropout_rm),
+                nn.Linear(args.h1_rm, args.h2_rm),
+                nn.ReLU(),
+                nn.Dropout(args.p_dropout_rm),
+                nn.Linear(args.h2_rm, 1)
+            )
         self.running_stats = RunningStat()
 
     def forward(self, x, mode=None, normalise=False):
@@ -228,6 +253,64 @@ class RewardModel(nn.Module):
 
 
 class RewardModelEnsemble(nn.Module):
+    def __init__(self, state_size, action_size, args):
+        super().__init__()
+        self.ensemble_size = args.size_rm_ensemble
+        assert self.ensemble_size >= 2
+        for ensemble_num in range(self.ensemble_size):
+            setattr(self, 'layers{}'.format(ensemble_num), 
+                    RewardModel(state_size, action_size, args)
+            )
+            setattr(self, 'running_stats{}'.format(ensemble_num), RunningStat()) # running mean and variance of each net in ensemble across prefs_buffer
+
+    def forward(self, x, mode=None, normalise=False):
+        """Returns the average output from forward pass
+           through each network in the ensemble.
+        """
+        output = 0
+        for ensemble_num in range(self.ensemble_size):
+            net = getattr(self, 'layers{}'.format(ensemble_num))
+            r_hat = net(x)
+            if normalise:
+                running_stats = getattr(self, 'running_stats{}'.format(ensemble_num))
+                r_hat = (r_hat - running_stats.mean) / np.sqrt(running_stats.var + 1e-8)
+            output += r_hat
+        return output / self.ensemble_size
+
+    def forward_all(self, x, mode=None, normalise=False):
+        """Instead of averaging output across `ensemble_size`
+           networks, return tensor of the output from each network
+           in ensemble. Results from different ensembles are
+           concatenated on the innermost dimension.
+           This will be used, for example, in the BALD algo.
+        """
+        outputs = []
+        for ensemble_num in range(self.ensemble_size):
+            net = getattr(self, 'layers{}'.format(ensemble_num))
+            r_hat = net(x)
+            if normalise:
+                running_stats = getattr(self, 'running_stats{}'.format(ensemble_num))
+                r_hat = (r_hat - running_stats.mean) / np.sqrt(running_stats.var + 1e-8)
+            outputs.append(r_hat)
+        return torch.cat(outputs, dim=-1)
+
+    def forward_single(self, x, ensemble_num='random', mode=None, normalise=False):
+        """Instead of averaging output across `ensemble_size`
+           networks, return output from just one of the forward
+           passes, selected u.a.r. from all nets in ensemble.
+        """
+        if ensemble_num == 'random':
+            ensemble_num = random.randrange(self.ensemble_size)
+        assert 0 <= ensemble_num <+ self.ensemble_size -1
+        net = getattr(self, 'layers{}'.format(ensemble_num))
+        r_hat = net(x)
+        if normalise:
+            running_stats = getattr(self, 'running_stats{}'.format(ensemble_num))
+            r_hat = (r_hat - running_stats.mean) / np.sqrt(running_stats.var + 1e-8)
+        return r_hat
+
+
+class RewardModelEnsembleOld(nn.Module):
     """Parameterises r_hat : states x actions -> real rewards
        Approximation of true reward, trained by supervised learning
        on preferences over trajectory segments as in Christiano et al. 2017
