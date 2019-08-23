@@ -120,13 +120,13 @@ def gridworld_zac_defaults(args):
     # so exploration fraction is 9000/3e6 = 0.003. This doesn't seem like enough, let's use 0.1
     args.episilon_start = 1.0
     args.epsilon_stop = 0.05
-    args.exploration_fraction = 0.1
+    args.exploration_fraction = 0.05 # explore over 1M steps
     # from here on, they don't mention their values
     # args.agent_gdt_step_period = 4 # Zac makes gradient updates at the end of each episode. My code now does the same
     args.gamma = 0.99 # this is standard
-    args.n_agent_steps = int(3e6) # may need to increase since Zac trains for 1M *episodes*, so a lot more
+    args.n_agent_steps = int(50e6) # Zac trains for 1M *episodes*; each episode is up to 50 steps
     args.n_agent_steps_pretrain = 0 # not sure if Zac does pretraining
-    args.agent_test_frequency = 30 # test every 100k agent steps
+    args.agent_test_frequency = 100 # test every 500K agent steps
     # reward modelling
     args.n_epochs_pretrain_rm = 2000 # not yet tested
     args.n_epochs_train_rm = 2000 # not yet tested
