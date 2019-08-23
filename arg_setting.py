@@ -76,6 +76,7 @@ def parse_arguments():
     parser.add_argument('--no_reinit_rm', dest='reinit_rm', action='store_false', help='Flag not to reinitialise reward model before every training round')
     parser.add_argument('--normalise_rm_while_training', action='store_true', help='Flag to normalise output of reward predictors while training them (only while testing)')
     parser.add_argument('--no_train_reward_model', action='store_true', help='Flag not train reward model. Sets lr_rm to zero')
+    parser.add_argument('--train_rm_ensemble_independently', action='store_true', help='Flag to train each component of reward model ensemble with different minibatches. If false (default) difference between ensembles is due only to their different initialisation.')
 
     # active learning
     parser.add_argument('--active_method', type=str, default=None, help='Choice of: BALD, var_ratios, max_entropy, mean_std')
