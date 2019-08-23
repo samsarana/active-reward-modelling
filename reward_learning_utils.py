@@ -59,12 +59,11 @@ def compute_mean_var(reward_model, prefs_buffer):
     return reward_model
 
 
-def save_reward_model(reward_model, i_round, args):
+def save_reward_model(reward_model, rm_optimizer, i_round, args):
     path = '{}/checkpts/rm/{}.pt'.format(args.logdir, i_round)
     torch.save({
-        'round': i_round,
-        'rm_state_dict': reward_model.state_dict()
-        # 'optimizer_state_dict': optimizer.state_dict(),
+        'rm_state_dict': reward_model.state_dict(),
+        'rm_optimizer_state_dict': rm_optimizer.state_dict(),
         }, path)
 
 
