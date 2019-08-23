@@ -37,7 +37,7 @@ class RunningStat:
 
 
 class TrueRewardRunningStat(RunningStat): # TODO make a subclass like this for reward model case
-    def __init__(self, shape=()):
+    def __init__(self, shape=()): # TODO pretty sure this function is redundant
         super().__init__()
 
     def push_clip_pairs(self, clip_data):
