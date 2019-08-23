@@ -40,7 +40,7 @@ def log_agent_episode(rets, writers, step, i_train_round, sub_round, args, is_te
 def log_RL_loop(returns, args, i_train_round, sub_round, writers):
     """TODO refactor this funciton with the next one (log_tested_policy)
     """
-    i_train_sub_round = args.agent_test_frequency * i_train_round + sub_round
+    i_train_sub_round = args.agent_test_frequency * (i_train_round-1) + sub_round
     writer1, writer2 = writers
     mean_true_returns = np.sum(np.array(returns['all']['true'])) / len(returns['all']['true'])
     mean_true_returns_norm = np.sum(np.array(returns['all']['true_norm'])) / len(returns['all']['true_norm'])
@@ -62,7 +62,7 @@ def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_ro
     """Write test returns to Tensorboard and `returns_summary` DataFrame.
     """
     writer1, writer2 = writers
-    i_train_sub_round = args.agent_test_frequency * i_train_round + sub_round
+    i_train_sub_round = args.agent_test_frequency * (i_train_round-1) + sub_round
     num_test_episodes = len(returns['true'])
     mean_ret_true = np.sum(np.array(returns['true'])) / num_test_episodes
     returns_summary[i_run][('1.true', i_train_round, sub_round)] = mean_ret_true # dict format that is friendly to creating a multiindex pd.DataFrame downstream
