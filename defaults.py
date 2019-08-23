@@ -124,7 +124,7 @@ def gridworld_zac_defaults(args):
     # from here on, they don't mention their values
     # args.agent_gdt_step_period = 4 # Zac makes gradient updates at the end of each episode. My code now does the same
     args.gamma = 0.99 # this is standard
-    args.n_agent_steps = int(50e6) # Zac trains for 1M *episodes*; each episode is up to 50 steps
+    args.n_agent_steps = int(2e6)#int(50e6) # Zac trains for 1M *episodes*; each episode is up to 50 steps
     args.n_agent_steps_pretrain = 0 # not sure if Zac does pretraining
     args.agent_test_frequency = 100 # test every 500K agent steps
     # reward modelling
