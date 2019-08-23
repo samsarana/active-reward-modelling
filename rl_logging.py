@@ -86,13 +86,11 @@ def log_tested_policy(returns, writers, returns_summary, args, i_run, i_train_ro
     return mean_ret_true
 
 
-def save_policy(q_net, i_round, i_sub_round, args):
+def save_policy(q_net, policy_optimizer, i_round, i_sub_round, args):
     path = '{}/checkpts/agent/{}-{}.pt'.format(args.logdir, i_round, i_sub_round)
     torch.save({
-        'round': i_round,
-        'test_no': i_sub_round,
-        'policy_state_dict': q_net.state_dict()
-        # 'optimizer_state_dict': optimizer.state_dict(),
+        'policy_state_dict': q_net.state_dict(),
+        'policy_optimizer_state_dict': policy_optimizer.state_dict(),
         }, path)
 
 
