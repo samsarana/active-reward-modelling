@@ -57,7 +57,9 @@ def parse_arguments():
 
     # reward model hyperparamas
     parser.add_argument('--rm_archi', type=str, default='mlp', help='Is reward model an mlp, cnn or cnn_mod?')
-    parser.add_argument('--hid_units_rm', type=int, default=64)
+    parser.add_argument('--h1_rm', type=int, default=64)
+    parser.add_argument('--h2_rm', type=int, default=64)
+    parser.add_argument('--h3_rm', type=int, default=None)
     parser.add_argument('--batch_size_rm', type=int, default=16) # same as Ibarz
     parser.add_argument('--lr_rm', type=float, default=1e-4)
     parser.add_argument('--p_dropout_rm', type=float, default=0.5)
