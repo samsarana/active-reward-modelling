@@ -161,21 +161,22 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
             state = env.reset()
             returns = log_agent_episode(returns, writers, step, i_train_round, sub_round, args, is_test=False)
 
-        # q_net gradient step
-        if step >= args.agent_learning_starts and step % args.agent_gdt_step_period == 0 and \
-                len(replay_buffer) >= 3*args.batch_size_agent:
-            if args.RL_baseline:
-                loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, normalise_rewards=args.normalise_rewards, true_reward_stats=true_reward_stats)
-            else:
-                loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=reward_model, normalise_rewards=args.normalise_rewards)
-            optimizer_agent.zero_grad()
-            loss_agent.backward()
-            optimizer_agent.step()
-            writer1.add_scalar('7.agent_loss/round_{}'.format(i_train_round), loss_agent, step)
-            # scheduler.step() # Ibarz doesn't mention lr annealing...
-            writer1.add_scalar('8.agent_epsilon/round_{}'.format(i_train_round), epsilon, step)
-            # if q_net.epsilon > q_net.epsilon_stop:
-            #     q_net.epsilon *= q_net.epsilon_decay
+            # q_net gradient step
+        # if step >= args.agent_learning_starts and step % args.agent_gdt_step_period == 0 and \
+        #         len(replay_buffer) >= 3*args.batch_size_agent:
+            if step >= args.agent_learning_starts and len(replay_buffer) >= 3*args.batch_size_agent: # we now make learning updates at the end of every episode
+                if args.RL_baseline:
+                    loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, normalise_rewards=args.normalise_rewards, true_reward_stats=true_reward_stats)
+                else:
+                    loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=reward_model, normalise_rewards=args.normalise_rewards)
+                optimizer_agent.zero_grad()
+                loss_agent.backward()
+                optimizer_agent.step()
+                writer1.add_scalar('7.agent_loss/round_{}'.format(i_train_round), loss_agent, step)
+                # scheduler.step() # Ibarz doesn't mention lr annealing...
+                writer1.add_scalar('8.agent_epsilon/round_{}'.format(i_train_round), epsilon, step)
+                # if q_net.epsilon > q_net.epsilon_stop:
+                #     q_net.epsilon *= q_net.epsilon_decay
 
         # update q_target
         if step % args.target_update_period == 0: # update target parameters
