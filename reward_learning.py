@@ -219,6 +219,54 @@ class RewardModel(nn.Module):
             self.layers = nn.Sequential(
                 nn.Linear(state_size + action_size, args.h1_rm),
                 nn.ReLU(),
+                # nn.Dropout(args.p_dropout_rm),
+                nn.Linear(args.h1_rm, args.h2_rm),
+                nn.ReLU(),
+                # nn.Dropout(args.p_dropout_rm),
+                nn.Linear(args.h2_rm, args.h3_rm),
+                nn.ReLU(),
+                # nn.Dropout(args.p_dropout_rm),
+                nn.Linear(args.h3_rm, 1)
+            )
+        else: # 2 hidden layer reward model
+            self.layers = nn.Sequential(
+                nn.Linear(state_size + action_size, args.h1_rm),
+                nn.ReLU(),
+                # nn.Dropout(args.p_dropout_rm),
+                nn.Linear(args.h1_rm, args.h2_rm),
+                nn.ReLU(),
+                # nn.Dropout(args.p_dropout_rm),
+                nn.Linear(args.h2_rm, 1)
+            )
+        self.running_stats = RunningStat()
+
+    def forward(self, x, mode=None, normalise=False):
+        """
+        `mode` is unused... this is silly code but see docstr
+        of CnnRewardModel.forward() for why I'm doing it this
+        way
+        """
+        ###! Recent UNTESTED change to try to stop softmax outputting 0's
+        x[...,:-1] /= 255. # normalise *pixels* (not actions -- they remain in range 0-3) to be between 0 and 1 (like in Ibarz, I think?? - see top of p.15)
+        # TODO does this need to have gradient tracked?? I don't think so, because "/" has no parameters..?
+        ###!
+        r_hat = self.layers(x)
+        if normalise:
+            r_hat = (r_hat - self.running_stats.mean) / np.sqrt(self.running_stats.var + 1e-8)
+        return r_hat
+
+
+class RewardModelReg(nn.Module):
+    """
+    As above, but has batchnorm and dropout layers on 3 layer network
+    and dropout layers on 2 layer network
+    """
+    def __init__(self, state_size, action_size, args):
+        super().__init__()
+        if args.h3_rm: # 3 hidden layer reward model
+            self.layers = nn.Sequential(
+                nn.Linear(state_size + action_size, args.h1_rm),
+                nn.ReLU(),
                 nn.BatchNorm1d(args.h1_rm),
                 nn.Dropout(args.p_dropout_rm),
                 nn.Linear(args.h1_rm, args.h2_rm),
@@ -250,7 +298,7 @@ class RewardModel(nn.Module):
         of CnnRewardModel.forward() for why I'm doing it this
         way
         """
-        x = x.view(-1, self.sa_size)
+        x = x.view(-1, self.sa_size) # need this because batchnorm 1d layers can have at most 4d input; x is currently 5d if mode == 'clip_pair_batch'
         x = self.layers(x)
         if normalise:
             x = (x - self.running_stats.mean) / np.sqrt(self.running_stats.var + 1e-8)
@@ -424,8 +472,15 @@ def compute_loss_rm_wchecks(r_hats_batch, mu_batch, args, obs_shape, act_shape):
 def compute_loss_rm(r_hats_batch, mu_batch):
     """Clean, assert-free version of the above.
     """
+    assert len(r_hats_batch.shape) == 3, "r_hats_batch dims should be (B, 2, clip_length)!"
     exp_sum_r_hats_batch = r_hats_batch.sum(dim=2).exp()
     p_hat_12_batch = exp_sum_r_hats_batch[:, 0] / exp_sum_r_hats_batch.sum(dim=1)
+    ## Alternative code, not clear whether this is more readable
+    # logits = r_hats_batch.sum(dim=2)
+    # probs = F.softmax(logits, dim=1)[:,0]
+    # loss = F.binary_cross_entropy(input=probs, target=mu_batch, reduction='sum')
+    ## TODO do more numerically stable implementation using F.cross_entropy
+    # which combines log_softmax and nll_loss in a single function
     return F.binary_cross_entropy(input=p_hat_12_batch, target=mu_batch, reduction='sum')
         
 def compute_loss_rm_ensemble(r_hats_batch_draw, mu_batch):
