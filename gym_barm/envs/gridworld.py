@@ -231,11 +231,11 @@ class GridworldEnv(UpsampledGridworldEnv):
         self.determined_locations = {
             'hero': (0,0),
             'goal': (0,4),
-            # 'goal2': (2,3),
-            # 'goal3': (4,2),
-            # 'goal4': (4,0),
-            'fire': (1,2)
-            # 'fire2': (3,1)
+            'goal2': (2,3),
+            'goal3': (4,2),
+            'goal4': (4,0),
+            'fire': (1,2),
+            'fire2': (3,1)
         }
         self.terminate_ep_if_done = terminate_ep_if_done
         if not random_resets:
@@ -254,14 +254,14 @@ class GridworldEnv(UpsampledGridworldEnv):
         self.objects.append(bug)
         hole = gameOb(self.newPosition('fire'),1,1,0,-1,'fire')
         self.objects.append(hole)
-        # bug2 = gameOb(self.newPosition('goal2'),1,1,1,1,'goal2')
-        # self.objects.append(bug2)
-        # hole2 = gameOb(self.newPosition('fire2'),1,1,0,-1,'fire2')
-        # self.objects.append(hole2)
-        # bug3 = gameOb(self.newPosition('goal3'),1,1,1,1,'goal3')
-        # self.objects.append(bug3)
-        # bug4 = gameOb(self.newPosition('goal4'),1,1,1,1,'goal4')
-        # self.objects.append(bug4)
+        bug2 = gameOb(self.newPosition('goal2'),1,1,1,1,'goal2')
+        self.objects.append(bug2)
+        hole2 = gameOb(self.newPosition('fire2'),1,1,0,-1,'fire2')
+        self.objects.append(hole2)
+        bug3 = gameOb(self.newPosition('goal3'),1,1,1,1,'goal3')
+        self.objects.append(bug3)
+        bug4 = gameOb(self.newPosition('goal4'),1,1,1,1,'goal4')
+        self.objects.append(bug4)
         state = self.renderEnv()
         self.state = state
         self.done = False
