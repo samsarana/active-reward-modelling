@@ -76,6 +76,9 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
             if not args.continue_once_solved and env.spec.reward_threshold != None and mean_test_ret_true >= env.spec.reward_threshold:
                 writer1.add_scalar('10.n_episodes', n_episodes, i_train_round)
                 raise SystemExit("Environment solved, moving onto next run.")
+            # reset dict logging returns since last test
+            train_returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
+                    'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
             i_test += 1
 
     writer1.add_scalar('10.n_episodes', n_episodes, i_train_round)
