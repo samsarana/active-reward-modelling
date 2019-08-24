@@ -109,31 +109,27 @@ def gridworld_zac_defaults(args):
     args.batch_size_agent = 32
     args.optimizer_agent = 'RMSProp'
     args.lambda_agent = 0
-    args.lr_agent = 1e-4
+    # args.lr_agent = 1e-4
     args.replay_buffer_size = int(10e3)
     args.target_update_period = 1000
     args.target_update_tau = 1 # I'm guessing they used hard updates
-    # zac uses exponential annealing but this scheme is roughly equivalent
-    # log_0.999(0.05) = 2994 ~ 3000
-    # learning update 3000 = 9k agent steps (assuming learning update every 3 steps)
-    # train for 3M RL steps
-    # so exploration fraction is 9000/3e6 = 0.003. This doesn't seem like enough, let's use 0.1
+    args.epsilon_annealing_scheme == 'exp'
     args.episilon_start = 1.0
     args.epsilon_stop = 0.05
-    args.exploration_fraction = 0.1 # explore over 1M steps
+    args.epsilon_decay = 0.999 # explore over 1M steps
     # from here on, they don't mention their values
     # args.agent_gdt_step_period = 4 # Zac makes gradient updates at the end of each episode. My code now does the same
     args.gamma = 0.99 # this is standard
-    args.n_agent_steps = int(10e6)#100#int(50e6) # Zac trains for 1M *episodes*; each episode is up to 50 steps
+    args.n_agent_steps = int(50e6) # Zac trains for 1M *episodes*; each episode is up to 50 steps. I found that 10M steps is roughly 300K episodes. So I'm doing a little more training than him
     args.n_agent_steps_pretrain = 0 # not sure if Zac does pretraining
-    args.agent_test_frequency = 100 # test every 100K agent steps
+    args.agent_test_frequency = 100 # test every 500K agent steps
     # reward modelling
     args.h1_rm = 128
     args.h2_rm = 256
     args.h3_rm = 256
-    args.batch_size_rm = 64 # this may be too large (we train on less data than blocker, I think)
+    args.batch_size_rm = 16 # Zac uses 64 batch size, but 16 clip pairs (Ibarz) is aleady 32*25=800 state-actions!
     args.lr_rm = 5e-3
-    args.n_epochs_train_rm = 1#5000 # not yet tested
+    args.n_epochs_train_rm = 5000 # not yet tested
     return args
 
 
