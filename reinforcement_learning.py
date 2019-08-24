@@ -57,8 +57,8 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
                 writer1.add_scalar('7.agent_loss/round_{}'.format(i_train_round), loss_agent, step)
                 # scheduler.step() # Ibarz doesn't mention lr annealing...
                 writer1.add_scalar('8.agent_epsilon/round_{}'.format(i_train_round), epsilon, step)
-                # if q_net.epsilon > q_net.epsilon_stop:
-                #     q_net.epsilon *= q_net.epsilon_decay
+            if args.epsilon_annealing_scheme == 'exp':
+                args.exploration.step()
 
         # update q_target
         if step % args.target_update_period == 0: # update target parameters
