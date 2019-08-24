@@ -1,4 +1,4 @@
-import argparse, logging
+import argparse
 import numpy as np
 from defaults import *
 from utils import LinearSchedule, ExpSchedule
@@ -135,17 +135,11 @@ def make_arg_changes(args):
         args.n_acq_batches_per_round = np.array(args.n_labels_per_round) // np.array(args.batch_size_acq)
 
     if args.epsilon_annealing_scheme == 'linear':
-        logging.info('Agent policy is epsilon greedy with linear annealing from {} to {} over {} fraction of agent steps i.e. {} steps'.format(
-            args.epsilon_start, args.epsilon_stop, args.exploration_fraction, int(args.exploration_fraction * args.n_agent_steps)
-        ))
         args.exploration = LinearSchedule(schedule_timesteps=int(args.exploration_fraction * args.n_agent_steps),
                                       initial_p=args.epsilon_start,
                                       final_p=args.epsilon_stop)
     else:
         assert args.epsilon_annealing_scheme == 'exp'
-        logging.info('Agent policy is epsilon greedy with exponential decay rate {}, starting from {} to {} '.format(
-            args.epsilon_decay, args.epsilon_start, args.epsilon_stop
-        ))
         args.exploration = ExpSchedule(decay_rate=args.epsilon_decay, final_p=args.epsilon_stop, initial_p=args.epsilon_start)
 
     # args.prefs_buffer_size = sum(args.n_labels_per_round)
