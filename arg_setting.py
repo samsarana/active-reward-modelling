@@ -1,7 +1,7 @@
-import argparse
+import argparse, logging
 import numpy as np
 from defaults import *
-from q_learning import LinearSchedule
+from utils import LinearSchedule, ExpSchedule
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -37,10 +37,11 @@ def parse_arguments():
     parser.add_argument('--target_update_tau', type=float, default=8e-2) # Ibarz: 1 (hard update)
     parser.add_argument('--agent_gdt_step_period', type=int, default=4) # Ibarz: 4
     parser.add_argument('--gamma', type=float, default=0.99)
+    parser.add_argument('--epsilon_annealing_scheme', type=str, default='exp', help='exp or linear epsilon annealing?')
     parser.add_argument('--epsilon_start', type=float, default=1.0, help='exploration probability for agent at start')
-    # parser.add_argument('--epsilon_decay', type=float, default=0.999, help='`epsilon *= epsilon * epsilon_decay` every learning step, until `epsilon_stop`') 
+    parser.add_argument('--epsilon_decay', type=float, default=0.999, help='If `exp` epsilon_annealing_scheme, then `epsilon *= epsilon * epsilon_decay` every learning step, until `epsilon_stop`') 
     parser.add_argument('--epsilon_stop', type=float, default=0.01)
-    parser.add_argument('--exploration_fraction', type=float, default=0.1, help='Over what fraction of entire training period is epsilon annealed (linearly)?')
+    parser.add_argument('--exploration_fraction', type=float, default=0.1, help='If `linear` epsilon annealing scheme, over what fraction of entire training period is epsilon annealed?')
     # parser.add_argument('--n_labels_per_round', type=int, default=5, help='How many labels to acquire per round?')
     # parser.add_argument('--n_labels_pretraining', type=int, default=500, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining. If -1 (default), it will be set to n_labels_per_round') # Ibarz: 25k. Removed support for diff no. labels in pretraining
     parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[500,2400,1200,600,300,150], help='How many labels to acquire per round? (in main training loop). len should be n_rounds + 1, since 0th is pretraining labels')
@@ -133,9 +134,19 @@ def make_arg_changes(args):
                 
         args.n_acq_batches_per_round = np.array(args.n_labels_per_round) // np.array(args.batch_size_acq)
 
-    args.exploration = LinearSchedule(schedule_timesteps=int(args.exploration_fraction * args.n_agent_steps),
+    if args.epsilon_annealing_scheme == 'linear':
+        logging.info('Agent policy is epsilon greedy with linear annealing from {} to {} over {} fraction of agent steps i.e. {} steps'.format(
+            args.epsilon_start, args.epsilon_stop, args.exploration_fraction, int(args.exploration_fraction * args.n_agent_steps)
+        ))
+        args.exploration = LinearSchedule(schedule_timesteps=int(args.exploration_fraction * args.n_agent_steps),
                                       initial_p=args.epsilon_start,
                                       final_p=args.epsilon_stop)
+    else:
+        assert args.epsilon_annealing_scheme == 'exp'
+        logging.info('Agent policy is epsilon greedy with exponential decay rate {}, starting from {} to {} '.format(
+            args.epsilon_decay, args.epsilon_start, args.epsilon_stop
+        ))
+        args.exploration = ExpSchedule(decay_rate=args.epsilon_decay, final_p=args.epsilon_stop, initial_p=args.epsilon_start)
 
     # args.prefs_buffer_size = sum(args.n_labels_per_round)
     
