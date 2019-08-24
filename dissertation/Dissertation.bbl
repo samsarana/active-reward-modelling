@@ -1,98 +1,124 @@
-\begin{thebibliography}{10}
+\begin{thebibliography}{}
 
-\bibitem{Achiam2019}
-Joshua Achiam.
-\newblock {Spinning Up in Deep RL}, 2019.
+\bibitem[Achiam, 2019]{Achiam2019}
+Achiam, J. (2019).
+\newblock {Spinning Up in Deep RL}.
 
-\bibitem{Amodei2016}
-Dario Amodei, Chris Olah, Jacob Steinhardt, Paul Christiano, John Schulman, and
-  Dan Man{\'{e}}.
+\bibitem[Amodei et~al., 2016]{Amodei2016}
+Amodei, D., Olah, C., Steinhardt, J., Christiano, P., Schulman, J., and
+  Man{\'{e}}, D. (2016).
 \newblock {Concrete Problems in AI Safety}.
-\newblock pages 1--29, 2016.
+\newblock pages 1--29.
 
-\bibitem{Christiano2017}
-Paul Christiano, Jan Leike, Tom~B. Brown, Miljan Martic, Shane Legg, and Dario
-  Amodei.
+\bibitem[Christiano et~al., 2017]{Christiano2017}
+Christiano, P., Leike, J., Brown, T.~B., Martic, M., Legg, S., and Amodei, D.
+  (2017).
 \newblock {Deep reinforcement learning from human preferences}.
-\newblock 2017.
 
-\bibitem{Gal2017a}
-Yarin Gal.
+\bibitem[Cohen et~al., 2017]{cohen2017emnist}
+Cohen, G., Afshar, S., Tapson, J., and van Schaik, A. (2017).
+\newblock Emnist: an extension of mnist to handwritten letters.
+\newblock {\em arXiv preprint arXiv:1702.05373}.
+
+\bibitem[Elo, 1978]{elo1978rating}
+Elo, A.~E. (1978).
+\newblock {\em The rating of chessplayers, past and present}.
+\newblock Arco Pub.
+
+\bibitem[Gal, 2017]{Gal2017a}
+Gal, Y. (2017).
 \newblock {Uncertainty in Deep Learning}.
-\newblock {\em Phd Thesis}, 1(1):1--11, 2017.
+\newblock {\em Phd Thesis}, 1(1):1--11.
 
-\bibitem{Hester2017}
-Todd Hester, Matej Vecerik, Olivier Pietquin, Marc Lanctot, Tom Schaul, Bilal
-  Piot, Dan Horgan, John Quan, Andrew Sendonaris, Gabriel Dulac-Arnold, Ian
-  Osband, John Agapiou, Joel~Z. Leibo, and Audrunas Gruslys.
+\bibitem[Gal et~al., 2017]{Gal2017b}
+Gal, Y., Islam, R., and Ghahramani, Z. (2017).
+\newblock {Deep Bayesian Active Learning with Image Data}.
+
+\bibitem[Hester et~al., 2017]{Hester2017}
+Hester, T., Vecerik, M., Pietquin, O., Lanctot, M., Schaul, T., Piot, B.,
+  Horgan, D., Quan, J., Sendonaris, A., Dulac-Arnold, G., Osband, I., Agapiou,
+  J., Leibo, J.~Z., and Gruslys, A. (2017).
 \newblock {Deep Q-learning from Demonstrations}.
-\newblock 2017.
 
-\bibitem{Ho2016}
-Jonathan Ho and Stefano Ermon.
+\bibitem[Ho and Ermon, 2016]{Ho2016}
+Ho, J. and Ermon, S. (2016).
 \newblock {Generative Adversarial Imitation Learning}.
-\newblock 2016.
 
-\bibitem{Ibarz2018}
-Borja Ibarz, Jan Leike, Tobias Pohlen, Geoffrey Irving, Shane Legg, and Dario
-  Amodei.
+\bibitem[Ibarz et~al., 2018]{Ibarz2018}
+Ibarz, B., Leike, J., Pohlen, T., Irving, G., Legg, S., and Amodei, D. (2018).
 \newblock {Reward learning from human preferences and demonstrations in Atari}.
-\newblock (2017):1--20, 2018.
+\newblock (2017):1--20.
 
-\bibitem{Knox2009}
-W~Bradley Knox and Peter Stone.
+\bibitem[Jones et~al., 01  ]{jones2001}
+Jones, E., Oliphant, T., Peterson, P., et~al. (2001--).
+\newblock {SciPy}: Open source scientific tools for {Python}.
+\newblock [Online; accessed 24/08/2019].
+
+\bibitem[Kirsch et~al., 2019]{Kirsch2019}
+Kirsch, A., van Amersfoort, J., and Gal, Y. (2019).
+\newblock {BatchBALD: Efficient and Diverse Batch Acquisition for Deep Bayesian
+  Active Learning}.
+
+\bibitem[Knox and Stone, 2009]{Knox2009}
+Knox, W.~B. and Stone, P. (2009).
 \newblock {Interactively shaping agents via human reinforcement: The Tamer
   Framework}.
-\newblock {\em Proc. fifth Int. Conf. Knowl. capture - K-CAP '09}, page~9,
-  2009.
+\newblock {\em Proc. fifth Int. Conf. Knowl. capture - K-CAP '09}, page~9.
 
-\bibitem{Mnih2016}
-Volodymyr Mnih, Adri{\`{a}}~Puigdom{\`{e}}nech Badia, Mehdi Mirza, Alex Graves,
-  Timothy~P. Lillicrap, Tim Harley, David Silver, and Koray Kavukcuoglu.
+\bibitem[Mnih et~al., 2016]{Mnih2016}
+Mnih, V., Badia, A.~P., Mirza, M., Graves, A., Lillicrap, T.~P., Harley, T.,
+  Silver, D., and Kavukcuoglu, K. (2016).
 \newblock {Asynchronous Methods for Deep Reinforcement Learning}.
-\newblock 48, 2016.
+\newblock 48.
 
-\bibitem{Mnih2015}
-Volodymyr Mnih, Koray Kavukcuoglu, David Silver, Andrei~A. Rusu, Joel Veness,
-  Marc~G. Bellemare, Alex Graves, Martin Riedmiller, Andreas~K. Fidjeland,
-  Georg Ostrovski, Stig Petersen, Charles Beattie, Amir Sadik, Ioannis
-  Antonoglou, Helen King, Dharshan Kumaran, Daan Wierstra, Shane Legg, and
-  Demis Hassabis.
+\bibitem[Mnih et~al., 2015]{Mnih2015}
+Mnih, V., Kavukcuoglu, K., Silver, D., Rusu, A.~A., Veness, J., Bellemare,
+  M.~G., Graves, A., Riedmiller, M., Fidjeland, A.~K., Ostrovski, G., Petersen,
+  S., Beattie, C., Sadik, A., Antonoglou, I., King, H., Kumaran, D., Wierstra,
+  D., Legg, S., and Hassabis, D. (2015).
 \newblock {Human-level control through deep reinforcement learning}.
-\newblock {\em Nature}, 518(7540):529--533, 2015.
+\newblock {\em Nature}, 518(7540):529--533.
 
-\bibitem{Ng2000}
-Andrew Ng and Stuart Russell.
+\bibitem[Ng and Russell, 2000]{Ng2000}
+Ng, A. and Russell, S. (2000).
 \newblock {Algorithms for inverse reinforcement learning}.
-\newblock {\em Proc. Seventeenth Int. Conf. Mach. Learn.}, 0:663--670, 2000.
+\newblock {\em Proc. Seventeenth Int. Conf. Mach. Learn.}, 0:663--670.
 
-\bibitem{Schulman2015}
-John Schulman, Sergey Levine, Philipp Moritz, Michael~I. Jordan, and Pieter
-  Abbeel.
+\bibitem[Paszke et~al., 2017]{paszke2017automatic}
+Paszke, A., Gross, S., Chintala, S., Chanan, G., Yang, E., DeVito, Z., Lin, Z.,
+  Desmaison, A., Antiga, L., and Lerer, A. (2017).
+\newblock Automatic differentiation in {PyTorch}.
+\newblock In {\em NIPS Autodiff Workshop}.
+
+\bibitem[Schulman et~al., 2015]{Schulman2015}
+Schulman, J., Levine, S., Moritz, P., Jordan, M.~I., and Abbeel, P. (2015).
 \newblock {Trust Region Policy Optimization}.
-\newblock 2015.
 
-\bibitem{Sutton2018}
-R.~S. Sutton and A.~G. Barto.
+\bibitem[Sutton and Barto, 2018]{Sutton2018}
+Sutton, R.~S. and Barto, A.~G. (2018).
 \newblock {\em {Reinforcement Learning: An Introduction (2nd Edition, in
   preparation)}}.
-\newblock 2018.
 
-\bibitem{Warnell2017}
-Garrett Warnell, Nicholas Waytowich, Vernon Lawhern, and Peter Stone.
+\bibitem[Van~Rossum and Drake~Jr, 1995]{van1995python}
+Van~Rossum, G. and Drake~Jr, F.~L. (1995).
+\newblock {\em Python tutorial}.
+\newblock Centrum voor Wiskunde en Informatica Amsterdam, The Netherlands.
+
+\bibitem[Warnell et~al., 2017]{Warnell2017}
+Warnell, G., Waytowich, N., Lawhern, V., and Stone, P. (2017).
 \newblock {Deep TAMER: Interactive Agent Shaping in High-Dimensional State
   Spaces}.
-\newblock pages 1545--1553, 2017.
+\newblock pages 1545--1553.
 
-\bibitem{Wilson2012}
-A.~Wilson, A.~Fern, and P.~Tadepalli.
+\bibitem[Wilson et~al., 2012]{Wilson2012}
+Wilson, A., Fern, A., and Tadepalli, P. (2012).
 \newblock {A Bayesian approach for policy learning from trajectory preference
   queries}.
-\newblock {\em Adv. Neural Inf. Process. Syst.}, 2:1--9, 2012.
+\newblock {\em Adv. Neural Inf. Process. Syst.}, 2:1--9.
 
-\bibitem{Ziebart2008}
-B.D. Ziebart, Andrew Maas, J.A. Bagnell, and A.K. Dey.
+\bibitem[Ziebart et~al., 2008]{Ziebart2008}
+Ziebart, B., Maas, A., Bagnell, J., and Dey, A. (2008).
 \newblock {Maximum entropy inverse reinforcement learning}.
-\newblock {\em Proc. AAAI}, (January):1433--1438, 2008.
+\newblock {\em Proc. AAAI}, (January):1433--1438.
 
 \end{thebibliography}

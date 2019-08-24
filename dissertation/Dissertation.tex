@@ -43,9 +43,10 @@
 \newtheorem{corollary}{Corollary}
 \newtheorem{proposition}{Proposition}
 \newtheorem{definition}{Definition}
+\newtheorem{assumption}{Assumption}
 
 \begin{document}
-\title{Active Learning for Reward Modelling}
+\title{ARMA: Active Reward Modelling for Agent Alignment}
 \author{Sam Clarke}
 \date{September 2019}
 \renewcommand{\bibname}{References}
@@ -64,6 +65,9 @@
 \chapter{Introduction}
 
 \section{Relation to Material Studied on the MSc Course}
+
+\chapter{Neural Networks}
+Or can I fit this in more naturally as part of the narrative? In any case, it need to come before I mention DQN.
 
 \chapter{Reinforcement Learning} % Explain problem, give context
 Reinforcement learning (RL) refers simultaneously to a problem, methods for solving that problem, and the field that studies the problem and its solution methods. The problem of RL is to learn what to do---how to map situations to actions---so as to maximise some numerical reward signal \cite[pp.~1-2]{Sutton2018}.
@@ -336,7 +340,7 @@ Since this dissertation concerns reward learning from trajectory preferences spe
 \subsection{Reward Learning from Trajectory Preferences in Deep RL}
 
 \subsubsection{Setting}
-The agent-environment interface is as described in Section \ref{subsection:agent_env_interface}, with the modification that on step $ t $, instead of receiving reward $ R_{t+1} \in \mathcal{R} \subset \reals $, there is an \textit{annotator} who expresses preferences between \textit{trajectory segments}, or \textit{clips}. A clip is a finite sequence of states and actions $ ((s_0,a_0), (s_1,a_1),\dots,(s_{k-1},a_{k-1})) \in (\mathcal{S} \times \mathcal{A})^k $. If the annotator prefers some clip $ \sigma^1 $ to another clip $ \sigma^2 $, write $ \sigma^1 \succ \sigma^2 $. The agent does not see the annotator's implicit reward function $ r : \mathcal{S} \times \mathcal{A} \mapsto \mathcal{R} $, and must instead use the preferences expressed by the annotator to maximise $ r $ over time. This is the goal of reward learning from trajectory preferences.
+The agent-environment interface is as described in Section \ref{subsection:agent_env_interface}, with the modification that on step $ t $, instead of receiving reward $ R_{t+1} \in \mathcal{R} \subset \reals $, there is an \textit{annotator} who expresses preferences between \textit{trajectory segments}, or \textit{clips}. A clip is a finite sequence of states and actions $ ((s_0,a_0), (s_1,a_1),\dots,(s_{k-1},a_{k-1})) \in (\mathcal{S} \times \mathcal{A})^k $. If the annotator prefers some clip $ \sigma^1 $ to another clip $ \sigma^2 $, write $ \sigma^1 \succ \sigma^2 $. The annotator may also be indifferent between the clips, in which case we write $ \sigma^1 \sim \sigma^2 $ The agent does not see the annotator's implicit reward function $ r : \mathcal{S} \times \mathcal{A} \mapsto \mathcal{R} $, and must instead use the preferences expressed by the annotator to maximise $ r $ over time. This is the goal of reward learning from trajectory preferences.
 %TODO need to define \succ in terms of r(.,.) ?
 If the annotator could write down their true $ r $, then clearly we could perform traditional RL instead of taking the reward learning approach. However, as we noted above, we are interested in applying RL to tasks for which we do not have the true $ r $, which is when reward learning is useful. Nonetheless, for the purposes of quantitatively evaluating the method, we consider tasks for which we do have access to the true $ r $.
 
@@ -350,24 +354,30 @@ The method has two components: a policy $ \pi : \mathcal{S} \times \mathcal{A} \
 More detail on each process is provided below.
 
 \subsubsection{Process 1: Training the policy} %TODO make sure I mention q-learning v policy optimisation distinction in section \ref{subsection:rl_taxonomy}
-As mentioned, process 1 is akin to traditional RL except $ \rp $ is used in place of the environment reward $ r $. There are two subtleties to mention. Firstly, since $ \rp $ is learned while RL is taking place, \cite{Christiano2017} prefer policy optimization methods over Q-learning, as these have been successfully applied to RL tasks with a non-stationary reward function \cite{Ho2016}. Specifically, they use A2C \cite{Mnih2016} and TPRO \cite{Schulman2015}. However, the follow up paper \cite{Ibarz2018} uses a Q-learning method\footnote{The reason for deviating from the recommendation in \cite{Christiano2017} is that \cite{Ibarz2018} combine reward learning from trajectory preferences and expert demonstrations, and DQfD is state-of-the-art for the latter problem.}, DQfD \cite{Hester2017}, and it is not clear that performance is impaired. Hence, the literate is ambiguous on whether a non-stationary reward function is necessarily problematic for Q-learning. %TODO link to the section of my method where I say that I used DQN; motivate why I did this; say that reinitialising agent should make it okay.
+As mentioned, process 1 is akin to traditional RL except $ \rp $ is used in place of the environment reward $ r $. There are two subtleties to mention. Firstly, since $ \rp $ is learned while RL is taking place, \cite{Christiano2017} prefer policy optimization methods over Q-learning, as these have been successfully applied to RL tasks with a non-stationary reward function \cite{Ho2016}. Specifically, they use A2C \cite{Mnih2016} and TPRO \cite{Schulman2015}. However, the follow up paper \cite{Ibarz2018} uses a Q-learning method\footnote{The reason for deviating from the recommendation in \cite{Christiano2017} is that \cite{Ibarz2018} combine reward learning from trajectory preferences and expert demonstrations, and DQfD is state-of-the-art for the latter problem.}, DQfD \cite{Hester2017}, and it is not clear that performance is impaired. Hence, the literature is ambiguous on whether a non-stationary reward function is necessarily problematic for Q-learning. %TODO link to the section of my method where I say that I used DQN; motivate why I did this; say that reinitialising agent should make it okay.
 
-Secondly, the reward model $ \rp $ is trained only on pairwise comparisons, and so its scale is underdetermined. Previous work therefore proposes periodically normalising $ \rp $ to have zero mean and constant standard deviation over the examples in $ \annbuff $. This is crucial for training stability since deep RL is sensitive to the scale of rewards. %TODO perhaps comment here or later on what Zac said that scaling rewards can actually in some cases change optimal policy...
+Secondly, since the reward model $ \rp $ is trained only on pairwise comparisons, its scale is underdetermined. Previous work therefore proposes periodically normalising $ \rp $ to have zero mean and constant standard deviation over the examples in $ \annbuff $. This is crucial for training stability since deep RL is sensitive to the scale of rewards. %TODO perhaps comment here or later on what Zac said that scaling rewards can actually in some cases change optimal policy...
 %TODO comment here on later on the subtelties of normalisation when using an ensemble for your rewards.
 
-\subsubsection{Process 2: Selecting and annotating clips}
-%\includegraphics[scale=1]{./results_A1}
+\subsubsection{Process 2: Selecting and annotating clip pairs}
+Previous work uses two methods for selecting clip pairs. \cite{Ibarz2018} sample uniformly at random from $ \expbuff $. \cite{Christiano2017} train an ensemble of three reward predictors and select the clip pairs with the maximum standard deviation across the ensemble. Roughly this favours clip pairs on which the model is most uncertain, with the hope of improving sample efficiency (that is to say, being able to learn $ \rp $ with fewer labels from the annotator). However, they found that relative to random selection, this sometimes impaired performance and slowed down training. In Section ** we consider what caused this.
+
+The selected clip pairs $ \sigma^1, \sigma^2 $ are then annotated with a label $ \mu $, indicating which clip is preferred. $ \mu $ is a distribution over $ \{1,2\} $ where $ \mu(1) = 1, \mu(2) = 0 $ if $ \sigma^1 \succ \sigma^2 $; $ \mu(1) = 0.5, \mu(2) = 0.5 $ if $ \sigma^1 \sim \sigma^2 $; or $ \mu(1) = 0, \mu(2) = 1 $ if $ \sigma^2 \succ \sigma^1 $. The triples $ (\sigma^1, \sigma^2, \mu) $ are then added to $ \annbuff $. The majority of previous work uses a \textit{synthetic annotator} rather than an actual human. Labels are simply generated according to the (hidden) ground truth reward function $ r $, where $ \sigma^1 \succ \sigma^2 $ if $ \sum_t r(s_t^1, a_t^1) > \sum_t r(s_t^1, a_t^1) $; $ \sigma^1 \sim \sigma^2 $ if $ \sum_t r(s_t^1, a_t^1) = \sum_t r(s_t^1, a_t^1) $; and $ \sigma^2 \succ \sigma^1 $ otherwise. This facilitates quicker experimentation and more clear performance metrics (by using hidden ground truth reward function to evaluate agent performance and reward model alignment).
 
 \subsubsection{Process 3: Training the reward model}
-Again, if we assume that there is some latent reward function $ \hat{r} : \mathcal{S} \times \mathcal{A} \mapsto \reals $ which explains the human's judgements, and also that the human's probability of preferring one trajectory to another depends exponentially on the value of $ \hat{r} $ summed over the trajectory, we can model $ \hat{r} $ with a neural network and fit its parameters to best explain the human's judgements.
-
-\begin{align*}
+The training of $ \rp $ is based on the following assumption:
+\begin{assumption} \label{assumption:1}
+	The annotator's probability of preferring clip 1 to clip 2, $ \hat{P}(\sigma^1 \succ \sigma^2) $, depends exponentially on the value of $ \hat{r} $ summed over the clips.
+\end{assumption}
+This allows us to write:
+\begin{equation} \label{eq:1}
 \hat{P}(\sigma^1 \succ \sigma^2) = \frac{\exp \sum_t \hat{r}(s_t^1, a_t^1)}{\exp \sum_t \hat{r}(s_t^1, a_t^1) + \exp \sum_t \hat{r}(s_t^2, a_t^2)}
-\end{align*}
-\begin{align*}
-\text{loss}(\hat{r}) = -\sum_{(\sigma^1, \sigma^2, \mu) \in D} \mu(1) \log \hat{P}(\sigma^1 \succ \sigma^2) + \mu(2)\log \hat{P}(\sigma^2 \succ \sigma^1)
-\end{align*}
-
+\end{equation}
+We can then fit the parameters of $ \rp $ by treating the problem as binary classification. In other words, we can use standard supervised learning techniques to optimize the parameters of $ \rp $ so as to minimise the cross-entropy loss between the predictions in \ref{eq:1} and the annotator's labels.
+\begin{equation}
+\text{loss}(\hat{r}) = -\sum_{(\sigma^1, \sigma^2, \mu) \in \annbuff} \mu(1) \log \hat{P}(\sigma^1 \succ \sigma^2) + \mu(2)\log \hat{P}(\sigma^2 \succ \sigma^1)
+\end{equation}
+Assumption \ref{assumption:1} follows the Elo rating system developed for chess \cite{elo1978rating}. Given a zero-sum game and two players with a scalar rating, Elo specifies a mapping from player ratings (in our case: reward) to the probability of each player winning (in our case: the probability of each clip being preferred by the annotator).
 
 \chapter{Uncertainty in Deep Learning}
 % Talk about Yarin's thesis, BNNs; maybe Ian Obsband paper for good measure (esp. if I end up using ensemble instead of MC-Dropout?)
@@ -378,6 +388,14 @@ We probably want the model to be able to recognise that this is an out of distri
 Thus, the field of Bayesian Deep Learning aims to equip neural networks with the ability to output a point estimate along with its uncertainty in that estimate. Historically, many of the attempts to do so were not very practical. For example, one algorithm, Bayes by Backprop, requires doubling the number of model parameters, making training more computationally expensive, and is very sensitive to hyperparameter tuning. However, recent techniques allow almost any network trained with a stochastic regularisation technique, such as dropout, to, given an input, obtain a predictive mean and variance (uncertainty), without any complicated augmentation to the network \cite[p.~15]{Gal2017a}.
 
 \section{Bayesian Neural Networks}
+From Andreas:
+2.3 Bayesian Neural Networks (BNN)
+In this paper we focus on BNNs as our Bayesian model because they scale well to high dimensional
+inputs, such as images. Compared to regular neural networks, BNNs maintain a distribution over
+their weights instead of point estimates. Performing exact inference in BNNs is intractable for any
+reasonably sized model, so we resort to using a variational approximation. Similar to Gal et al. [10],
+we use MC dropout [9], which is easy to implement, scales well to large models and datasets, and is
+straightforward to optimise.
 
 \section{Model Uncertainty in BNNs}
 
@@ -416,19 +434,71 @@ Discussion of previous work.
 \subsection{Deep RL from Human Preferences}
 % Christiano: summarise what didn't work, and what might have gone wrong (how to frame this depends on the results that I eventually get to)
 
+
+\part{Innovation}
+
 \chapter{Method}
 % Here I'll describe the training protocol I used (mostly Ibarz but without the demos)
 % I can leave gorey detail to Experiments/Appendix
 % I should have already summarised the high level approach in Background
 % And I'll describe the different methods of Active Learning/uncert estimates that I tried
-% Implementational matters: PyTorch and why I chose it
-\section{Training Protocol}
+
+\section{Possible failure modes of active reward modelling}
+Before developing our method, it was important to consider the possible failure modes of the previous attempt to apply active learning to reward modelling. \cite{Christiano2017} compute the standard deviation of each clip pair $(\sigma^1, \sigma^2)$ across the ensemble. In the language of acquisition functions, they use $ a_{mean\_std}(\sigma^1, \sigma^2) $, which in this setting is written as:
+\begin{align*}
+a_{mean\_std}(\sigma^1, \sigma^2) = \sqrt{\frac{1}{3}\sum_{i=1}^{3}\left(\hat{P_i}(\sigma^1 \succ \sigma^2) - \overline{\hat{P}(\sigma^1 \succ \sigma^2)}\right)^2},
+\end{align*}
+where $ \hat{P_i}(\sigma^1 \succ \sigma^2) $ is the prediction $ \hat{P}(\sigma^1 \succ \sigma^2) $ according to component $ i $ of the ensemble, and $ \overline{\hat{P}(\sigma^1 \succ \sigma^2)} $ is the average of these predictions.
+
+The quality of uncertainty estimates and active learning method is one possible failure mode. Indeed, \cite[p.~6]{Christiano2017} explain the failure of their implementation as due to $ a_{mean\_std}(\sigma^1, \sigma^2) $ ``crude approximation'' to reward predictor uncertainty.
+
+Additionally, there are three features of the application of active learning to reward modelling that are not present in the standard supervised learning case. Firstly, the pool dataset is not known in advance, but is gathered as the RL agent encounters new states. This seems to present an exploration problem: naively, the agent's exploration is guided by the current reward function estimate, $ \rp $. Thus, the agent may not explore novel states and collect diverse clip pairs for the pool dataset. If the pool dataset is not diverse, it may be hard to beat the random acquisition baseline with active learning, since the data may all be more or less equally informative.
+%TODO do I need to define diverse more rigorously
+
+Secondly, since the objects that we acquire are \textit{clip pairs} rather than, for example, single images, yet the (growing) dataset is comprised of single clips, evaluating the acquisition function over the dataset is a complexity $ O(n^2) $ operation, for $ n $ the number of clips acquired. Therefore, the standard active learning procedure of evaluating the acquisition function on each point in the pool dataset and picking that which maximises it, quickly becomes unfeasible as the dataset grows in size. To get around this issue, in order to acquire $ k $ clip pairs, \cite{Christiano2017} randomly sample $ 10k $ clip pairs and select the $ k $ with the highest score according to $ a_{mean\_std} $. However, it is not clear that this method suffices to find clip pairs that are more informative than random acquisition: a factor of 10 may simply be too small.
+
+Thirdly, it is not clear that the standard acquisition functions can be applied out of the box to learning \textit{in the preference space}. Consider the following example: we are deciding whether to acquire clip pair $ c_1 = (\sigma^1, \sigma^2) $ or $ c_2 = (\sigma^3, \sigma^4) $ to acquire. Suppose further that the reward model is uncertain whether $ c_1 $ has label $ 0 $ or $ 0.5 $\footnote{TODO I may need to spell this out more, in terms of draws from the posterior giving something like 0, 0.5, 0, 0.5 ... Can I borrow Yarin's presentation in thesis of a similar case?}; and uncertain whether $ p_2 $ has label $ 0 $ or $ 1 $. Now, $ a_{mean\_std}(c_1) =  $, whereas $ a_{mean\_std}(c_2) =  $, and thus we will acquire $ c_2 $. Yet, when learning in the preference space, using disagreement between models in an ensemble as the basis for an acquisition function may not capture all that we care about. It may be important, for example, to acquire clip pairs that allow the model to make deductions based on transitivity of the preference relation. For suppose that we have already acquired some clip pair $ (\sigma^0, \sigma^1) $. Then acquiring $ (\sigma^1, \sigma^2) $ would in effect give for free the label of $ (\sigma^0, \sigma^2) $, whereas the acquisition of $ (\sigma^3, \sigma^4) $ would not. Thus, we may need a better proxy than disagreement for active learning in the preference space.
+%TODO I'm highly uncertain about whether this point is correct
+
+There are other possible failure modes that apply to active learning in general. When performing \textit{batch acquisition}, that is, acquiring the top $ b $ points that maximise an acquisition function \cite{Gal2017b}, may lead to the acquisition of points that are informative individually, but jointly are much less informative than the sum of their parts. In particular, the acquisitions may not be very diverse. Indeed, \cite[p.~8]{Kirsch2019} show that with acquisition size 5, BALD underperforms random acquisition on the EMNIST image dataset \cite{cohen2017emnist} when acquiring new images with acquisition size 5. Specifically, they observe that BALD several classes are under-represented in the acquisitions made by BALD. \cite{Christiano2017} use acquisition sizes of up to 500.
+
+Anything else?
+
+\section{Applying acquisition functions to reward modelling}
+
+
+\section{ARMA}
+In this section we present the training protocol we developed.
+\begin{algorithm}
+	\caption{ARMA: Active Reward Modelling for Agent Alignment.}
+	\label{alg:arma}
+	\begin{algorithmic}[1]
+		\State Initialise replay memory $ D $ to capacity $ N $
+		\State Initialise neural network $ Q $ with random weights $ \theta $ as approximate optimal action-value function
+		\State Initialise neural network $ \hat{Q} $ with identical weights $ \theta^- = \theta $ as approximate target action-value function
+		\State Reset environment to starting state $ s_0 $
+		\For{$ t=0, \dots, T $}
+		\State With probability $ \epsilon $ execute random action $ a_t $
+		\State otherwise execute action $ a_t = \arg\max_a Q(s_t, a ; \theta) $
+		\State Observe next state and corresponding reward $ s_{t+1}, r_{t+1} \sim p(.,.\mid s_t,a_t) $
+		\State Store transition $ (s_t, a_t, r_{t+1}, s_{t+1}) $ in $ D_t $
+		\State Randomly sample minibatch of transitions $ (s_j, a_j, r_{j+1}, s_{j+1}) \sim D_t $
+		\State Set $ y_j = \begin{cases}
+		r_{j+1} \text{ if episode terminates at step $ j+1 $} \\
+		r_{j+1} + \gamma \max_{a'} \hat{Q}(s_{j+1}, a_j ; \theta^- ) \text{ otherwise}
+		\end{cases}$
+		\State Do gradient descent on $ (y_j - Q(s_j, a_j ; \theta))^2 $ w.r.t network parameters $ \theta $
+		\State Every $ C $ steps set $ \theta^- = \theta $
+		\EndFor
+	\end{algorithmic}
+\end{algorithm}
 
 \section{Acquisition Functions}
 
 \section{Uncertainty Estimates}
 
 \section{Implementation Details}
+The training protocol is implemented mostly in Python \cite{van1995python}. We use gradient descent to optimize the parameters of the deep Q-network and reward model. Pytorch \cite{paszke2017automatic} is an open source machine learning library, built on top of Python, which provides tools to perform automatic differentiation. This allows us to compute gradient without differentiating by hand our loss function with respect to our model parameters. We implement the buffers for collecting agent experience, storing annotated clips in SciPy \cite{jones2001}, which is also built on top of Python. This gives finer control over data representation and sampling.
 
 \chapter{Experimental Details}
 %TODO does it make sense to separate experiment details from method? I think so.
@@ -446,7 +516,7 @@ We used the environments provided by OpenAI Gym to run our experiments.
 % Here I'll describe the results in a shiny way
 % Graphs and comments on whether I achieved the goal of applying active learning to increase the sample efficiency of reward modelling
 \section{CartPole-v0}
-
+%\includegraphics[scale=1]{./results_A1}
 
 \chapter{Conclusions}
 \section{Summary}
@@ -457,8 +527,8 @@ We used the environments provided by OpenAI Gym to run our experiments.
 
 % acknowledgements
 
-\bibliographystyle{plain}
-\bibliography{library}
+\bibliographystyle{apalike}
+\bibliography{library,additional}
 
 \appendix
 \appendixpage
