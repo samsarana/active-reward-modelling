@@ -19,20 +19,21 @@ def log_agent_step(sa_pair, r_true, rets, true_reward_stats, reward_model, args)
 
 
 def log_agent_episode(rets, writers, step, i_train_round, args, test_num=None):
-    writer1, writer2 = writers
-    if test_num is not None: # we're logging a test episode
-        tag = '2a.test_ep_return_per_step/round_{}/test_no_{}'.format(i_train_round, test_num)
-        tag_norm = '2b.test_ep_return_per_step_normalised/round_{}/test_no_{}'.format(i_train_round, test_num)
-    else: # logging training episode
-        tag = '4a.train_ep_return_per_step/round_{}'.format(i_train_round)
-        tag_norm = '4b.train_ep_return_per_step_normalised/round_{}'.format(i_train_round)
-    # interpreting writers: 1 == blue == true!
-    writer1.add_scalar(tag, rets['ep']['true'], step)
-    if args.normalise_rewards:
-        writer1.add_scalar(tag_norm, rets['ep']['true_norm'], step)
-    if not args.RL_baseline:
-        writer2.add_scalar(tag, rets['ep']['pred'], step)
-        writer2.add_scalar(tag_norm, rets['ep']['pred_norm'], step)
+    if args.log_all_steps:
+        writer1, writer2 = writers
+        if test_num is not None: # we're logging a test episode
+            tag = '2a.test_ep_return_per_step/round_{}/test_no_{}'.format(i_train_round, test_num)
+            tag_norm = '2b.test_ep_return_per_step_normalised/round_{}/test_no_{}'.format(i_train_round, test_num)
+        else: # logging training episode
+            tag = '4a.train_ep_return_per_step/round_{}'.format(i_train_round)
+            tag_norm = '4b.train_ep_return_per_step_normalised/round_{}'.format(i_train_round)
+        # interpreting writers: 1 == blue == true!
+        writer1.add_scalar(tag, rets['ep']['true'], step)
+        if args.normalise_rewards:
+            writer1.add_scalar(tag_norm, rets['ep']['true_norm'], step)
+        if not args.RL_baseline:
+            writer2.add_scalar(tag, rets['ep']['pred'], step)
+            writer2.add_scalar(tag_norm, rets['ep']['pred_norm'], step)
     for key, value in rets['ep'].items():
         rets['all'][key].append(value)
         rets['ep'][key] = 0
