@@ -1,14 +1,15 @@
 \begin{thebibliography}{}
 
-\bibitem[Achiam, 2019]{Achiam2019}
-Achiam, J. (2019).
-\newblock {Spinning Up in Deep RL}.
-
 \bibitem[Amodei et~al., 2016]{Amodei2016}
 Amodei, D., Olah, C., Steinhardt, J., Christiano, P., Schulman, J., and
   Man{\'{e}}, D. (2016).
 \newblock {Concrete Problems in AI Safety}.
 \newblock pages 1--29.
+
+\bibitem[Blundell et~al., 2015]{Blundell2015}
+Blundell, C., Cornebise, J., Kavukcuoglu, K., and Wierstra, D. (2015).
+\newblock {Weight Uncertainty in Neural Networks}.
+\newblock 37.
 
 \bibitem[Christiano et~al., 2017]{Christiano2017}
 Christiano, P., Leike, J., Brown, T.~B., Martic, M., Legg, S., and Amodei, D.
@@ -20,19 +21,53 @@ Cohen, G., Afshar, S., Tapson, J., and van Schaik, A. (2017).
 \newblock Emnist: an extension of mnist to handwritten letters.
 \newblock {\em arXiv preprint arXiv:1702.05373}.
 
+\bibitem[Cohn et~al., 1996]{cohn1996active}
+Cohn, D.~A., Ghahramani, Z., and Jordan, M.~I. (1996).
+\newblock Active learning with statistical models.
+\newblock {\em Journal of artificial intelligence research}, 4:129--145.
+
 \bibitem[Elo, 1978]{elo1978rating}
 Elo, A.~E. (1978).
 \newblock {\em The rating of chessplayers, past and present}.
 \newblock Arco Pub.
+
+\bibitem[Freeman, 1965]{freeman1965elementary}
+Freeman, L.~C. (1965).
+\newblock {\em Elementary applied statistics: for students in behavioral
+  science}.
+\newblock John Wiley \& Sons.
+
+\bibitem[Fujimoto et~al., 2018]{fujimoto2018addressing}
+Fujimoto, S., van Hoof, H., and Meger, D. (2018).
+\newblock Addressing function approximation error in actor-critic methods.
+\newblock {\em arXiv preprint arXiv:1802.09477}.
 
 \bibitem[Gal, 2017]{Gal2017a}
 Gal, Y. (2017).
 \newblock {Uncertainty in Deep Learning}.
 \newblock {\em Phd Thesis}, 1(1):1--11.
 
+\bibitem[Gal and Ghahramani, 2015]{Gal2015}
+Gal, Y. and Ghahramani, Z. (2015).
+\newblock {Dropout as a Bayesian Approximation: Representing Model Uncertainty
+  in Deep Learning}.
+\newblock 48.
+
 \bibitem[Gal et~al., 2017]{Gal2017b}
 Gal, Y., Islam, R., and Ghahramani, Z. (2017).
 \newblock {Deep Bayesian Active Learning with Image Data}.
+
+\bibitem[Goodfellow et~al., 2016]{Goodfellow-et-al-2016}
+Goodfellow, I., Bengio, Y., and Courville, A. (2016).
+\newblock {\em Deep Learning}.
+\newblock MIT Press.
+\newblock \url{http://www.deeplearningbook.org}.
+
+\bibitem[Haarnoja et~al., 2018]{haarnoja2018soft}
+Haarnoja, T., Zhou, A., Abbeel, P., and Levine, S. (2018).
+\newblock Soft actor-critic: Off-policy maximum entropy deep reinforcement
+  learning with a stochastic actor.
+\newblock {\em arXiv preprint arXiv:1801.01290}.
 
 \bibitem[Hester et~al., 2017]{Hester2017}
 Hester, T., Vecerik, M., Pietquin, O., Lanctot, M., Schaul, T., Piot, B.,
@@ -44,17 +79,36 @@ Hester, T., Vecerik, M., Pietquin, O., Lanctot, M., Schaul, T., Piot, B.,
 Ho, J. and Ermon, S. (2016).
 \newblock {Generative Adversarial Imitation Learning}.
 
+\bibitem[Houlsby et~al., 2011]{Houlsby2011}
+Houlsby, N., Husz{\'{a}}r, F., Ghahramani, Z., and Lengyel, M. (2011).
+\newblock {Bayesian Active Learning for Classification and Preference
+  Learning}.
+\newblock pages 1--17.
+
 \bibitem[Ibarz et~al., 2018]{Ibarz2018}
 Ibarz, B., Leike, J., Pohlen, T., Irving, G., Legg, S., and Amodei, D. (2018).
 \newblock {Reward learning from human preferences and demonstrations in Atari}.
 \newblock (2017):1--20.
 
-\bibitem[Jones et~al., 01  ]{jones2001}
-Jones, E., Oliphant, T., Peterson, P., et~al. (2001--).
+\bibitem[Jones et~al., 2001]{jones2001}
+Jones, E., Oliphant, T., Peterson, P., et~al. (2001).
 \newblock {SciPy}: Open source scientific tools for {Python}.
 \newblock [Online; accessed 24/08/2019].
 
-\bibitem[Kirsch et~al., 2019]{Kirsch2019}
+\bibitem[Kampffmeyer et~al., 2016]{kampffmeyer2016semantic}
+Kampffmeyer, M., Salberg, A.-B., and Jenssen, R. (2016).
+\newblock Semantic segmentation of small objects and modeling of uncertainty in
+  urban remote sensing images using deep convolutional neural networks.
+\newblock In {\em Proceedings of the IEEE conference on computer vision and
+  pattern recognition workshops}, pages 1--9.
+
+\bibitem[Kendall et~al., 2015]{kendall2015bayesian}
+Kendall, A., Badrinarayanan, V., and Cipolla, R. (2015).
+\newblock Bayesian segnet: Model uncertainty in deep convolutional
+  encoder-decoder architectures for scene understanding.
+\newblock {\em arXiv preprint arXiv:1511.02680}.
+
+\bibitem[Kirsch et~al., 2019]{Kirsch2019a}
 Kirsch, A., van Amersfoort, J., and Gal, Y. (2019).
 \newblock {BatchBALD: Efficient and Diverse Batch Acquisition for Deep Bayesian
   Active Learning}.
@@ -64,6 +118,12 @@ Knox, W.~B. and Stone, P. (2009).
 \newblock {Interactively shaping agents via human reinforcement: The Tamer
   Framework}.
 \newblock {\em Proc. fifth Int. Conf. Knowl. capture - K-CAP '09}, page~9.
+
+\bibitem[Lillicrap et~al., 2015]{lillicrap2015continuous}
+Lillicrap, T.~P., Hunt, J.~J., Pritzel, A., Heess, N., Erez, T., Tassa, Y.,
+  Silver, D., and Wierstra, D. (2015).
+\newblock Continuous control with deep reinforcement learning.
+\newblock {\em arXiv preprint arXiv:1509.02971}.
 
 \bibitem[Mnih et~al., 2016]{Mnih2016}
 Mnih, V., Badia, A.~P., Mirza, M., Graves, A., Lillicrap, T.~P., Harley, T.,
@@ -93,6 +153,11 @@ Paszke, A., Gross, S., Chintala, S., Chanan, G., Yang, E., DeVito, Z., Lin, Z.,
 \bibitem[Schulman et~al., 2015]{Schulman2015}
 Schulman, J., Levine, S., Moritz, P., Jordan, M.~I., and Abbeel, P. (2015).
 \newblock {Trust Region Policy Optimization}.
+
+\bibitem[Shannon, 1948]{shannon1948mathematical}
+Shannon, C.~E. (1948).
+\newblock A mathematical theory of communication.
+\newblock {\em Bell system technical journal}, 27(3):379--423.
 
 \bibitem[Sutton and Barto, 2018]{Sutton2018}
 Sutton, R.~S. and Barto, A.~G. (2018).

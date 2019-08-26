@@ -1,62 +1,61 @@
 \contentsline {part}{I\hspace {1em}Background}{4}{part.1}% 
 \contentsline {chapter}{\numberline {1}Introduction}{5}{chapter.1}% 
 \contentsline {section}{\numberline {1.1}Relation to Material Studied on the MSc Course}{5}{section.1.1}% 
-\contentsline {chapter}{\numberline {2}Neural Networks}{6}{chapter.2}% 
-\contentsline {chapter}{\numberline {3}Reinforcement Learning}{7}{chapter.3}% 
-\contentsline {section}{\numberline {3.1}Elements of Reinforcement Learning}{7}{section.3.1}% 
-\contentsline {section}{\numberline {3.2}Finite Markov Decision Processes}{7}{section.3.2}% 
-\contentsline {subsection}{\numberline {3.2.1}The Agent-Environment Interface}{8}{subsection.3.2.1}% 
-\contentsline {subsection}{\numberline {3.2.2}Goals and Rewards}{9}{subsection.3.2.2}% 
-\contentsline {subsection}{\numberline {3.2.3}Returns and Episodes}{9}{subsection.3.2.3}% 
-\contentsline {subsection}{\numberline {3.2.4}Policies and Value Functions}{10}{subsection.3.2.4}% 
-\contentsline {subsection}{\numberline {3.2.5}Optimal Policies and Optimal Value Functions}{11}{subsection.3.2.5}% 
-\contentsline {subsection}{\numberline {3.2.6}Bellman Equations}{12}{subsection.3.2.6}% 
-\contentsline {section}{\numberline {3.3}Reinforcement Learning Solution Methods}{13}{section.3.3}% 
-\contentsline {subsection}{\numberline {3.3.1}Taxonomy of RL Solution Methods}{14}{subsection.3.3.1}% 
-\contentsline {subsection}{\numberline {3.3.2}Deep Q-network}{14}{subsection.3.3.2}% 
-\contentsline {section}{\numberline {3.4}Reinforcement Learning from Unknown Reward Functions}{16}{section.3.4}% 
-\contentsline {subsection}{\numberline {3.4.1}Reward Learning from Trajectory Preferences with Handcrafted Feature Transformations}{18}{subsection.3.4.1}% 
-\contentsline {subsubsection}{Active Preference-Based Learning of Reward Functions}{18}{section*.2}% 
-\contentsline {subsubsection}{Batch Active Preference-Based Learning of Reward Functions}{18}{section*.3}% 
-\contentsline {subsubsection}{DemPref}{18}{section*.4}% 
-\contentsline {subsection}{\numberline {3.4.2}Reward Learning from Trajectory Preferences in Deep RL}{18}{subsection.3.4.2}% 
-\contentsline {subsubsection}{Setting}{18}{section*.5}% 
-\contentsline {subsubsection}{Method}{18}{section*.6}% 
-\contentsline {subsubsection}{Process 1: Training the policy}{19}{section*.7}% 
-\contentsline {subsubsection}{Process 2: Selecting and annotating clip pairs}{20}{section*.8}% 
-\contentsline {subsubsection}{Process 3: Training the reward model}{20}{section*.9}% 
-\contentsline {chapter}{\numberline {4}Uncertainty in Deep Learning}{22}{chapter.4}% 
-\contentsline {section}{\numberline {4.1}Bayesian Neural Networks}{23}{section.4.1}% 
-\contentsline {section}{\numberline {4.2}Model Uncertainty in BNNs}{23}{section.4.2}% 
-\contentsline {chapter}{\numberline {5}Active Learning}{24}{chapter.5}% 
-\contentsline {section}{\numberline {5.1}Acquisition Functions}{24}{section.5.1}% 
-\contentsline {subsection}{\numberline {5.1.1}Max Entropy}{24}{subsection.5.1.1}% 
-\contentsline {subsection}{\numberline {5.1.2}Variation Ratios}{24}{subsection.5.1.2}% 
-\contentsline {subsection}{\numberline {5.1.3}Mean STD}{24}{subsection.5.1.3}% 
-\contentsline {subsection}{\numberline {5.1.4}BALD}{24}{subsection.5.1.4}% 
-\contentsline {section}{\numberline {5.2}Applying Active Learning to RL without a reward function}{24}{section.5.2}% 
-\contentsline {subsection}{\numberline {5.2.1}APRIL}{25}{subsection.5.2.1}% 
-\contentsline {subsection}{\numberline {5.2.2}Active Preference-Based Learning of Reward Functions with handcrafted feature transformations}{25}{subsection.5.2.2}% 
-\contentsline {subsubsection}{Active Preference-Based Learning of Reward Functions}{25}{section*.10}% 
-\contentsline {subsubsection}{Batch Active Preference-Based Learning of Reward Functions}{25}{section*.11}% 
-\contentsline {subsubsection}{DemPref}{25}{section*.12}% 
-\contentsline {subsection}{\numberline {5.2.3}Deep RL from Human Preferences}{25}{subsection.5.2.3}% 
-\contentsline {part}{II\hspace {1em}Innovation}{26}{part.2}% 
-\contentsline {chapter}{\numberline {6}Method}{27}{chapter.6}% 
-\contentsline {section}{\numberline {6.1}Possible failure modes of active reward modelling}{27}{section.6.1}% 
-\contentsline {section}{\numberline {6.2}Applying acquisition functions to reward modelling}{28}{section.6.2}% 
-\contentsline {section}{\numberline {6.3}ARMA}{28}{section.6.3}% 
-\contentsline {section}{\numberline {6.4}Acquisition Functions}{28}{section.6.4}% 
-\contentsline {section}{\numberline {6.5}Uncertainty Estimates}{28}{section.6.5}% 
-\contentsline {section}{\numberline {6.6}Implementation Details}{28}{section.6.6}% 
-\contentsline {chapter}{\numberline {7}Experimental Details}{30}{chapter.7}% 
-\contentsline {section}{\numberline {7.1}CartPole-v0}{30}{section.7.1}% 
-\contentsline {chapter}{\numberline {8}Results}{31}{chapter.8}% 
-\contentsline {section}{\numberline {8.1}CartPole-v0}{31}{section.8.1}% 
-\contentsline {chapter}{\numberline {9}Conclusions}{32}{chapter.9}% 
-\contentsline {section}{\numberline {9.1}Summary}{32}{section.9.1}% 
-\contentsline {section}{\numberline {9.2}Evaluation}{32}{section.9.2}% 
-\contentsline {section}{\numberline {9.3}Future Work}{32}{section.9.3}% 
-\contentsline {chapter}{References}{33}{chapter*.13}% 
-\contentsline {chapter}{Appendices}{}{section*.14}
-\contentsline {chapter}{\numberline {A}Some Appendix Material}{37}{appendix.A}% 
+\contentsline {chapter}{\numberline {2}Reinforcement Learning}{6}{chapter.2}% 
+\contentsline {section}{\numberline {2.1}Elements of Reinforcement Learning}{6}{section.2.1}% 
+\contentsline {section}{\numberline {2.2}Finite Markov Decision Processes}{6}{section.2.2}% 
+\contentsline {subsection}{\numberline {2.2.1}The Agent-Environment Interface}{7}{subsection.2.2.1}% 
+\contentsline {subsection}{\numberline {2.2.2}Goals and Rewards}{8}{subsection.2.2.2}% 
+\contentsline {subsection}{\numberline {2.2.3}Returns and Episodes}{8}{subsection.2.2.3}% 
+\contentsline {subsection}{\numberline {2.2.4}Policies and Value Functions}{9}{subsection.2.2.4}% 
+\contentsline {subsection}{\numberline {2.2.5}Optimal Policies and Optimal Value Functions}{10}{subsection.2.2.5}% 
+\contentsline {subsection}{\numberline {2.2.6}Bellman Equations}{11}{subsection.2.2.6}% 
+\contentsline {section}{\numberline {2.3}Reinforcement Learning Solution Methods}{12}{section.2.3}% 
+\contentsline {subsection}{\numberline {2.3.1}Deep Neural Networks}{13}{subsection.2.3.1}% 
+\contentsline {subsubsection}{Model}{13}{section*.2}% 
+\contentsline {subsection}{\numberline {2.3.2}Cost function}{14}{subsection.2.3.2}% 
+\contentsline {subsection}{\numberline {2.3.3}Deep Q-network}{14}{subsection.2.3.3}% 
+\contentsline {section}{\numberline {2.4}Reinforcement Learning from Unknown Reward Functions}{16}{section.2.4}% 
+\contentsline {subsection}{\numberline {2.4.1}Reward Learning from Trajectory Preferences with Handcrafted Feature Transformations}{19}{subsection.2.4.1}% 
+\contentsline {subsubsection}{Active Preference-Based Learning of Reward Functions}{19}{section*.3}% 
+\contentsline {subsubsection}{Batch Active Preference-Based Learning of Reward Functions}{19}{section*.4}% 
+\contentsline {subsubsection}{DemPref}{19}{section*.5}% 
+\contentsline {subsection}{\numberline {2.4.2}Reward Learning from Trajectory Preferences in Deep RL}{19}{subsection.2.4.2}% 
+\contentsline {subsubsection}{Setting}{19}{section*.6}% 
+\contentsline {subsubsection}{Method}{19}{section*.7}% 
+\contentsline {subsubsection}{Process 1: Training the policy}{20}{section*.8}% 
+\contentsline {subsubsection}{Process 2: Selecting and annotating clip pairs}{21}{section*.9}% 
+\contentsline {subsubsection}{Process 3: Training the reward model}{21}{section*.10}% 
+\contentsline {chapter}{\numberline {3}Uncertainty in Deep Learning}{23}{chapter.3}% 
+\contentsline {section}{\numberline {3.1}Bayesian Neural Networks}{24}{section.3.1}% 
+\contentsline {section}{\numberline {3.2}Model Uncertainty in BNNs}{24}{section.3.2}% 
+\contentsline {chapter}{\numberline {4}Active Learning}{25}{chapter.4}% 
+\contentsline {section}{\numberline {4.1}Acquisition Functions}{26}{section.4.1}% 
+\contentsline {subsection}{\numberline {4.1.1}Max Entropy}{26}{subsection.4.1.1}% 
+\contentsline {subsection}{\numberline {4.1.2}BALD}{26}{subsection.4.1.2}% 
+\contentsline {subsection}{\numberline {4.1.3}Variation Ratios}{29}{subsection.4.1.3}% 
+\contentsline {subsection}{\numberline {4.1.4}Mean STD}{29}{subsection.4.1.4}% 
+\contentsline {section}{\numberline {4.2}Applying Active Learning to RL without a reward function}{30}{section.4.2}% 
+\contentsline {subsection}{\numberline {4.2.1}APRIL}{30}{subsection.4.2.1}% 
+\contentsline {subsection}{\numberline {4.2.2}Active Preference-Based Learning of Reward Functions with handcrafted feature transformations}{30}{subsection.4.2.2}% 
+\contentsline {subsubsection}{Active Preference-Based Learning of Reward Functions}{30}{section*.11}% 
+\contentsline {subsubsection}{Batch Active Preference-Based Learning of Reward Functions}{30}{section*.12}% 
+\contentsline {subsubsection}{DemPref}{30}{section*.13}% 
+\contentsline {subsection}{\numberline {4.2.3}Deep RL from Human Preferences}{30}{subsection.4.2.3}% 
+\contentsline {part}{II\hspace {1em}Innovation}{31}{part.2}% 
+\contentsline {chapter}{\numberline {5}Method}{32}{chapter.5}% 
+\contentsline {section}{\numberline {5.1}Possible failure modes of active reward modelling}{32}{section.5.1}% 
+\contentsline {section}{\numberline {5.2}ARMA}{34}{section.5.2}% 
+\contentsline {section}{\numberline {5.3}Acquisition Functions and Uncertainty Estimates}{35}{section.5.3}% 
+\contentsline {section}{\numberline {5.4}Implementation Details}{36}{section.5.4}% 
+\contentsline {chapter}{\numberline {6}Experimental Details}{37}{chapter.6}% 
+\contentsline {section}{\numberline {6.1}CartPole-v0}{37}{section.6.1}% 
+\contentsline {chapter}{\numberline {7}Results}{38}{chapter.7}% 
+\contentsline {section}{\numberline {7.1}CartPole-v0}{38}{section.7.1}% 
+\contentsline {chapter}{\numberline {8}Conclusions}{39}{chapter.8}% 
+\contentsline {section}{\numberline {8.1}Summary}{39}{section.8.1}% 
+\contentsline {section}{\numberline {8.2}Evaluation}{39}{section.8.2}% 
+\contentsline {section}{\numberline {8.3}Future Work}{39}{section.8.3}% 
+\contentsline {chapter}{References}{40}{chapter*.14}% 
+\contentsline {chapter}{Appendices}{}{section*.15}
+\contentsline {chapter}{\numberline {A}Some Appendix Material}{45}{appendix.A}% 

@@ -1,8 +1,8 @@
 \documentclass[11pt, a4paper, bibliography=totoc]{report}
-\usepackage{amsmath,amsthm,amssymb, ltablex, listings, enumerate, cancel, bussproofs, tabto, wasysym, algpseudocode, algorithm, savesym, mathtools, physics, xcolor, setspace, appendix, dirtree, ragged2e}
+\usepackage{amsmath,amsthm,amssymb, ltablex, listings, enumerate, cancel, bussproofs, tabto, wasysym, algpseudocode, algorithm, savesym, mathtools, physics, xcolor, setspace, appendix, dirtree, ragged2e, tikz}
 \usepackage[margin=3.5cm]{geometry}
 \usepackage[font=footnotesize,labelfont=bf]{caption}
-\usepackage[nottoc]{tocbibind} % adds Bibliography to 
+\usepackage[nottoc]{tocbibind} % adds Bibliography to TOCs
 \usepackage[linktocpage]{hyperref}
 
 \hypersetup{
@@ -14,6 +14,7 @@
 \doublespacing
 \pagestyle{headings}
 
+% my math commands
 \newcommand{\nats}{\mathbb{N}}
 \newcommand{\reals}{\mathbb{R}}
 \renewcommand{\P}[1]{\mathbb{P}\left( #1 \right) }
@@ -25,9 +26,13 @@
 \newcommand{\expbuff}{\mathrm{E}}
 \newcommand{\annbuff}{\mathrm{A}}
 \newcommand{\repbuff}{\mathrm{D}}
-
-\newcommand{\w}{\mathbf{w}}
 \newcommand{\data}{\mathcal{D}}
+\newcommand{\entropy}[1]{\mathbb{H} \left[ #1 \right] }
+\newcommand{\MI}[1]{\mathbb{I} \left[ #1 \right] }
+\newcommand{\w}{\mathbf{w}}
+\newcommand{\x}{\mathbf{x}}
+
+% these commands are left over from my BBB report; I might never use them
 \newcommand{\vfe}{\mathcal{F}(\data, \theta)}
 \newcommand{\F}{\mathcal{F}}
 \newcommand{\bepsilon}{\pmb{\epsilon}}
@@ -36,6 +41,7 @@
 \newcommand{\btheta}{\pmb{\theta}}
 \newcommand{\brho}{\pmb{\rho}}
 \newcommand{\normal}[3]{\mathcal{N}(#1 \vert #2, #3)}
+
 \newtheorem{claim}{Claim}
 \newtheorem{theorem}{Theorem}
 \newtheorem{lemma}{Lemma}
@@ -44,6 +50,7 @@
 \newtheorem{proposition}{Proposition}
 \newtheorem{definition}{Definition}
 \newtheorem{assumption}{Assumption}
+\newtheorem{example}{Example}
 
 \begin{document}
 \title{ARMA: Active Reward Modelling for Agent Alignment}
@@ -65,9 +72,6 @@
 \chapter{Introduction}
 
 \section{Relation to Material Studied on the MSc Course}
-
-\chapter{Neural Networks}
-Or can I fit this in more naturally as part of the narrative? In any case, it need to come before I mention DQN.
 
 \chapter{Reinforcement Learning} % Explain problem, give context
 Reinforcement learning (RL) refers simultaneously to a problem, methods for solving that problem, and the field that studies the problem and its solution methods. The problem of RL is to learn what to do---how to map situations to actions---so as to maximise some numerical reward signal \cite[pp.~1-2]{Sutton2018}.
@@ -145,14 +149,15 @@ The \textit{action-value function} $ q_\pi : \mathcal{S} \times \mathcal{A} \map
 %TODO I'm confused about optimal policy. On Spinningup it seems to be defined as the policy that maximises the v_\pi(s_0). But S&B say it's the policy that maximises v_\pi(s) for all s \in S. These two defs are inconsistent bc consider an unreachable state? Spinningup def could say that some policy is optimal despite being bad in unreachable state; S&B def would not...
 % http://spinningup.openai.com/en/latest/spinningup/rl_intro.html#the-rl-problem
 % p.64 S&B
+**Some words here based on the TODO above.
 The problem of Reinforcement Learning is thus to find an optimal policy.
 
 All optimal policies share the same value functions. We call these the \textit{optimal state-value function}, $ v_* $, and the \textit{optimal action-value function} $ q_* $:
 \begin{definition}[Optimal state-value function (from {\cite[p.~62]{Sutton2018}})]
-	$$ v_*  := \max_\pi v_\pi(s) ~~ \forall s \in \mathcal{S} .$$
+	$$ v_*(s)  := \max_\pi v_\pi(s) ~~ \forall s \in \mathcal{S} .$$
 \end{definition}
 \begin{definition}[Optimal action-value function (from {\cite[p.~63]{Sutton2018}})]
-	$$ q_*  := \max_\pi q_\pi(s,a) ~~ \forall s \in \mathcal{S} ~~ \forall a \in \mathcal{A} .$$
+	$$ q_*(s,a)  := \max_\pi q_\pi(s,a) ~~ \forall s \in \mathcal{S} ~~ \forall a \in \mathcal{A} .$$
 \end{definition}
 
 There is a simple connection between optimal Q-function and optimal policy that will be used in Section \ref{RL_solution_methods}:
@@ -204,51 +209,46 @@ These value functions obey special recursive relationships called Bellman equati
 \section{Reinforcement Learning Solution Methods} \label{RL_solution_methods}
 One method of solving the reinforcement learning problem is to explicitly solve a set of Bellman optimality equations. For example, in a finite MDP with $ n $ states and $ m $ actions, the Bellman equations for $ q_* $ are a set of $ n\cdot m $ equations in $ n\cdot m $ unknowns\footnote{This assumes that the agent can take any action in any state.}. Given the dynamics $ p $ of the MDP, standard techniques for solving systems of equations can be applied. Then, via Claim (\ref{Q_claim}), the agent has an optimal policy \cite[p.~64]{Sutton2018}.
 
-However, in reality, we rarely have access to $ p $, or sufficient computational resources to solve this system of equations exactly \cite[p.~66]{Sutton2018}. Thus, the literature on RL solution methods focuses on finding approximate solutions.
+However, in reality, we rarely have access to $ p $, or sufficient computational resources to solve this system of equations exactly \cite[p.~66]{Sutton2018}. Thus, much of the recent literature on RL solution methods focuses on finding approximate solutions.
 
-In this section, we give a brief and incomplete taxonomy of RL solution methods, most of which give approximate solutions. Then, we focus on one such method, the deep Q-network, which is important for the rest of this thesis.
+In particular, there has been rapid development in a class of solution methods called \textit{deep reinforcement learning}. The idea is to use a \textit{deep neural network} to approximate some function that will yield an optimal policy. Typically, we approximate the optimal value function---this is called \textit{Q-learning}---or the optimal policy, directly---in which case it is termed \textit{policy optimization}\footnote{Some methods, such as DDPG \cite{lillicrap2015continuous}, TD3 \cite{fujimoto2018addressing} and SAC \cite{haarnoja2018soft} approximate both the optimal value function and the optimal policy.}.
 
-\subsection{Taxonomy of RL Solution Methods} \label{subsection:rl_taxonomy}
-The following taxonomy draws on those given in \cite{Sutton2018} and \cite{Achiam2019}.
+In this section, we first provide background material on deep neural networks, necessary to understand how they approximate a Q-function or policy. We then explain in detail one particular deep reinforcement learning solution method, the deep Q-network, which is important for the rest of this thesis.
 
-\dirtree{%
-	.1 RL Solution Methods.
-	.2 Tabular Solution Methods.
-	.3 Dynamic Programming.
-	.4 Policy Iteration.
-	.4 Value Iteration.
-	.3 Monte Carlo Methods.
-	.4 MC Prediction.
-	.4 MC Control.
-	.3 Temporal-Difference Learning.
-	.4 Sarsa.
-	.4 Q-Learning.
-	.2 Approximate Solution Methods.
-	.3 Deep RL.
-	.4 Model-Free.
-	.5 Policy Optimisation.
-	.6 Policy Gradient.
-	.6 A2C / A3C.
-	.6 PPO.
-	.6 TPRO.
-	.5 Q-Learning.
-	.6 \textbf{DQN}.
-	.6 C51.
-	.5 Policy Optimisation + Q-Learning.
-	.6 DDPG.
-	.6 TD3.
-	.6 SAC.
-	.4 Model-Based.	
-	.5 Given the Model.
-	.6 AlphaZero.
-	.5 Learn the Model.
-	.6 I2A.
-}
-% design choices; trade-offs?
-% model-based v model-free
+\subsection{Deep Neural Networks}
+% model (func approx), data, loss, optimizer (mention batch GD, SGD, minibatch GD, then Adam and RMSProp briefly, since I use these)
+% what is is relation between method of gradient descent and optimizer? where does the former fit into the  model, data, loss, optimizer thing? is it part of "optimizer"?
+The goal of a deep neural network (NN) is to approximate some function $ f^* : X \mapsto Y $ \cite{Goodfellow-et-al-2016}. For example, in image classification, $ X $ may be image pixels, and $ Y $ some image categories, for example, bird, plane or superhero. The neural network specifies a mapping $ y = f(\x ; \theta) $ that depends on some parameters $ \theta $. The task is then to learn the $ \theta $ that give the best approximation to the true function $ f^* $. A deep learning algorithm specifies how to do this.
+
+As in machine learning in general, there are four key components to such an algorithm: model (or function approximator), cost function, optimization procedure and dataset specification.
+
+\subsubsection{Model}
+The model, of course, is a deep NN. This simplest form of deep NN is a \textit{deep feedforward network}\footnote{They are also referred to as feedforward neural networks or multilayer perceptrons (MLPs)}. They are called feedforward because when the model is evaluated on input $ \x $, computation flows without ever feeding back into itself in a loop. They are called networks because it is natural to think of these models as being composed of many different functions, each of which is termed a \textit{layer}. Starting from the \textit{input layer}, the output of each layer flows into the next, through each of the \textit{hidden layers} until the \textit{output layer} is reaches and the function returns some value. Deep feedforward networks are deep inasmuch as they have many hidden layers \cite[p.~164]{Goodfellow-et-al-2016}.
+
+\begin{example}
+Consider a very simple feedforward NN $ f : \reals^2 \mapsto \reals $ with one hidden layer. $ f $ is composed of three functions: $ f(\x) = f^{(3)}(f^{(2)}(f^{(1)}(\x))) $, where:
+\begin{align*}
+	f^{(1)}(\x) &= \mathbf{z} = \mathbf{W^1}\x \quad \text{for some $ 2\times 2 $ matrix $ \mathbf{W^1} $} \\
+	f^{(2)}(\mathbf{z}) &= \mathbf{a} = \textup{ReLu}(\mathbf{a}) := \max\{0,\mathbf{a} \} \quad \text{where $ \max(.) $ is applied pointwise} \\
+	f^{(3)}(\mathbf{a}) &= \mathbf{W^2}\mathbf{a} \quad \text{for some $ 1 \times 2 $ matrix $ \mathbf{W^2} $}
+\end{align*}
+\end{example}
+
+\subsection{Cost function}
+A cost function is some function that quantifies the performance of our model i.e. how close it is to the true function $ f^* $ we are trying to approximate. It is not clear how to design such a function, not least because we do not have access to $ f^* $. One popular cost function is called the \textit{negative log-likelihood}, which is simply the negative logarithm of the \textit{likelihood function}. Given a parametric family of probability distributions $ p_{\text{model}}(\x ; \theta) $ over the same space, a likelihood function gives the probability of a set of observations for different settings of the model parameters $ \theta $. More formally, consider a set of $ m $ i.i.d. examples $ \mathbb{X} = \{\x_1, \dots, \x_m \} $ drawn from a true but unknown data generating distribution. Then the likelihood function $ L(\theta) $ is defined by:
+\begin{align*}\label{eq:lik}
+L(\theta) :=&~ p_{\text{model}}(\mathbb{X} ; \theta) \\
+	=&~ \Pi_{i=1}^m p_{\text{model}}(\x_i ; \theta)
+\end{align*}
+Why log?
+Why negative?
+
+\subsection{Optimization procedure}
+
+\subsection{Dataset specification?}
 
 \subsection{Deep Q-network} \label{DQN}
-The deep Q-network (DQN) agent approximates $ q_* $ using a deep convolutional neural network $ Q(s,a; \theta) $ as the function approximator \cite{Mnih2015}. $ \theta $ are the parameters (weights) of the neural network, which is called a Q-network. It can be trained by performing gradient descent on the parameters $ \theta_i $ at iteration $ i $ to reduce the mean-squared error between $ Q(s,a; \theta_i) $ and the Bellman equation for $ q_*(s,a) $, given in Proposition (\ref{bellman_q*}). Since we do not have access to the true value of this target, we instead use approximate target values $ y = r + max_{a'} ~ Q(s', a' ; \theta_i^-) $, with $ \theta_i^- $ some previous network parameters.
+The deep Q-network (DQN) agent approximates $ q_* $ using a deep neural network $ Q(s,a; \theta) $ as the function approximator \cite{Mnih2015}. $ \theta $ are the parameters (weights) of the neural network, which is called a Q-network. It can be trained by performing gradient descent on the parameters $ \theta_i $ at iteration $ i $ to reduce the mean-squared error between $ Q(s,a; \theta_i) $ and the Bellman equation for $ q_*(s,a) $, given in Proposition (\ref{bellman_q*}). Since we do not have access to the true value of this target, we instead use approximate target values $ y = r + max_{a'} ~ Q(s', a' ; \theta_i^-) $, with $ \theta_i^- $ some previous network parameters.
 
 One could then perform standard gradient descent on this loss function using the experience collected by the agent $\langle (s_t, a_t, r_{t+1}, s_{t+1}) \rangle_{t=0}^T $ as data, as one would do in the supervised learning setting. However, there are three important differences in the reinforcement learning setting: correlations both (i) in the data set, and (ii) between $ Q(s,a ; \theta_i) $ and the targets. Furthermore, (iii) updates to $ Q $ may change the policy and thus change the data distribution. This leads to instability in training. To address this, the authors propose two algorithmic innovations. Firstly, instead of training on experience in the order that it is collected, the agent maintains a buffer of experience $ D_t = \{ e_1, e_2, \dots, e_t \} $ where $ e_t = (s_t, a_t, r_{t+1}, s_{t+1}) $. When making learning updates, drawing minibatches uniformly at random from this buffer breaks correlations in the experience sequence and smooths over changes in the data distribution, alleviating problems (i) and (iii). This is termed \textit{experience replay}. Secondly, to reduce correlations between $ Q $ and the targets and alleviate problem (ii), the approximate target values are updated to match the parameters $ Q $ only every $ C $ steps for some hyperparameter $ C > 1 $.
 
@@ -288,8 +288,6 @@ We summarise this training procedure in Algorithm \ref{alg:dqn}. To ensure adequ
 \end{algorithm}
 
 Note that line 11 assumes we are training DQN to perform an episodic task, hence the first case which follows the convention given in Section \ref{rets_and_episodes} whereby zero reward is given for all states after the terminal state. If the task were instead continuing, line 11 would simply be $ y_j = r_{j+1} + \gamma \max_{a'} \hat{Q}(s_{j+1}, a_j ; \theta^- ) $.
-
-%TODO do I need to describe neural networks too?
 
 \section{Reinforcement Learning from Unknown Reward Functions}
 So far, we have assumed that as the agent interacts with the environment, it receives both information about the next state and the associated scalar reward. This presents an obvious challenge if we want to apply RL to solve real-world problems: since the world does not give scalar rewards, it seems we would have to manually specify a reward function mapping states of the world to rewards. For complex or poorly defined goals, this is difficult to do. If we try instead to design an approximate reward function, an agent optimizing hard for this objective will do so at the expense of satisfying our preferences \cite[p.~1]{Christiano2017}.
@@ -340,20 +338,20 @@ Since this dissertation concerns reward learning from trajectory preferences spe
 \subsection{Reward Learning from Trajectory Preferences in Deep RL}
 
 \subsubsection{Setting}
-The agent-environment interface is as described in Section \ref{subsection:agent_env_interface}, with the modification that on step $ t $, instead of receiving reward $ R_{t+1} \in \mathcal{R} \subset \reals $, there is an \textit{annotator} who expresses preferences between \textit{trajectory segments}, or \textit{clips}. A clip is a finite sequence of states and actions $ ((s_0,a_0), (s_1,a_1),\dots,(s_{k-1},a_{k-1})) \in (\mathcal{S} \times \mathcal{A})^k $. If the annotator prefers some clip $ \sigma^1 $ to another clip $ \sigma^2 $, write $ \sigma^1 \succ \sigma^2 $. The annotator may also be indifferent between the clips, in which case we write $ \sigma^1 \sim \sigma^2 $ The agent does not see the annotator's implicit reward function $ r : \mathcal{S} \times \mathcal{A} \mapsto \mathcal{R} $, and must instead use the preferences expressed by the annotator to maximise $ r $ over time. This is the goal of reward learning from trajectory preferences.
+The agent-environment interface is as described in Section \ref{subsection:agent_env_interface}, with the modification that on step $ t $, instead of receiving reward $ R_{t+1} \in \mathcal{R} \subset \reals $, there is an \textit{annotator} who expresses preferences between \textit{trajectory segments}, or \textit{clips}. A clip is a finite sequence of states and actions $ ((s_0,a_0), (s_1,a_1),\dots,(s_{k-1},a_{k-1})) \in (\mathcal{S} \times \mathcal{A})^k $. If the annotator prefers some clip $ \sigma^1 $ to another clip $ \sigma^2 $, write $ \sigma^1 \succ \sigma^2 $. The annotator may also be indifferent between the clips, in which case we write $ \sigma^1 \sim \sigma^2 $. The agent does not see the annotator's implicit reward function $ r : \mathcal{S} \times \mathcal{A} \mapsto \mathcal{R} $, and must instead use the preferences expressed by the annotator to maximise $ r $ over time. This is the goal of reward learning from trajectory preferences.
 %TODO need to define \succ in terms of r(.,.) ?
 If the annotator could write down their true $ r $, then clearly we could perform traditional RL instead of taking the reward learning approach. However, as we noted above, we are interested in applying RL to tasks for which we do not have the true $ r $, which is when reward learning is useful. Nonetheless, for the purposes of quantitatively evaluating the method, we consider tasks for which we do have access to the true $ r $.
 
 \subsubsection{Method}
 The method has two components: a policy $ \pi : \mathcal{S} \times \mathcal{A} \mapsto [0,1] $ and an estimate of the annotator's reward function, $ \rp : \mathcal{S} \times \mathcal{A} \mapsto \mathcal{R} $, called a \textit{reward model} or \textit{reward predictor}. Both components are parametrised by a deep neural network. The agent learns to maximise the annotator's implicit reward function over time by iterating through the following three processes:
 \begin{enumerate}
-	\item Reinforcement learning by a traditional deep RL algorithm whereby policy $ \pi $ interacts with the environment for $ T $ steps and updates its parameters to optimise $ \rp $ over time. Agent experience $ \mathrm{E} = ((s_0, a_0), (s_1, a_1),\dots, (s_{T-1}, a_{T-1}) ) $ is stored.
+	\item Reinforcement learning by a traditional deep RL algorithm whereby policy $ \pi $ interacts with the environment for $ T $ steps and updates its parameters to optimise $ \rp $ over time. Agent experience $ \expbuff = ((s_0, a_0), (s_1, a_1),\dots, (s_{T-1}, a_{T-1}) ) $ is stored.
 	\item Select pairs of clips $ (\sigma^1, \sigma^2) $ from $ \expbuff $, request a preference $ \mu $ from the annotator on each sampled pair, and add the labelled pair to the annotation buffer $ \annbuff $.
 	\item Supervised learning to train the reward model on $ \annbuff $, the preferences expressed by the annotator so far.
 \end{enumerate}
 More detail on each process is provided below.
 
-\subsubsection{Process 1: Training the policy} %TODO make sure I mention q-learning v policy optimisation distinction in section \ref{subsection:rl_taxonomy}
+\subsubsection{Process 1: Training the policy}
 As mentioned, process 1 is akin to traditional RL except $ \rp $ is used in place of the environment reward $ r $. There are two subtleties to mention. Firstly, since $ \rp $ is learned while RL is taking place, \cite{Christiano2017} prefer policy optimization methods over Q-learning, as these have been successfully applied to RL tasks with a non-stationary reward function \cite{Ho2016}. Specifically, they use A2C \cite{Mnih2016} and TPRO \cite{Schulman2015}. However, the follow up paper \cite{Ibarz2018} uses a Q-learning method\footnote{The reason for deviating from the recommendation in \cite{Christiano2017} is that \cite{Ibarz2018} combine reward learning from trajectory preferences and expert demonstrations, and DQfD is state-of-the-art for the latter problem.}, DQfD \cite{Hester2017}, and it is not clear that performance is impaired. Hence, the literature is ambiguous on whether a non-stationary reward function is necessarily problematic for Q-learning. %TODO link to the section of my method where I say that I used DQN; motivate why I did this; say that reinitialising agent should make it okay.
 
 Secondly, since the reward model $ \rp $ is trained only on pairwise comparisons, its scale is underdetermined. Previous work therefore proposes periodically normalising $ \rp $ to have zero mean and constant standard deviation over the examples in $ \annbuff $. This is crucial for training stability since deep RL is sensitive to the scale of rewards. %TODO perhaps comment here or later on what Zac said that scaling rewards can actually in some cases change optimal policy...
@@ -370,12 +368,12 @@ The training of $ \rp $ is based on the following assumption:
 	The annotator's probability of preferring clip 1 to clip 2, $ \hat{P}(\sigma^1 \succ \sigma^2) $, depends exponentially on the value of $ \hat{r} $ summed over the clips.
 \end{assumption}
 This allows us to write:
-\begin{equation} \label{eq:1}
-\hat{P}(\sigma^1 \succ \sigma^2) = \frac{\exp \sum_t \hat{r}(s_t^1, a_t^1)}{\exp \sum_t \hat{r}(s_t^1, a_t^1) + \exp \sum_t \hat{r}(s_t^2, a_t^2)}
+\begin{equation} \label{eq:softmax}
+\hat{P}(\sigma^1 \succ \sigma^2 ; \rp) = \frac{\exp \sum_t \hat{r}(s_t^1, a_t^1)}{\exp \sum_t \hat{r}(s_t^1, a_t^1) + \exp \sum_t \hat{r}(s_t^2, a_t^2)}
 \end{equation}
-We can then fit the parameters of $ \rp $ by treating the problem as binary classification. In other words, we can use standard supervised learning techniques to optimize the parameters of $ \rp $ so as to minimise the cross-entropy loss between the predictions in \ref{eq:1} and the annotator's labels.
-\begin{equation}
-\text{loss}(\hat{r}) = -\sum_{(\sigma^1, \sigma^2, \mu) \in \annbuff} \mu(1) \log \hat{P}(\sigma^1 \succ \sigma^2) + \mu(2)\log \hat{P}(\sigma^2 \succ \sigma^1)
+We can then fit the parameters of $ \rp $ by treating the problem as binary classification. In other words, we can use standard supervised learning techniques to optimize the parameters of $ \rp $ so as to minimise the cross-entropy loss between the predictions in \ref{eq:softmax} and the annotator's labels.
+\begin{equation} \label{eq:loss}
+\text{loss}(\hat{r}) = -\sum_{(\sigma^1, \sigma^2, \mu) \in \annbuff} \mu(1) \log \hat{P}(\sigma^1 \succ \sigma^2 ; \rp) + \mu(2)\log \hat{P}(\sigma^2 \succ \sigma^1 ; \rp)
 \end{equation}
 Assumption \ref{assumption:1} follows the Elo rating system developed for chess \cite{elo1978rating}. Given a zero-sum game and two players with a scalar rating, Elo specifies a mapping from player ratings (in our case: reward) to the probability of each player winning (in our case: the probability of each clip being preferred by the annotator).
 
@@ -387,7 +385,7 @@ We probably want the model to be able to recognise that this is an out of distri
 
 Thus, the field of Bayesian Deep Learning aims to equip neural networks with the ability to output a point estimate along with its uncertainty in that estimate. Historically, many of the attempts to do so were not very practical. For example, one algorithm, Bayes by Backprop, requires doubling the number of model parameters, making training more computationally expensive, and is very sensitive to hyperparameter tuning. However, recent techniques allow almost any network trained with a stochastic regularisation technique, such as dropout, to, given an input, obtain a predictive mean and variance (uncertainty), without any complicated augmentation to the network \cite[p.~15]{Gal2017a}.
 
-\section{Bayesian Neural Networks}
+\section{Bayesian Neural Networks} \label{sec:bnns}
 From Andreas:
 2.3 Bayesian Neural Networks (BNN)
 In this paper we focus on BNNs as our Bayesian model because they scale well to high dimensional
@@ -402,15 +400,65 @@ straightforward to optimise.
 \chapter{Active Learning}
 % BALD (Houlsby: Bayesian Active Learning for Classification and Preference Learning)
 % Adapting it to the deep case (Yarin's thesis/Image Data paper)
-\section{Acquisition Functions}
+Supervised learning requires labelled training data. However, for many real-world problems, obtained labelled data is expensive. For example, constructing a dataset for image classification requires a human to specify the category of every image in training data. Active learning \cite{cohn1996active} is a framework for training a model using less data to achieve the same performance, by acquiring only the data that is most informative to the model. The key ingredient in active learning is called an \textit{acquisition function}. Given a model $ \mathcal{M} $ and pool data $ \mathcal{D}_{pool} \subset X $, an acquisition function $ a : X \times \mathcal{M} \mapsto \reals $ quantifies how informative the label of an element $ \x \in \mathcal{D}_{pool} $ would be to the model. This determines the next $ \x $ to query the \textit{oracle} for a label. More precisely, we acquire each new training datum $ x^* $ according to \cite{Gal2017b}:
+\[ \x^* = {\arg\max}_{\x \in \mathcal{D}_{pool}} a(\x, \mathcal{M}) \]
+Acquisition functions are often based on uncertainty estimates, corresponding with the intuition that it is good to acquire data on which the model is currently uncertain. In this section, we review some common acquisition functions for classification tasks\footnote{Different acquisition functions are used for regression tasks, typically based on predictive variance \cite[p.~47]{Gal2017a} which I do not cover here.} and then discuss how BNNs can provide the uncertainty estimates that these functions require. %TODO well in the Model Uncertainty in BNNs section I probably say stuff about this. work out what more, if anything, i need to say here.
 
-\subsection{Max Entropy}
+\section{Acquisition Functions} \label{sec:acq_funcs}
 
-\subsection{Variation Ratios}
+\subsection{Max Entropy} \label{sec:max_ent}
+One natural idea is to acquire $ \x \in \data_{pool} $ with the highest entropy \cite{shannon1948mathematical} given the current training data $ \data_{train} $. Entropy is a key concept in information theory, which is a mathematical formalisation of uncertainty. More specifically, given a predictive distribution $ p : X \times Y \mapsto [0,1] $ (i.e. a model which predicts the probability of input $ \x $ being in class $ y $) trained on dataset $ \data_{train} $, the \textit{predictive entropy} of a new input $ \x $ formalises how uncertain $ p $ is about the label of input $ \x $ \cite[p.~52]{Gal2017a}:
+\begin{equation}\label{eq:entropy}
+\entropy{y \mid \x, \data_{train}} = -\sum_{c} p(y=c \mid \x, \data_{train} ) \log p(y=c \mid \x, \data_{train} )
+\end{equation} %TODO I'm a little confused about when we should use mathbb{P}(.) and when we use p(.)
+where the sum is over the possible classes $ c $ of label $ y $.
 
-\subsection{Mean STD}
+%TODO it would be better to set up a running example for this section; the presentation currently is a little clunky; I have to keep referring to the same thing.
+\begin{example} \label{ex:max_ent}
+	Consider the binary classification case where we have two classes i.e. $ c \in \{0, 1\} $. Given some input $ \x $, if the model $ p $ predicts $ 0.5 $ for both classes, i.e. $ p(y=0 \mid \x, \data_{train}) = p(y=1 \mid \x, \data_{train}) = 0.5 $ then $ \entropy{y \mid \x, \data_{train}} $ will take its maximum value of $ \log(2) $, corresponding with the intuition that the model is maximally uncertain as to the label of $ \x $ because it predicts label $ 0 $ and label $ 1 $ with equal probability. The other extreme is when the model predicts exactly $ 0 $ or $ 1 $ for the label of $ \x $. In this case $ \entropy{y \mid \x, \data_{train}} = 0 $. The model is already certain about the label of $ \x $ (and it would be pointless to acquire its label).
+\end{example}
+%TODO do I need to say slightly more precisely how we eval acquisition function? I think I'll do this below, because that's about BNNs (MC-Dropout, ensemble etc)
 
 \subsection{BALD}
+Whilst acquiring points by maximising entropy seems like a reasonable idea, one might wonder whether the data on which the model is the most uncertain are actually the most informative data to acquire. Consider that the pool might contain data which are inherently ambiguous, like a handwritten digit that is a borderline case between a $ 1 $ and a $ 7 $. It might not be very helpful to acquire such points, because their labels do not actually resolve any uncertainty. Such data are said to have high \textit{aleatoric uncertainty}, which is to say uncertainty due to noise inherent in the data, which cannot be resolved given more data \cite[p.~7]{Gal2017a}. Even if we had a many labels of $ 7 $'s that look like $ 1 $'s, or $ 1 $'s that look like $ 7 $'s, given a new ambiguous $ 1 $ or $ 7 $, we will still (correctly) be uncertain about its label.
+
+On the contrary, it seems better to acquire data which the model is uncertain about, but which also help to resolve uncertainty. Such data have high \textit{epistemic} or \textit{model uncertainty}. We claimed that predictive entropy as in Equation \ref{eq:entropy} represents a model's total uncertainty in its prediction. Total uncertainty comprises both that arising from noisy data, and uncertainty about model parameters and class. In other words, predictive uncertainty is sum of aleatoric and epistemic uncertainty.
+
+Now, how can we specify an acquisition function that selects data which have high epistemic but low aleatoric uncertainty? For reasons which will soon become clear, we denote epistemic uncertainty as $ \MI{y, \w \mid \x, \data_{train}} $ where $ \w $ are the parameters of our model. This is called \textit{mutual information} between the prediction \textit{y} and the model parameters $ \w $. Since we now consider uncertainty in both noisy data and the model parameters, we need some extra notation. Consider our model parameters $ \w \sim p(.\mid \data_{train}) $ to be sampled from a distribution over model parameters, which depends on the dataset on which the model has been trained. Now, we can write aleatoric uncertainty as expected predictive entropy, where the expectation is over draws of our model parameters: $ \E{p(\w \mid \data_{train})}{ \entropy{y \mid \x, \w }} $. This formalises the intuition that aleatoric uncertainty is high if, even when model uncertainty is removed (because we consider only a \textit{single} draw of the model parameters), predictive entropy is still high. In this case, the uncertainty can only be coming from noise in the data. Conversely, if we take a single draw of the model parameters, leaving only aleatoric uncertainty, and predictive entropy is low, then aleatoric uncertainty must be low. %TODO I think I could say the thing and its converse in one and make these few sentences clearer. Also I think I'm still a little confused myself which seems bad.
+%TODO I think I'm also a bit confused about the status of all the things I'm saying... claims (proved or unproved?), definitions, intuitions, cited stuff ? And also confused about whether this presentation of BALD, which I made up based on my understanding, is formally correct.
+
+Putting this all together, we arrive at a formalisation of epistemic uncertainty, in terms of the difference between predictive and aleatoric uncertainty \cite[p.~53]{Gal2017a}:
+\begin{align}\label{eq:bald}
+\MI{y ; \w \mid \x, \data_{train}} &= \entropy{y \mid \x, \data_{train}} - \E{p(\w \mid \data_{train})}{ \entropy{y \mid \x, \w }} \nonumber \\
+&= -\sum_{c} p(y=c \mid \x, \data_{train} ) \log p(y=c \mid \x, \data_{train} ) \nonumber \\ 
+&\qquad + \E{p(\w \mid \data_{train})}{\sum_{c} p(y=c \mid \x, \w ) \log p(y=c \mid \x, \w )}
+\end{align}
+
+There is an alternative way to arrive at this formalisation of epistemic uncertainty, which is the reason for denoting it as $ \MI{y, \w \mid \x, \data_{train}} $. The mutual information between two random variables $ \MI{X ; Y} $ quantifies the information gained about $ X $ by observing $ Y $. Thus, $ \MI{y, \w \mid \x, \data_{train}} $ quantifies the information gained about the model parameters by observing the label $ y $ of input $ \x $, given the current training data $ \data_{train} $, which sound like a good metric for an acquisition function. By the definition of mutual information we can arrive at the same result as in Equation \ref{eq:bald}:
+\begin{align*}
+\MI{y ; \w \mid \x, \data_{train}} :&= \entropy{y \mid \x, \data_{train}} - \E{p(\w \mid \data_{train})}{ \entropy{y \mid \x, \w }}
+\end{align*} %TODO add a step here -- I'm confued about exactly what the rearrangemen is. Where does the expectation come from? (see my notes on bottom of pp.15 Christiano. The orginal BALD paper just says this is "easy to show"!)
+Using this objective as an acquisition function was first proposed in \cite{Houlsby2011}. Their intuition that it seeks to acquire examples on which particular settings of the model parameters are highly confident, but in disagreement with each other, or in the language used above, on which aleatoric uncertainty is low but epistemic uncertainty is high. They called this objective Bayesian Active Learning by Disagreement (BALD).
+
+\begin{example}
+	Again, consider the binary classification setting. In the second case presented in Example \ref{ex:max_ent} when individual draws of the model parameters always predict either $ 0 $ or $ 1 $, then (as with Max Entropy), $ \MI{y ; \w \mid \x, \data_{train}} = 0 $. There is no disagreement on the label of $ \x $ between different draws of the model parameters, and so the epistemic uncertainty is zero. However, in the first case, where individual draws of the model parameters always predict $ 0.5 $, then we get $ \MI{y ; \w \mid \x, \data_{train}} = \entropy{y \mid \x, \data_{train}} - \E{p(\w \mid \data_{train})}{ \entropy{y \mid \x, \w }} = \log(2) - \log(2) = 0 $. While this input has high predictive entropy, its label would not be very informative to the model, because the predictive entropy is due entirely to noise (which cannot be explained away given more data) rather than epistemic uncertainty. For an example which will score highly with respect to BALD, consider if sequential draws of the model parameters predict the label of some input $ \x $ to be $ 0, 1, 0, 1, \dots $. Then $ \MI{y ; \w \mid \x, \data_{train}} = \log(2) - 0 = \log(2) $, corresponding with the high confidence, but high disagreement between different model parameters.
+\end{example}
+
+\subsection{Variation Ratios}
+%TODO in AL image data paper, they present the below (which is what I implement). However, in his thesis, Yarin presents a version which can be seen as approximating the below. It's a pedantic point, but why the difference?
+Maximising the Variation Ratios \cite{freeman1965elementary} is similar to Max Entropy in that it seeks the $ \x $ on which the model has high predictive uncertainty. The difference is that it does not have an information theoretic formalisation. Instead,
+\begin{align*}
+\text{variation-ratio}[\x] := 1 - \max_y p(y \mid \x, \data_{train})
+\end{align*}
+Observe that this metric will be low in the second case presented in Example \ref{ex:max_ent}, because for the class $ y $ that is always predicted by the model, $ p(y \mid \x, \data_{train} = 1 $ and so $ \text{variation-ratio}[\x] = 0 $. Conversely, it will achieve its maximum value of $ 0.5 $ (in the binary setting) in the first case in Example \ref{ex:max_ent}, because $ p(y=0 \mid \x, \data_{train} = p(y=1 \mid \x, \data_{train} = 0.5 $. Thus, it is open to the same failure mode as Max Entropy: acquiring data with high aleatoric but low epistemic uncertainty.
+
+\subsection{Mean STD}
+Finally, an approach with less theoretical grounding that is nonetheless used in the literature is to acquire points that maximise the mean standard deviation $ \sigma(\x) $, where the mean is taken over the different classes $ c $ that input $ \x $ can take \cite{kampffmeyer2016semantic, kendall2015bayesian}.
+\begin{align*}
+\sigma_c &= \sqrt{\E{p(\w \mid \data_{train})}{p(y=c \mid \x, \w)^2} - \E{p(\w \mid \data_{train})}{p(y=c \mid \x, \w)}^2 } \\
+\sigma(\x) &= \frac{1}{C} \sum_c \sigma_c
+\end{align*}
+This acquisition function has similar properties to BALD in that it standard deviation, like disagreement, will avoid data with high aleatoric and low epistemic uncertainty. This is easy to see: if different draws of the model parameters predict the label of input $ \x $ to be always $ 0.5 $, as in the first case in example \ref{ex:max_ent}, the standard deviation of these samples is zero.
 
 \section{Applying Active Learning to RL without a reward function}
 Discussion of previous work.
@@ -418,8 +466,7 @@ Discussion of previous work.
 \subsection{APRIL}
 % APRIL
 
-\subsection{Active Preference-Based Learning of Reward Functions with handcrafted feature transformations}
-% Summarise the *active learning parts* of the 2017,18,19 papers by Sadigh's lab (I've already summarised the 
+\subsection{Active Preference-Based Learning of Reward Functions with handcrafted feature transformations}% Summarise the *active learning parts* of the 2017,18,19 papers by Sadigh's lab (I've already summarised the 
 % reward learning parts, above)
 % it probably doesn't make sense to have a subsubsection for each, as I assume the active parts are basically the same?
 % but work this out once you've worked out what the differences are
@@ -444,58 +491,63 @@ Discussion of previous work.
 % And I'll describe the different methods of Active Learning/uncert estimates that I tried
 
 \section{Possible failure modes of active reward modelling}
-Before developing our method, it was important to consider the possible failure modes of the previous attempt to apply active learning to reward modelling. \cite{Christiano2017} compute the standard deviation of each clip pair $(\sigma^1, \sigma^2)$ across the ensemble. In the language of acquisition functions, they use $ a_{mean\_std}(\sigma^1, \sigma^2) $, which in this setting is written as:
+Before developing our method, it was important to consider the possible failure modes of the previous attempt to apply active learning to reward modelling. \cite{Christiano2017} compute the standard deviation of each clip pair $(\sigma^1, \sigma^2)$ across the ensemble. In the language of acquisition functions, they use $ a_{mean\_std}((\sigma^1, \sigma^2), \rp) $, which in this setting is written as:
 \begin{align*}
-a_{mean\_std}(\sigma^1, \sigma^2) = \sqrt{\frac{1}{3}\sum_{i=1}^{3}\left(\hat{P_i}(\sigma^1 \succ \sigma^2) - \overline{\hat{P}(\sigma^1 \succ \sigma^2)}\right)^2},
+a_{mean\_std}((\sigma^1, \sigma^2), \rp) = \sqrt{\frac{1}{3}\sum_{i=1}^{3}\left(\hat{P_i}(\sigma^1 \succ \sigma^2  ; \rp) - \overline{\hat{P}(\sigma^1 \succ \sigma^2  ; \rp)}\right)^2},
 \end{align*}
-where $ \hat{P_i}(\sigma^1 \succ \sigma^2) $ is the prediction $ \hat{P}(\sigma^1 \succ \sigma^2) $ according to component $ i $ of the ensemble, and $ \overline{\hat{P}(\sigma^1 \succ \sigma^2)} $ is the average of these predictions.
+%TODO the 1/3 and the sqrt look kinda ugly. is there a better but still precise presentation of this?
+where $ \hat{P_i}(\sigma^1 \succ \sigma^2  ; \rp) $ is the prediction $ \hat{P}(\sigma^1 \succ \sigma^2  ; \rp) $ according to component $ i $ of the ensemble, and $ \overline{\hat{P}(\sigma^1 \succ \sigma^2  ; \rp)} $ is the average of these predictions.
 
-The quality of uncertainty estimates and active learning method is one possible failure mode. Indeed, \cite[p.~6]{Christiano2017} explain the failure of their implementation as due to $ a_{mean\_std}(\sigma^1, \sigma^2) $ ``crude approximation'' to reward predictor uncertainty.
+The quality of uncertainty estimates and acquisition function is one possible failure mode. Indeed, \cite[p.~6]{Christiano2017} explain the failure of their implementation as due to $ a_{mean\_std}((\sigma^1, \sigma^2), \rp) $ across an ensemble of three networks as a ``crude approximation'' to reward predictor uncertainty. Possible solutions to this failure mode are to use a different acquisition function (such as BALD \cite{Houlsby2011}), or to derive uncertainty estimates using a different method (such as MC-Dropout \cite{Gal2015} or Bayes by Backprop \cite{Blundell2015}).
 
 Additionally, there are three features of the application of active learning to reward modelling that are not present in the standard supervised learning case. Firstly, the pool dataset is not known in advance, but is gathered as the RL agent encounters new states. This seems to present an exploration problem: naively, the agent's exploration is guided by the current reward function estimate, $ \rp $. Thus, the agent may not explore novel states and collect diverse clip pairs for the pool dataset. If the pool dataset is not diverse, it may be hard to beat the random acquisition baseline with active learning, since the data may all be more or less equally informative.
 %TODO do I need to define diverse more rigorously
 
 Secondly, since the objects that we acquire are \textit{clip pairs} rather than, for example, single images, yet the (growing) dataset is comprised of single clips, evaluating the acquisition function over the dataset is a complexity $ O(n^2) $ operation, for $ n $ the number of clips acquired. Therefore, the standard active learning procedure of evaluating the acquisition function on each point in the pool dataset and picking that which maximises it, quickly becomes unfeasible as the dataset grows in size. To get around this issue, in order to acquire $ k $ clip pairs, \cite{Christiano2017} randomly sample $ 10k $ clip pairs and select the $ k $ with the highest score according to $ a_{mean\_std} $. However, it is not clear that this method suffices to find clip pairs that are more informative than random acquisition: a factor of 10 may simply be too small.
 
-Thirdly, it is not clear that the standard acquisition functions can be applied out of the box to learning \textit{in the preference space}. Consider the following example: we are deciding whether to acquire clip pair $ c_1 = (\sigma^1, \sigma^2) $ or $ c_2 = (\sigma^3, \sigma^4) $ to acquire. Suppose further that the reward model is uncertain whether $ c_1 $ has label $ 0 $ or $ 0.5 $\footnote{TODO I may need to spell this out more, in terms of draws from the posterior giving something like 0, 0.5, 0, 0.5 ... Can I borrow Yarin's presentation in thesis of a similar case?}; and uncertain whether $ p_2 $ has label $ 0 $ or $ 1 $. Now, $ a_{mean\_std}(c_1) =  $, whereas $ a_{mean\_std}(c_2) =  $, and thus we will acquire $ c_2 $. Yet, when learning in the preference space, using disagreement between models in an ensemble as the basis for an acquisition function may not capture all that we care about. It may be important, for example, to acquire clip pairs that allow the model to make deductions based on transitivity of the preference relation. For suppose that we have already acquired some clip pair $ (\sigma^0, \sigma^1) $. Then acquiring $ (\sigma^1, \sigma^2) $ would in effect give for free the label of $ (\sigma^0, \sigma^2) $, whereas the acquisition of $ (\sigma^3, \sigma^4) $ would not. Thus, we may need a better proxy than disagreement for active learning in the preference space.
+Thirdly, it is not clear that the standard acquisition functions can be applied out of the box to learning \textit{in the preference space}. Consider the following example: we are deciding whether to acquire clip pair $ c_1 = (\sigma^1, \sigma^2) $ or $ c_2 = (\sigma^3, \sigma^4) $ to acquire. Suppose further that the reward model is uncertain whether $ c_1 $ has label $ 0 $ or $ 0.5 $\footnote{TODO I may need to spell this out more, in terms of draws from the posterior giving something like 0, 0.5, 0, 0.5 ... Can I borrow Yarin's presentation in thesis of a similar case?}; and uncertain whether $ p_2 $ has label $ 0 $ or $ 1 $. Now, $ a_{mean\_std}(c_1, \rp) =  $, whereas $ a_{mean\_std}(c_2, \rp) =  $, and thus we will acquire $ c_2 $. Yet, when learning in the preference space, using disagreement between models in an ensemble as the basis for an acquisition function may not capture all that we care about. It may be important, for example, to acquire clip pairs that allow the model to make deductions based on transitivity of the preference relation. For suppose that we have already acquired some clip pair $ (\sigma^0, \sigma^1) $. Then acquiring $ (\sigma^1, \sigma^2) $ would in effect give for free the label of $ (\sigma^0, \sigma^2) $, whereas the acquisition of $ (\sigma^3, \sigma^4) $ would not. Thus, we may need a better proxy than simply disagreement for active learning in the preference space.
 %TODO I'm highly uncertain about whether this point is correct
 
-There are other possible failure modes that apply to active learning in general. When performing \textit{batch acquisition}, that is, acquiring the top $ b $ points that maximise an acquisition function \cite{Gal2017b}, may lead to the acquisition of points that are informative individually, but jointly are much less informative than the sum of their parts. In particular, the acquisitions may not be very diverse. Indeed, \cite[p.~8]{Kirsch2019} show that with acquisition size 5, BALD underperforms random acquisition on the EMNIST image dataset \cite{cohen2017emnist} when acquiring new images with acquisition size 5. Specifically, they observe that BALD several classes are under-represented in the acquisitions made by BALD. \cite{Christiano2017} use acquisition sizes of up to 500.
+There are other possible failure modes that apply to active learning in general. When performing \textit{batch acquisition}, that is, acquiring the top $ b $ points that maximise an acquisition function \cite{Gal2017b}, may lead to the acquisition of points that are informative individually, but jointly are much less informative than the sum of their parts. In particular, the acquisitions may not be very diverse. Indeed, \cite[p.~8]{Kirsch2019a} show that with acquisition size 5, BALD underperforms random acquisition on the EMNIST image dataset \cite{cohen2017emnist} when acquiring new images with acquisition size 5. Specifically, they observe that BALD several classes are under-represented in the acquisitions made by BALD. \cite{Christiano2017} use acquisition sizes of up to 500.
 
-Anything else?
-
-\section{Applying acquisition functions to reward modelling}
-
+Finally, it is worth noting that sometimes random acquisition just does perform strongly. At the beginning of training, the uncertainty estimates used by the acquisition function may have biased noise, while random acquisition has no such bias. At the end of training, if most of the pool data have been acquired, active learning will show little improvement over random acquisition. Thus, depending on the setting, there is a potentially small window in which active learning may help. The usefulness of active learning depends on how large this window is. In active reward modelling, is it an open question how large this window is for different tasks.
+%TODO is there any literature on the question of if/when rand acq just is very good? What do Yarin, Andreas, Houlsby graphs look like at beginning, end?
+%TODO say something about it being an open question which acqisition function to use etc/active learning with deep NNs is still not super well understood?
 
 \section{ARMA}
-In this section we present the training protocol we developed.
+In this section we present the training protocol we developed. Specifically, we explain how to apply acquisition functions to reward modelling. %TODO do we really? what does this mean?
 \begin{algorithm}
 	\caption{ARMA: Active Reward Modelling for Agent Alignment.}
 	\label{alg:arma}
 	\begin{algorithmic}[1]
-		\State Initialise replay memory $ D $ to capacity $ N $
-		\State Initialise neural network $ Q $ with random weights $ \theta $ as approximate optimal action-value function
-		\State Initialise neural network $ \hat{Q} $ with identical weights $ \theta^- = \theta $ as approximate target action-value function
-		\State Reset environment to starting state $ s_0 $
-		\For{$ t=0, \dots, T $}
-		\State With probability $ \epsilon $ execute random action $ a_t $
-		\State otherwise execute action $ a_t = \arg\max_a Q(s_t, a ; \theta) $
-		\State Observe next state and corresponding reward $ s_{t+1}, r_{t+1} \sim p(.,.\mid s_t,a_t) $
-		\State Store transition $ (s_t, a_t, r_{t+1}, s_{t+1}) $ in $ D_t $
-		\State Randomly sample minibatch of transitions $ (s_j, a_j, r_{j+1}, s_{j+1}) \sim D_t $
-		\State Set $ y_j = \begin{cases}
-		r_{j+1} \text{ if episode terminates at step $ j+1 $} \\
-		r_{j+1} + \gamma \max_{a'} \hat{Q}(s_{j+1}, a_j ; \theta^- ) \text{ otherwise}
-		\end{cases}$
-		\State Do gradient descent on $ (y_j - Q(s_j, a_j ; \theta))^2 $ w.r.t network parameters $ \theta $
-		\State Every $ C $ steps set $ \theta^- = \theta $
+        \State Initialise RL agent
+		\State Initialise neural network $ \rp $ as reward model
+		\State Initialise experience buffer $ \expbuff $ for sampling clip pairs
+		\State Initialise annotation buffer $ \annbuff $ for storing labelled clip pairs
+		\State Define acquisition function $ a((\sigma^1, \sigma^2), \rp) $
+		\State For each round $ i=1, \dots, N $ fix some number $ m_i $ of labels to request from the annotator in that round
+		\State Without updating its parameters, run the agent in the environment and add experience to $ \expbuff $
+		\For{$ i=1, \dots, N $}
+		\State Sample $ 10m_i $ clip pairs from $ \expbuff $
+		\State Acquire the $ m_i $ clip pairs that maximise $ a(.,.) $
+		\State Request labels on these clip pairs (from the annotator) and add them to $ \annbuff $
+		\State Reinitialise reward model $ \rp $
+		\State Train $ \rp $ to convergence with the preferences in $ \annbuff $, by doing gradient descent on loss function \ref{eq:loss}
+		\State Reinitialise RL agent
+		\State Clear experience buffer $ \expbuff $
+		\State Train RL agent to convergence with rewards from $ \rp $, adding experience to $ \expbuff $ \label{line:call_dqn}
 		\EndFor
 	\end{algorithmic}
 \end{algorithm}
+%TODO mention reinitialising agent (every round)?
+%TODO mention reinitialsing reward model (before every time it is trained)? (cite Andreas/Yarin) Mention (capping) acquisition batch size?
+%TODO in any case I don't want to confuse the algorithm so I'd probs mention these things in text below
+%This follows \cite{Christiano2017}, which reduces the chance of the parameters of $ \rp $ collapsing to some bad local minimum before training begins. %TODO this is not a valid reason given that we reintialise the reward model before each training. So (as I have done) perhaps we can safely remove all the pretraining (at least from the simplified presentation of the algorithm). Though this would mean that the first round of agent training is pure rubbish (although, not in Acrobot :P -- on the contrary, that would have been v useful information!). Ok so now I've changed the order of the 1 1/2 loop to simplify the algorithm. I think this is more clear given our method. The old algorithm is in clippings.tex
+In our implementation, we use DQN for our RL agent. Thus line \ref{line:call_dqn} represents calling Algorithm \ref{alg:dqn} as a subroutine, except with rewards from $ \rp $ instead of from the environment.
 
-\section{Acquisition Functions}
-
-\section{Uncertainty Estimates}
+\section{Acquisition Functions and Uncertainty Estimates}
+We tried each of the four acquisition functions explained in Section \ref{sec:acq_funcs}. Each require the ability to get uncertainty estimates by sampling from some appropriate posterior to the reward model $ \rp $ that we are optimizing. For this, we parameterise $ \rp $ with an ensemble of 5 neural networks. Each network has a different random initialisation and is trained independently, that is to say, using independent random minibatches for gradient descent\footnote{TODO mention that there is no principled way to implement ensemble, and that using different minibatches is a design choice?}. For a given input $ (s,a) \in \mathcal{S} \times \mathcal{A} $, we can draw 5 samples from the approximate posterior of $ \rp $: one for each forward pass through a network in the ensemble. There are other methods for sampling from an approximate posterior (see Section \ref{sec:bnns}), but we choose this method because while it is computationally more expensive than, for example, MC-Dropout, it introduces no additional hyperparameters to be tuned. This minimises the number of possible failure modes of our implementation, facilitating easier diagnosis of unsuccessful experiments.
+%TODO what is the source to justify the use of ensemble as approximate posterior?
 
 \section{Implementation Details}
 The training protocol is implemented mostly in Python \cite{van1995python}. We use gradient descent to optimize the parameters of the deep Q-network and reward model. Pytorch \cite{paszke2017automatic} is an open source machine learning library, built on top of Python, which provides tools to perform automatic differentiation. This allows us to compute gradient without differentiating by hand our loss function with respect to our model parameters. We implement the buffers for collecting agent experience, storing annotated clips in SciPy \cite{jones2001}, which is also built on top of Python. This gives finer control over data representation and sampling.

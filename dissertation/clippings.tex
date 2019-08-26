@@ -1,0 +1,68 @@
+% this is ARMA as I actually implemented it, and is close to Christiano
+% however I think the presentation is easier to read and makes more sense for our experiments (we don't need to pretrain reward model extensively)
+\begin{algorithm}
+	\caption{ARMA: Active Reward Modelling for Agent Alignment.}
+	\label{alg:arma}
+	\begin{algorithmic}[1]
+%		\State Initialise neural network $ Q $ with random weights $ \theta $ as approximate optimal action-value function
+%		\State Initialise neural network $ \hat{Q} $ with identical weights $ \theta^- = \theta $ as approximate target action-value function
+%		\State Initialise replay memory $ D $ to capacity $ N $
+        \State Initialise RL agent
+		\State Initialise neural network $ \rp $ as reward model
+		\State Initialise experience buffer $ \expbuff $ for sampling clip pairs
+		\State Initialise annotation buffer $ \annbuff $ for storing labelled clip pairs
+		\State Define some acquisition function $ a : (\mathcal{S} \times \mathcal{A})^k \times (\mathcal{S} \times \mathcal{A})^k \mapsto \reals $
+		\State Without updating its parameters, run the agent in the environment and add experience to $ \expbuff $
+		\State Sample $ 10k_0 $ clip pairs from $ \expbuff $
+		\State Acquire the $ k_0 $ clip pairs that maximise $ a(.,.) $
+		\State Request labels on these clip pairs (from the annotator) and add them to $ \annbuff $
+		\State Do gradient descent on loss function \ref{eq:loss} using data from $ \annbuff $ w.r.t. parameters of $ \rp $
+		\For{$ i=1, \dots, N $}
+		\State Reinitialise RL agent
+		\State Clear experience buffer $ \expbuff $
+		\State Train RL agent to convergence with rewards from $ \rp $, adding experience to $ \expbuff $
+		\State Sample $ 10k_i $ clip pairs from $ \expbuff $
+		\State Acquire the $ k_i $ clip pairs that maximise $ a(.,.) $
+		\State Request labels on these clip pairs and add them to $ \annbuff $
+		\State Reinitialise reward model $ \rp $
+		\State Do gradient descent on loss function \ref{eq:loss} using data from $ \annbuff $ w.r.t. parameters of $ \rp $
+		\EndFor
+	\end{algorithmic}
+\end{algorithm}
+
+\subsection{Taxonomy of RL Solution Methods} \label{subsection:rl_taxonomy}
+The following taxonomy draws on those given in \cite{Sutton2018} and \cite{Achiam2019}.
+%TODO this looks awful. just do it in ppt and save as eps
+\dirtree{%
+	.1 RL Solution Methods.
+	.2 Tabular Solution Methods.
+	.3 Dynamic Programming.
+	.4 Policy Iteration.
+	.4 Value Iteration.
+	.3 Monte Carlo Methods.
+	.4 MC Prediction.
+	.4 MC Control.
+	.3 Temporal-Difference Learning.
+	.4 Sarsa.
+	.4 Q-Learning.
+	.2 Approximate Solution Methods.
+	.3 Deep RL.
+	.4 Model-Free.
+	.5 Policy Optimisation.
+	.6 Policy Gradient.
+	.6 A2C / A3C.
+	.6 PPO.
+	.6 TPRO.
+	.5 Q-Learning.
+	.6 \textbf{DQN}.
+	.6 C51.
+	.5 Policy Optimisation + Q-Learning.
+	.6 DDPG.
+	.6 TD3.
+	.6 SAC.
+	.4 Model-Based.	
+	.5 Given the Model.
+	.6 AlphaZero.
+	.5 Learn the Model.
+	.6 I2A.
+}

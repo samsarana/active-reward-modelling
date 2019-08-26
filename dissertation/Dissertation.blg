@@ -3,16 +3,19 @@ The style file: apalike.bst
 Database file #1: library.bib
 Database file #2: additional.bib
 Warning--empty journal in Amodei2016
+Warning--empty journal in Blundell2015
 Warning--empty journal in Christiano2017
+Warning--empty journal in Gal2015
 Warning--empty journal in Gal2017b
 Warning--empty journal in Hester2017
 Warning--empty journal in Ho2016
+Warning--empty journal in Houlsby2011
 Warning--empty journal in Ibarz2018
 Warning--there's a number but no volume in Ibarz2018
-Warning--empty journal in Kirsch2019
+Warning--empty journal in Kirsch2019a
 Warning--empty journal in Mnih2016
 Warning--empty journal in Schulman2015
 Warning--empty publisher in Sutton2018
 Warning--empty journal in Warnell2017
 Warning--there's a number but no volume in Ziebart2008
-(There were 13 warnings)
+(There were 16 warnings)
