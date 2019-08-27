@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from reward_learning import RewardModelEnsemble, init_rm
+from utils import LinearSchedule, ExpSchedule
 
 class DQN(nn.Module):
     def __init__(self, num_inputs, num_actions, args):
@@ -222,4 +223,13 @@ def init_agent(args):
         # TODO may well need to load state dict of optimizer too, in order to continue training...
     q_target.load_state_dict(q_net.state_dict()) # set params of q_target to be the same
     replay_buffer = ReplayBuffer(args.replay_buffer_size)
-    return q_net, q_target, replay_buffer, optimizer_agent
+
+    if args.epsilon_annealing_scheme == 'linear':
+        epsilon_schedule = LinearSchedule(schedule_timesteps=int(args.exploration_fraction * args.n_agent_steps),
+                                      initial_p=args.epsilon_start,
+                                      final_p=args.epsilon_stop)
+    else:
+        assert args.epsilon_annealing_scheme == 'exp'
+        epsilon_schedule = ExpSchedule(decay_rate=args.epsilon_decay, final_p=args.epsilon_stop, initial_p=args.epsilon_start)
+
+    return q_net, q_target, replay_buffer, optimizer_agent, epsilon_schedule
