@@ -1,7 +1,6 @@
 import argparse
 import numpy as np
 from defaults import *
-from utils import LinearSchedule, ExpSchedule
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -68,7 +67,7 @@ def parse_arguments():
     parser.add_argument('--lambda_rm', type=float, default=1e-4, help='coefficient for L2 regularization for reward_model optimization')
     parser.add_argument('--n_epochs_pretrain_rm', type=int, default=-1, help='No. epochs to train rm on preferences collected during initial rollouts. If -1 (default) then this will be set to n_epochs_train_rm') # Ibarz: 50e3
     parser.add_argument('--n_epochs_train_rm', type=int, default=3000, help='No. epochs to train reward model per round in main training loop') # Ibarz: 6250
-    parser.add_argument('--prefs_buffer_size', type=int, default=5000) # Ibarz: 6800. since currently we collect fewer than 1000 labels in total, this doesn't matter (Ibarz never throw away labels. Christiano does.)
+    # parser.add_argument('--prefs_buffer_size', type=int, default=5000) # Ibarz: 6800. since currently we collect fewer than 1000 labels in total, this doesn't matter (Ibarz never throw away labels. Christiano does.)
     # NB using 5000 with obs_act_shape of (21168,) gives MemoryError. So if I do need to increase its size much more, I may need to change the implementation somehow...
     parser.add_argument('--clip_length', type=int, default=25) # as per Ibarz/Christiano; i'm interested in changing this
     parser.add_argument('--force_label_choice', action='store_true', help='Does synthetic annotator label clips about which it is indifferent as 0.5? If `True`, label equally good clips randomly')
@@ -135,15 +134,7 @@ def make_arg_changes(args):
                 
         args.n_acq_batches_per_round = np.array(args.n_labels_per_round) // np.array(args.batch_size_acq)
 
-    if args.epsilon_annealing_scheme == 'linear':
-        args.exploration = LinearSchedule(schedule_timesteps=int(args.exploration_fraction * args.n_agent_steps),
-                                      initial_p=args.epsilon_start,
-                                      final_p=args.epsilon_stop)
-    else:
-        assert args.epsilon_annealing_scheme == 'exp'
-        args.exploration = ExpSchedule(decay_rate=args.epsilon_decay, final_p=args.epsilon_stop, initial_p=args.epsilon_start)
-
-    # args.prefs_buffer_size = sum(args.n_labels_per_round)
+    args.prefs_buffer_size = sum(args.n_labels_per_round)
     
     # get environment ID
     envs_to_ids = { 'cartpole': {'id': 'gym_barm:CartPoleContinual-v0',
