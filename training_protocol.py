@@ -122,6 +122,7 @@ def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, op
         true_reward_stats.push_clip_pairs(acquired_clip_data)
     # save reward_model for loading later
     save_reward_model(reward_model, optimizer_rm, i_train_round, args)
+    save_preferece_info(prefs_buffer, true_reward_stats, i_train_round, args)
     return reward_model, prefs_buffer, mu_counts_total, true_reward_stats
 
 
