@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import torch, logging
+import torch, logging, pickle
 import torch.optim as optim
 from reward_learning import RewardModel, RewardModelEnsemble, CnnRewardModel
 
@@ -66,6 +66,15 @@ def save_reward_model(reward_model, rm_optimizer, i_round, args):
         'rm_optimizer_state_dict': rm_optimizer.state_dict(),
         }, path)
 
+
+def save_preferece_info(prefs_buffer, true_reward_stats, i_round, args):
+    prefs_path = '{}/checkpts/prefs/buff-{}.pkl'.format(args.logdir, i_round)
+    stats_path = '{}/checkpts/prefs/stats-{}.pkl'.format(args.logdir, i_round)
+    with open(prefs_path, 'wb') as output:
+        pickle.dump(prefs_buffer, output, pickle.HIGHEST_PROTOCOL)
+    with open(stats_path, 'wb') as output:
+        pickle.dump(true_reward_stats, output, pickle.HIGHEST_PROTOCOL)
+    
 
 def test_correlation(reward_model, env, q_net, args, writer1, i_train_round):
     """TODO Work out what dataset we should eval correlation on... currently
