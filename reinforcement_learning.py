@@ -5,7 +5,7 @@ from q_learning import *
 from test_policy import *
 from rl_logging import *
 
-def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
+def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, epsilon_schedule,
           agent_experience, reward_model, returns_summary,
           true_reward_stats, args, writers, i_run, i_train_round):
     writer1, writer2 = writers
@@ -18,7 +18,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
     state = env.reset()
     for step in range(start_step, start_step + args.n_agent_steps):
         # agent interact with env
-        epsilon = args.exploration.value(step)
+        epsilon = epsilon_schedule.value(step)
         action = q_net.act(state, epsilon)
         assert env.action_space.contains(action)
         next_state, r_true, done, _ = env.step(action) # one continuing episode
@@ -58,7 +58,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
                 # scheduler.step() # Ibarz doesn't mention lr annealing...
                 writer1.add_scalar('8.agent_epsilon/round_{}'.format(i_train_round), epsilon, step)
             if args.epsilon_annealing_scheme == 'exp':
-                args.exploration.step()
+                epsilon_schedule.step()
 
         # update q_target
         if step % args.target_update_period == 0: # update target parameters
