@@ -25,7 +25,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
     # SET UP: instantiate reward model + buffers and optimizers for training DQN and reward model
     reward_model, optimizer_rm = init_rm(args)
     prefs_buffer = PrefsBuffer(args)
-    q_net, q_target, replay_buffer, optimizer_agent = init_agent(args)
+    q_net, q_target, replay_buffer, optimizer_agent, epsilon_schedule = init_agent(args)
     true_reward_stats = TrueRewardRunningStat()
     
     # BEGIN PRETRAINING
@@ -52,12 +52,12 @@ def training_protocol(env, args, writers, returns_summary, i_run):
         # Stage 1.1a: Reinforcement learning with (normalised) rewards from current reward model
         log_agent_training_info(args, i_train_round)
         if args.reinit_agent:
-            q_net, q_target, _, optimizer_agent = init_agent(args) # keep replay buffer experience -- OK as long as we use the new rewards
+            q_net, q_target, _, optimizer_agent, epsilon_schedule = init_agent(args) # keep replay buffer experience -- OK as long as we use the new rewards
         # set up buffer to collect agent_experience for possible annotation
         num_clips = args.n_agent_steps // args.clip_length
         agent_experience = AgentExperience(num_clips, args) # since episodes do not end we collect one long trajectory then sample clips from it
         
-        q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
+        q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, epsilon_schedule,
                                                                  agent_experience, reward_model, returns_summary,
                                                                  true_reward_stats, args, writers, i_run, i_train_round)
 
