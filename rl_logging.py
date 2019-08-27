@@ -19,7 +19,7 @@ def log_agent_step(sa_pair, r_true, rets, true_reward_stats, reward_model, args)
 
 
 def log_agent_episode(rets, writers, step, i_train_round, args, test_num=None):
-    if args.log_all_steps:
+    if test_num is None or test_num % 20 == 0: # log all train episodes and 5 test episodes (we fix num test episodes at 100)
         writer1, writer2 = writers
         if test_num is not None: # we're logging a test episode
             tag = '2a.test_ep_return_per_step/round_{}/test_no_{}'.format(i_train_round, test_num)
