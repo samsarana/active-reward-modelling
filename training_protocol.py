@@ -55,7 +55,7 @@ def training_protocol(env, args, writers, returns_summary, i_run):
             q_net, q_target, _, optimizer_agent, epsilon_schedule = init_agent(args) # keep replay buffer experience -- OK as long as we use the new rewards
         # set up buffer to collect agent_experience for possible annotation
         num_clips = args.n_agent_steps // args.clip_length
-        agent_experience = AgentExperience(num_clips, args) # since episodes do not end we collect one long trajectory then sample clips from it
+        agent_experience = AgentExperience(num_clips, args) # since episodes do not end we collect one long trajectory then sample clips from it. TODO I can now init this *inside* do_RL since I refactored things nicely
         
         q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, epsilon_schedule,
                                                                  agent_experience, reward_model, returns_summary,
