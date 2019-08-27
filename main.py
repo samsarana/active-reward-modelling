@@ -28,6 +28,7 @@ def run_experiment(args, i_run, returns_summary):
     # make dirs for saving models at checkpoints
     os.makedirs('{}/checkpts/agent/'.format(args.logdir), exist_ok=True)
     os.makedirs('{}/checkpts/rm/'.format(args.logdir), exist_ok=True)
+    os.makedirs('{}/checkpts/prefs/'.format(args.logdir), exist_ok=True)
 
     # make environment
     env = gym.make(args.env_ID, **args.env_kwargs)
