@@ -137,9 +137,9 @@ def model_reward():
                 # compute loss
                 loss_rm_TEST = compute_loss_rm(r_hats_TEST, mus_TEST)  / n_labels_total * args.batch_size_rm
                 # log them
-                writer3.add_scalar('reward_model_loss/label_{}'.format(n_labels), loss_rm, epoch)
+                writer3.add_scalar('reward_model_loss/label_{}'.format(n_labels), loss_rm_TEST, epoch)
                 # log lower bound too
-                writer4.add_scalar('reward_model_loss/label_{}'.format(n_labels), loss_lower_bound, epoch)
+                writer4.add_scalar('reward_model_loss/label_{}'.format(n_labels), loss_lower_bound_TEST, epoch)
                 reward_model.train() # turn dropout back on
 
 
