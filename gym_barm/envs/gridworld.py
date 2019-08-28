@@ -230,6 +230,7 @@ class GridworldEnv(UpsampledGridworldEnv):
         super().__init__()
         self.sizeX = size
         self.sizeY = size
+        self.size = size
         self.actions = 4
         self.objects = []
         self.partial = partial
@@ -237,7 +238,7 @@ class GridworldEnv(UpsampledGridworldEnv):
         self.n_goals = n_goals
         self.n_lavas = n_lavas
         self.action_space = spaces.Discrete(4) # Discrete(n) is a discrete space in :math:`\{ 0, 1, \\dots, n-1 \}`
-        self.observation_space = spaces.Box(low=0, high=255, shape=(75,)) # Box represents the Cartesian product of n closed intervals
+        self.observation_space = spaces.Box(low=0, high=255, shape=(3*size*size,)) # Box represents the Cartesian product of n closed intervals
         self.determined_locations = {
             'hero': (0,0),
             'goal': (0,4),
@@ -295,10 +296,10 @@ class GridworldEnv(UpsampledGridworldEnv):
                 hero = item
         if self.partial == True:
             a = a[hero.y:hero.y+3,hero.x:hero.x+3,:]
-        b = scipy.misc.imresize(a[:,:,0],[5,5,1],interp='nearest')
+        b = scipy.misc.imresize(a[:,:,0],[self.size,self.size,1],interp='nearest')
         # b = np.array(Image.fromareray(a[:,:,0], mode='RGB').resize((5,5), resample=Image.NEAREST))
-        c = scipy.misc.imresize(a[:,:,1],[5,5,1],interp='nearest')
-        d = scipy.misc.imresize(a[:,:,2],[5,5,1],interp='nearest')
+        c = scipy.misc.imresize(a[:,:,1],[self.size,self.size,1],interp='nearest')
+        d = scipy.misc.imresize(a[:,:,2],[self.size,self.size,1],interp='nearest')
         a = np.stack([b,c,d],axis=2)
         return a
 
