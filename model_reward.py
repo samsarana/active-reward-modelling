@@ -52,6 +52,31 @@ def parse_arguments():
     args.obs_act_shape = 3*5*5 + 1
     args.n_actions = 4
     args.acquistion_func = lambda x : x
+
+    args = make_arg_changes(args)
+    return args
+
+def make_arg_changes(args):
+    args.logdir = './logs/{}/{}'.format(args.info, args.random_seed)
+    env = gym.make(args.env_ID, **args.env_kwargs)
+    if isinstance(env.observation_space, gym.spaces.Box):
+        args.obs_shape = env.observation_space.shape[0] # env.observation_space is Box(4,) and calling .shape returns (4,) [gym can be ugly]
+        args.obs_shape_all = env.observation_space.shape # TODO ugly
+    else:
+        raise RuntimeError("I don't know what observation space {} is!".format(env.observation_space))
+    assert isinstance(env.action_space, gym.spaces.Discrete), 'DQN requires discrete action space.'
+    args.act_shape = 1 # [gym doesn't have a nice way to get shape of Discrete space... env.action_space.shape -> () ]
+    args.obs_act_shape = args.obs_shape + args.act_shape
+    args.n_actions = env.action_space.n
+    obs = env.reset() # get an obs in order to set args.oa_dtype
+    args.oa_dtype = obs.dtype
+    # check that arrays for holding ob-act pairs have enough capacity
+    if np.issubdtype(args.oa_dtype, np.integer):
+        assert max(max(env.observation_space.high), args.n_actions) - 1 <= np.iinfo(args.oa_dtype).max # first max is over the dimensions of observation space. high gives highest value for each dim. second max is over that and number of actions
+    elif np.issubdtype(args.oa_dtype, np.floating):
+        assert max(max(env.observation_space.high), args.n_actions) - 1 <= np.finfo(args.oa_dtype).max
+    else:
+        raise RuntimeError("I don't understand the datatype of observations!")
     return args
 
 
@@ -66,15 +91,12 @@ def get_test_data(env, n_clips_total, n_labels_total, args):
 def model_reward():
     # setup
     args = parse_arguments()
-    args.logdir = './logs/{}/{}'.format(args.info, args.random_seed)
     writer1 = SummaryWriter(log_dir=args.logdir+'/train')
     writer2 = SummaryWriter(log_dir=args.logdir+'/train_lower')
     writer3 = SummaryWriter(log_dir=args.logdir+'/test')
     writer4 = SummaryWriter(log_dir=args.logdir+'/test_lower')
     env = gym.make(args.env_ID, **args.env_kwargs)
     env.seed(args.random_seed)
-    obs = env.reset()
-    args.oa_dtype = obs.dtype
     # set up logging
     os.makedirs('./logs/', exist_ok=True)
     logging.basicConfig(filename='./logs/{}.log'.format(args.info), level=logging.INFO)
