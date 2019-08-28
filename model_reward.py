@@ -133,9 +133,9 @@ def model_reward():
             if epoch % 1000 == 0 or epoch == args.n_epochs_train_rm - 1:
                 reward_model.eval() # turn dropout off for computing test loss
                 # pass clip pairs thru reward model to get predicted rewards
-                r_hats_TEST = reward_model(clip_pairs_TEST, mode='clip_pair_batch', normalise=False).squeeze(-1)
+                r_hats_TEST = reward_model(clip_pairs_TEST, mode='clip_pair_batch', normalise=False).squeeze(-1).detach()
                 # compute loss
-                loss_rm_TEST = compute_loss_rm(r_hats_TEST, mus_TEST).detach()  / n_labels_total * args.batch_size_rm
+                loss_rm_TEST = compute_loss_rm(r_hats_TEST, mus_TEST)  / n_labels_total * args.batch_size_rm
                 # log them
                 writer3.add_scalar('reward_model_loss/label_{}'.format(n_labels), loss_rm, epoch)
                 # log lower bound too
