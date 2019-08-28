@@ -6,6 +6,7 @@ from collections import Counter
 from q_learning import DQN
 from reward_learning import RewardModel, PrefsBuffer, compute_loss_rm
 from annotation import AgentExperience, generate_rand_clip_pairing
+from tqdm import trange
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -36,12 +37,16 @@ def parse_arguments():
 
     # settings that apply only to gridworld
     parser.add_argument('--grid_size', type=int, default=5, help='Length and width of grid')
+    parser.add_argument('--n_goals', type=int, default=1)
+    parser.add_argument('--n_lavas', type=int, default=1)
     parser.add_argument('--grid_deterministic_reset', action='store_true', help='Do objects in grid reset to same positions once episode terminates?')
     args = parser.parse_args()
     # make cheeky mofifications
     args.env_kwargs = {}
     args.env_kwargs['size']          = args.grid_size
     args.env_kwargs['random_resets'] = not args.grid_deterministic_reset
+    args.env_kwargs['n_goals']       = args.n_goals
+    args.env_kwargs['n_lavas']       = args.n_lavas
     args.obs_shape = 3*5*5
     args.act_shape = 1
     args.obs_act_shape = 3*5*5 + 1
@@ -97,7 +102,7 @@ def test_rm():
         assert mus_train.shape == (n_labels, )
         # train reward model!
         reward_model.train()
-        for epoch in range(args.n_epochs_train_rm):
+        for epoch in trange(args.n_epochs_train_rm, desc='Training reward model for {} epochs, with {} labels'.format(args.n_epochs_train_rm, n_labels)):
             # draw a minibatch
             idx = np.random.choice(n_labels, size=args.batch_size_rm, replace=False)
             clip_pairs_batch_, mus_batch_ = clip_pairs_train[idx], mus_train[idx]
