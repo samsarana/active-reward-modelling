@@ -51,10 +51,11 @@ def run_experiment(args, i_run, returns_summary):
     args.n_actions = env.action_space.n
     obs = env.reset() # get an obs in order to set args.oa_dtype
     args.oa_dtype = obs.dtype
+    # check that arrays for holding ob-act pairs have enough capacity
     if np.issubdtype(args.oa_dtype, np.integer):
-        assert args.n_actions - 1 <= np.iinfo(args.oa_dtype).max
+        assert max(max(env.observation_space.high), args.n_actions) - 1 <= np.iinfo(args.oa_dtype).max # first max is over the dimensions of observation space. high gives highest value for each dim. second max is over that and number of actions
     elif np.issubdtype(args.oa_dtype, np.floating):
-        assert args.n_actions - 1 <= np.finfo(args.oa_dtype).max
+        assert max(max(env.observation_space.high), args.n_actions) - 1 <= np.finfo(args.oa_dtype).max
     else:
         raise RuntimeError("I don't understand the datatype of observations!")
 
