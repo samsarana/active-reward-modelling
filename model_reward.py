@@ -109,7 +109,7 @@ def model_reward():
         assert mus_train.shape == (n_labels, )
         # train reward model!
         reward_model.train()
-        for epoch in trange(args.n_epochs_train_rm, desc='Training reward model for {} epochs, with {} labels'.format(args.n_epochs_train_rm, n_labels)):
+        for epoch in trange(args.n_epochs_train_rm, desc='Training reward model for {} epochs, with {} labels'.format(args.n_epochs_train_rm, n_labels), dynamic_ncols=True):
             # draw a minibatch
             idx = np.random.choice(n_labels, size=args.batch_size_rm, replace=False)
             clip_pairs_batch_, mus_batch_ = clip_pairs_train[idx], mus_train[idx]
