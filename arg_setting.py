@@ -20,7 +20,7 @@ def parse_arguments():
     parser.add_argument('--seed_offset', type=int, default=0, help='We seed with i_run + seed_offset, where i_run in {0..n_runs-1}')
     parser.add_argument('--n_sample_reps', type=int, default=1, help='For debugging: if >1, this will cause n_sample_reps exact copies of the first clip sampled from AgentExperience to be given to acquisition function')
     parser.add_argument('--reinit_rm_when_q_learning', action='store_true', help='For debugging: this will do the crazy thing of reinitialising reward model every time we want to use it to send rewards to DQN')
-    parser.add_argument('--log_all_steps', action='store_true', help='Logs to tensorboard return for every test and train step, rather than just the mean every agent_test_period steps. Warning: this makes loading data to tb take ages.')
+    # parser.add_argument('--log_all_steps', action='store_true', help='Logs to tensorboard return for every test and train step, rather than just the mean every agent_test_period steps. Warning: this makes loading data to tb take ages.')
 
     # agent hyperparams
     parser.add_argument('--dqn_archi', type=str, default='mlp', help='Is deep Q-network an mlp or cnn?')
