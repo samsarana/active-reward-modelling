@@ -22,7 +22,7 @@ class gameOb():
         self.name = name
         
 class UpsampledGridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
-    def __init__(self, partial=False, size=5, random_resets=True, terminate_ep_if_done=False): # sam added defaults
+    def __init__(self, partial=False, size=5, random_resets=True, terminate_ep_if_done=False, n_goals=1, n_lavas=1): # sam added defaults
         """
         partial: does agent get partial observations or full state?
         size: length and width of square grid.
@@ -37,11 +37,13 @@ class UpsampledGridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
         self.objects = []
         self.partial = partial
         self.random_resets = random_resets
+        self.n_goals = n_goals
+        self.n_lavas = n_lavas
         # Sam added the following three lines
         self.action_space = spaces.Discrete(4) # Discrete(n) is a discrete space in :math:`\{ 0, 1, \\dots, n-1 \}`
         # self.observation_space = spaces.Box(low=0, high=255, shape=(84,84,3)) # Box represents the Cartesian product of n closed intervals
-        self.observation_space = spaces.Box(low=0, high=255, shape=(21168,)) # Box represents the Cartesian product of n closed intervals
-        # not certain that high is 255 but pretty sure... this comes from scipy.misc.imresize
+        self.observation_space = spaces.Box(low=0, high=255, shape=(75,)) # Box represents the Cartesian product of n closed intervals
+        # 255 comes from scipy.misc.imresize
         self.determined_locations = {
             'hero': (0,0),
             'goal': (0,4),
@@ -68,14 +70,20 @@ class UpsampledGridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
         self.objects.append(bug)
         hole = gameOb(self.newPosition('fire'),1,1,0,-1,'fire')
         self.objects.append(hole)
-        bug2 = gameOb(self.newPosition('goal2'),1,1,1,1,'goal2')
-        self.objects.append(bug2)
-        hole2 = gameOb(self.newPosition('fire2'),1,1,0,-1,'fire2')
-        self.objects.append(hole2)
-        bug3 = gameOb(self.newPosition('goal3'),1,1,1,1,'goal3')
-        self.objects.append(bug3)
-        bug4 = gameOb(self.newPosition('goal4'),1,1,1,1,'goal4')
-        self.objects.append(bug4)
+        if self.n_goals >= 2:
+            bug2 = gameOb(self.newPosition('goal2'),1,1,1,1,'goal2')
+            self.objects.append(bug2)
+        if self.n_goals >= 3:
+            bug3 = gameOb(self.newPosition('goal3'),1,1,1,1,'goal3')
+            self.objects.append(bug3)
+        if self.n_goals >= 4:
+            bug4 = gameOb(self.newPosition('goal4'),1,1,1,1,'goal4')
+            self.objects.append(bug4)
+        if self.n_lavas >= 2:
+            hole2 = gameOb(self.newPosition('fire2'),1,1,0,-1,'fire2')
+            self.objects.append(hole2)
+        if self.n_goals > 4 or self.n_lavas > 2:
+            raise NotImplementedError("Using more than 4 goals or 2 lavas is undefined.")
         state = self.renderEnv()
         self.state = state
         self.done = False
