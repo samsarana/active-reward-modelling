@@ -241,7 +241,7 @@ class GridworldEnv(UpsampledGridworldEnv):
         self.observation_space = spaces.Box(low=0, high=255, shape=(3*size*size,)) # Box represents the Cartesian product of n closed intervals
         self.determined_locations = {
             'hero': (0,0),
-            'goal': (0,4),
+            'goal': (0,3),
             'goal2': (2,3),
             'goal3': (4,2),
             'goal4': (4,0),
