@@ -246,10 +246,7 @@ class RewardModel(nn.Module):
         of CnnRewardModel.forward() for why I'm doing it this
         way
         """
-        ###! Recent UNTESTED change to try to stop softmax outputting 0's
-        x[...,:-1] /= 255. # normalise *pixels* (not actions -- they remain in range 0-3) to be between 0 and 1 (like in Ibarz, I think?? - see top of p.15)
-        # TODO does this need to have gradient tracked?? I don't think so, because "/" has no parameters..?
-        ###!
+        x = torch.div(x, 255.)
         r_hat = self.layers(x)
         if normalise:
             r_hat = (r_hat - self.running_stats.mean) / np.sqrt(self.running_stats.var + 1e-8)
