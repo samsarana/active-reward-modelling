@@ -219,23 +219,23 @@ class RewardModel(nn.Module):
             self.layers = nn.Sequential(
                 nn.Linear(state_size + action_size, args.h1_rm),
                 nn.ReLU(),
-                # nn.Dropout(args.p_dropout_rm),
+                nn.Dropout(args.p_dropout_rm),
                 nn.Linear(args.h1_rm, args.h2_rm),
                 nn.ReLU(),
-                # nn.Dropout(args.p_dropout_rm),
+                nn.Dropout(args.p_dropout_rm),
                 nn.Linear(args.h2_rm, args.h3_rm),
                 nn.ReLU(),
-                # nn.Dropout(args.p_dropout_rm),
+                nn.Dropout(args.p_dropout_rm),
                 nn.Linear(args.h3_rm, 1)
             )
         else: # 2 hidden layer reward model
             self.layers = nn.Sequential(
                 nn.Linear(state_size + action_size, args.h1_rm),
                 nn.ReLU(),
-                # nn.Dropout(args.p_dropout_rm),
+                nn.Dropout(args.p_dropout_rm),
                 nn.Linear(args.h1_rm, args.h2_rm),
                 nn.ReLU(),
-                # nn.Dropout(args.p_dropout_rm),
+                nn.Dropout(args.p_dropout_rm),
                 nn.Linear(args.h2_rm, 1)
             )
         self.running_stats = RunningStat()
