@@ -63,7 +63,7 @@ def get_test_data(env, n_clips_total, n_labels_total, args):
     return torch.from_numpy(clip_pairs_test_).float(), torch.from_numpy(mus_test_).float()
 
 
-def test_rm():
+def model_reward():
     # setup
     args = parse_arguments()
     args.logdir = './logs/{}/{}'.format(args.info, args.random_seed)
@@ -164,4 +164,4 @@ def collect_random_experience(env, n_clips, args):
 
 
 if __name__ == '__main__':
-    test_rm()
+    model_reward()
