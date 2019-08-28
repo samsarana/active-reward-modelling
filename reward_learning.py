@@ -245,8 +245,7 @@ class RewardModel(nn.Module):
         `mode` is unused... this is silly code but see docstr
         of CnnRewardModel.forward() for why I'm doing it this
         way
-        """
-        x = torch.div(x, 255.)
+        """        
         r_hat = self.layers(x)
         if normalise:
             r_hat = (r_hat - self.running_stats.mean) / np.sqrt(self.running_stats.var + 1e-8)

@@ -35,6 +35,8 @@ def parse_arguments():
     parser.add_argument('--size_rm_ensemble', type=int, default=1, help='If active_method == ensemble then this must be >= 2')
     parser.add_argument('--selection_factor', type=int, default=1, help='when doing active learning, 1/selection_factor of the randomly sampled clip pairs are sent to human for evaluation')
 
+    parser.add_argument('--pixel_normalize', action='store_true', help='Divide pixel value by 255.')
+
     # settings that apply only to gridworld
     parser.add_argument('--grid_size', type=int, default=5, help='Length and width of grid')
     parser.add_argument('--n_goals', type=int, default=1)
@@ -173,6 +175,12 @@ def collect_random_experience(env, n_clips, args):
         action = env.action_space.sample()
         next_state, r_true, done, _ = env.step(action) # one continuing episode
         # record step info
+        if args.pixel_normalize:
+            state = state / 255.
+        # make action one-hot
+        if type(env.action_space) == gym.spaces.discrete.Discrete:
+            action_one_hot = np.zeros(env.action_space.n)
+            action_one_hot[action] = 1.
         sa_pair = np.append(state, action).astype(args.oa_dtype, casting='unsafe') # in case len(state.shape) > 1 (gridworld, atari), np.append will flatten it
         assert (sa_pair == np.append(state, action)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
         agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
