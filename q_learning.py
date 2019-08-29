@@ -160,10 +160,12 @@ def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
         if args.reinit_rm_when_q_learning:
             # logging.debug("Getting rew in q_learning_loss from reinitialised reward_model")
             reward_model, optimizer_rm = init_rm(args)
-        sa_pair = torch.cat((state.view(-1, args.obs_shape), action.unsqueeze(1).float()), dim=1) # dim 0 = batch, dim 1 = state-action
-        assert isinstance(reward_model, nn.Module)
+        action_one_hot = F.one_hot(action)
+        assert state.shape == (q_net.batch_size, args.obs_shape)
+        assert action_one_hot.shape == (q_net.batch_size, args.act_shape)
+        sa_pair = torch.cat((state, action_one_hot.float()), dim=1) # dim 0 = batch, dim 1 = state-action
+        assert sa_pair.shape == (q_net.batch_size, args.obs_act_shape)
         reward_model.eval() # turn off dropout at 'test' time i.e. when getting rewards to send to DQN
-        
         if args.no_ensemble_for_reward_pred:
             assert isinstance(reward_model, RewardModelEnsemble)
             rew = reward_model.forward_single(sa_pair, mode='batch', normalise=normalise_rewards).detach()
