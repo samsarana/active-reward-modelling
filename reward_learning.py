@@ -469,15 +469,13 @@ def compute_loss_rm(r_hats_batch, mu_batch):
     """Clean, assert-free version of the above.
     """
     assert len(r_hats_batch.shape) == 3, "r_hats_batch dims should be (B, 2, clip_length)!"
-    exp_sum_r_hats_batch = r_hats_batch.sum(dim=2).exp()
-    p_hat_12_batch = exp_sum_r_hats_batch[:, 0] / exp_sum_r_hats_batch.sum(dim=1)
-    ## Alternative code, not clear whether this is more readable
-    # logits = r_hats_batch.sum(dim=2)
-    # probs = F.softmax(logits, dim=1)[:,0]
-    # loss = F.binary_cross_entropy(input=probs, target=mu_batch, reduction='sum')
-    ## TODO do more numerically stable implementation using F.cross_entropy
-    # which combines log_softmax and nll_loss in a single function
-    return F.binary_cross_entropy(input=p_hat_12_batch, target=mu_batch, reduction='sum')
+    sum_r_hats_batch = r_hats_batch.sum(dim=2)
+    logits = sum_r_hats_batch[:,0]-sum_r_hats_batch[:,1]
+    # more numerically stable
+    loss = F.binary_cross_entropy_with_logits(input=logits, target=mu_batch, reduction='sum')
+    return loss
+    
+
         
 def compute_loss_rm_ensemble(r_hats_batch_draw, mu_batch):
     """When reward model is an ensemble, you should

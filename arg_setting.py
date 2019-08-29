@@ -92,6 +92,8 @@ def parse_arguments():
     parser.add_argument('--grid_size', type=int, default=5, help='Length and width of grid')
     parser.add_argument('--grid_deterministic_reset', action='store_true', help='Do objects in grid reset to same positions once episode terminates?')
     parser.add_argument('--grid_no_terminate_ep_if_done', action='store_true', help='Flag to make env.step() not give done=True when agent reaches goal or lava, but only when env.spec.max_episode_steps is reached.')
+    parser.add_argument('--pixel_normalize', action='store_true', help='Divide pixel value by 255.')
+     
     args = parser.parse_args()
     args = make_arg_changes(args)
     return args

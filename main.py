@@ -45,8 +45,10 @@ def run_experiment(args, i_run, returns_summary):
     #     args.obs_shape = 1
     else:
         raise RuntimeError("I don't know what observation space {} is!".format(env.observation_space))
-    assert isinstance(env.action_space, gym.spaces.Discrete), 'DQN requires discrete action space.'
-    args.act_shape = 1 # [gym doesn't have a nice way to get shape of Discrete space... env.action_space.shape -> () ]
+    if isinstance(env.action_space, gym.spaces.Discrete):
+        args.act_shape = env.action_space.n # [gym doesn't have a nice way to get shape of Discrete space... env.action_space.shape -> () ]
+    else:
+        raise NotImplementedError('Only discrete actions supported at the moment, for DQN')
     args.obs_act_shape = args.obs_shape + args.act_shape
     args.n_actions = env.action_space.n
     obs = env.reset() # get an obs in order to set args.oa_dtype

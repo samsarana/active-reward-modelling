@@ -6,6 +6,8 @@ from gym import wrappers
 from time import time, sleep
 from rl_logging import *
 from atari_preprocessing import *
+from reward_learning_utils import one_hot_action
+
 
 def test_policy(q_net, reward_model, true_reward_stats, args, writers, i_train_round, i_test, num_episodes=100):
     """Using the non-continuous version of the environment and q_net
@@ -34,8 +36,10 @@ def test_policy(q_net, reward_model, true_reward_stats, args, writers, i_train_r
         next_state, r_true, done, _ = env.step(action)
         # save true reward...
         # sa_pair = torch.tensor(np.append(state, action)).float()
-        sa_pair = np.append(state, action).astype(args.oa_dtype, casting='unsafe')
-        assert (sa_pair == np.append(state, action)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
+        if isinstance(env.action_space, gym.spaces.Discrete):
+            action_one_hot = one_hot_action(action, env)
+        sa_pair = np.append(state, action_one_hot).astype(args.oa_dtype, casting='unsafe')
+        assert (sa_pair == np.append(state, action_one_hot)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
         returns = log_agent_step(sa_pair, r_true, returns, true_reward_stats, reward_model, args)   
         # prepare for next step
         state = next_state

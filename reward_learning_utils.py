@@ -3,6 +3,12 @@ import matplotlib.pyplot as plt
 import torch, logging, pickle
 import torch.optim as optim
 from reward_learning import RewardModel, RewardModelEnsemble, CnnRewardModel
+import gym
+
+def one_hot_action(action, env):
+    action_one_hot = np.zeros(env.action_space.n)
+    action_one_hot[action] = 1.
+    return action_one_hot
 
 def update_running_mean_var(reward_model, acquired_clip_data):
     reward_model.eval() # turn off dropout
@@ -120,7 +126,9 @@ def eval_rm_correlation(reward_model, env, agent, args, obs_shape, act_shape, ro
             assert env.action_space.contains(action)
             next_state, reward, _, _ = env.step(action)
             # record step information
-            sa_pair = torch.FloatTensor(np.append(state, action))
+            if isinstance(env.action_space, gym.spaces.Discrete):
+                action_one_hot = one_hot_action(action, env)
+            sa_pair = torch.FloatTensor(np.append(state, action_one_hot))
             sa_pairs[step] = sa_pair
             r_true[step] = reward
             state = next_state
