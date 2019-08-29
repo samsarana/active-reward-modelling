@@ -109,7 +109,7 @@ def gridworld_zac_defaults(args):
     args.batch_size_agent = 32
     args.optimizer_agent = 'RMSProp'
     args.lambda_agent = 0
-    # args.lr_agent = 1e-4
+    args.lr_agent = 1e-4
     args.replay_buffer_size = int(10e3)
     args.target_update_period = 1000
     args.target_update_tau = 1 # I'm guessing they used hard updates
@@ -120,16 +120,16 @@ def gridworld_zac_defaults(args):
     # from here on, they don't mention their values
     # args.agent_gdt_step_period = 4 # Zac makes gradient updates at the end of each episode. My code now does the same
     args.gamma = 0.99 # this is standard
-    args.n_agent_steps = int(50e6) # Zac trains for 1M *episodes*; each episode is up to 50 steps. I found that 10M steps is roughly 300K episodes. So I'm doing a little more training than him
-    args.n_agent_steps_pretrain = 0 # not sure if Zac does pretraining
-    args.agent_test_frequency = 100 # test every 500K agent steps
+    args.n_agent_steps = int(1e6)
+    args.n_agent_steps_pretrain = 0
+    args.agent_test_frequency = 10 # test every 100K agent steps
     # reward modelling
-    args.h1_rm = 128
-    args.h2_rm = 256
-    args.h3_rm = 256
+    args.h1_rm = 64
+    args.h2_rm = 64
     args.batch_size_rm = 16 # Zac uses 64 batch size, but 16 clip pairs (Ibarz) is aleady 32*25=800 state-actions!
     args.lr_rm = 5e-3
-    args.n_epochs_train_rm = 5000 # not yet tested
+    # args.n_epochs_train_rm = 30000 # as used by Zac in 4x4_pixnorm_onehot_check
+    args.clip_length = 10
     return args
 
 
