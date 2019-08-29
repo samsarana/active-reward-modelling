@@ -513,13 +513,19 @@ def compute_loss_rm_ensemble(r_hats_batch_draw, mu_batch):
     """
     batch_size, _, clip_length, num_samples = r_hats_batch_draw.shape
     assert r_hats_batch_draw.shape[1] == 2
-    exp_sum_r_hats_batch_draw = r_hats_batch_draw.sum(dim=2).exp()
-    assert exp_sum_r_hats_batch_draw.shape == (batch_size, 2, num_samples)
-    p_hat_12_batch_draw = exp_sum_r_hats_batch_draw[:, 0, :] / exp_sum_r_hats_batch_draw.sum(dim=1)
-    assert p_hat_12_batch_draw.shape == (batch_size, num_samples)
-    p_hat_12_batch = p_hat_12_batch_draw.mean(1)
-    assert p_hat_12_batch.shape == mu_batch.shape
-    return F.binary_cross_entropy(input=p_hat_12_batch, target=mu_batch, reduction='sum')
+    # exp_sum_r_hats_batch_draw = r_hats_batch_draw.sum(dim=2).exp()
+    sum_r_hats_batch = r_hats_batch_draw.sum(dim=2)
+    # assert exp_sum_r_hats_batch_draw.shape == (batch_size, 2, num_samples)
+    # p_hat_12_batch_draw = exp_sum_r_hats_batch_draw[:, 0, :] / exp_sum_r_hats_batch_draw.sum(dim=1)
+    logits_batch_draw = sum_r_hats_batch[:,0,:]-sum_r_hats_batch[:,1,:]
+    assert logits_batch_draw.shape == (batch_size, num_samples)
+    # p_hat_12_batch = p_hat_12_batch_draw.mean(1)
+    logits_batch = logits_batch_draw.mean(1)
+    assert logits_batch.shape == mu_batch.shape
+    loss = F.binary_cross_entropy_with_logits(input=logits_batch, target=mu_batch, reduction='sum')
+    # return F.binary_cross_entropy(input=p_hat_12_batch, target=mu_batch, reduction='sum')
+    import ipdb; ipdb.set_trace()
+    return loss
 
 
 def init_rm(args):
