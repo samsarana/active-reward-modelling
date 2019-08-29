@@ -42,7 +42,7 @@ class UpsampledGridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
         # Sam added the following three lines
         self.action_space = spaces.Discrete(4) # Discrete(n) is a discrete space in :math:`\{ 0, 1, \\dots, n-1 \}`
         # self.observation_space = spaces.Box(low=0, high=255, shape=(84,84,3)) # Box represents the Cartesian product of n closed intervals
-        self.observation_space = spaces.Box(low=0, high=255, shape=(21168,)) # Box represents the Cartesian product of n closed intervals
+        self.observation_space = spaces.Box(low=0., high=255., shape=(21168,)) # Box represents the Cartesian product of n closed intervals
         # 255 comes from scipy.misc.imresize
         self.determined_locations = {
             'hero': (0,0),
@@ -64,23 +64,23 @@ class UpsampledGridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
         
     def reset(self):
         self.objects = []
-        hero = gameOb(self.newPosition('hero'),1,1,2,None,'hero')
+        hero = gameOb(self.newPosition('hero'),1,1.,2,None,'hero')
         self.objects.append(hero)
-        bug = gameOb(self.newPosition('goal'),1,1,1,1,'goal')
+        bug = gameOb(self.newPosition('goal'),1,1.,1,1,'goal')
         self.objects.append(bug)
-        hole = gameOb(self.newPosition('fire'),1,1,0,-1,'fire')
+        hole = gameOb(self.newPosition('fire'),1,1.,0,-1,'fire')
         self.objects.append(hole)
         if self.n_goals >= 2:
-            bug2 = gameOb(self.newPosition('goal2'),1,1,1,1,'goal2')
+            bug2 = gameOb(self.newPosition('goal2'),1,1.,1,1,'goal2')
             self.objects.append(bug2)
         if self.n_goals >= 3:
-            bug3 = gameOb(self.newPosition('goal3'),1,1,1,1,'goal3')
+            bug3 = gameOb(self.newPosition('goal3'),1,1.,1,1,'goal3')
             self.objects.append(bug3)
         if self.n_goals >= 4:
-            bug4 = gameOb(self.newPosition('goal4'),1,1,1,1,'goal4')
+            bug4 = gameOb(self.newPosition('goal4'),1,1.,1,1,'goal4')
             self.objects.append(bug4)
         if self.n_lavas >= 2:
-            hole2 = gameOb(self.newPosition('fire2'),1,1,0,-1,'fire2')
+            hole2 = gameOb(self.newPosition('fire2'),1,1.,0,-1,'fire2')
             self.objects.append(hole2)
         if self.n_goals > 4 or self.n_lavas > 2:
             raise NotImplementedError("Using more than 4 goals or 2 lavas is undefined.")
@@ -159,8 +159,8 @@ class UpsampledGridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
 
     def renderEnv(self):
         #a = np.zeros([self.sizeY,self.sizeX,3])
-        a = np.ones([self.sizeY+2,self.sizeX+2,3])
-        a[1:-1,1:-1,:] = 0
+        a = np.ones([self.sizeY+2,self.sizeX+2,3],dtype=np.float64)
+        a[1:-1,1:-1,:] = 0.
         hero = None
         for item in self.objects:
             a[item.y+1:item.y+item.size+1, item.x+1:item.x+item.size+1, item.channel] = item.intensity
@@ -174,7 +174,7 @@ class UpsampledGridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
         # c = np.array(Image.fromarray(a[:,:,1]).resize([84,84,1]))
         d = scipy.misc.imresize(a[:,:,2],[84,84,1],interp='nearest')
         # d = np.array(Image.fromarray(a[:,:,2]).resize([84,84,1]))
-        a = np.stack([b,c,d],axis=2)
+        a = np.stack([b,c,d],axis=2).astype(np.float64) 
         return a
 
     def step(self,action):
@@ -259,23 +259,23 @@ class GridworldEnv(UpsampledGridworldEnv):
         
     def reset(self):
         self.objects = []
-        hero = gameOb(self.newPosition('hero'),1,1,2,None,'hero')
+        hero = gameOb(self.newPosition('hero'),1,1.,2,None,'hero')
         self.objects.append(hero)
-        bug = gameOb(self.newPosition('goal'),1,1,1,1,'goal')
+        bug = gameOb(self.newPosition('goal'),1,1.,1,1,'goal')
         self.objects.append(bug)
-        hole = gameOb(self.newPosition('fire'),1,1,0,-1,'fire')
+        hole = gameOb(self.newPosition('fire'),1,1.,0,-1,'fire')
         self.objects.append(hole)
         if self.n_goals >= 2:
-            bug2 = gameOb(self.newPosition('goal2'),1,1,1,1,'goal2')
+            bug2 = gameOb(self.newPosition('goal2'),1,1.,1,1,'goal2')
             self.objects.append(bug2)
         if self.n_goals >= 3:
-            bug3 = gameOb(self.newPosition('goal3'),1,1,1,1,'goal3')
+            bug3 = gameOb(self.newPosition('goal3'),1,1.,1,1,'goal3')
             self.objects.append(bug3)
         if self.n_goals >= 4:
-            bug4 = gameOb(self.newPosition('goal4'),1,1,1,1,'goal4')
+            bug4 = gameOb(self.newPosition('goal4'),1,1.,1,1,'goal4')
             self.objects.append(bug4)
         if self.n_lavas >= 2:
-            hole2 = gameOb(self.newPosition('fire2'),1,1,0,-1,'fire2')
+            hole2 = gameOb(self.newPosition('fire2'),1,1.,0,-1,'fire2')
             self.objects.append(hole2)
         if self.n_goals > 4 or self.n_lavas > 2:
             raise NotImplementedError("Using more than 4 goals or 2 lavas is undefined.")
@@ -286,7 +286,7 @@ class GridworldEnv(UpsampledGridworldEnv):
     
 
     def renderEnv(self):
-        a = np.zeros([self.sizeY,self.sizeX,3])
+        a = np.zeros([self.sizeY,self.sizeX,3],dtype=np.float64)
         # a = np.ones([self.sizeY+2,self.sizeX+2,3])
         # a[1:-1,1:-1,:] = 0
         hero = None
@@ -300,7 +300,8 @@ class GridworldEnv(UpsampledGridworldEnv):
         # b = np.array(Image.fromareray(a[:,:,0], mode='RGB').resize((5,5), resample=Image.NEAREST))
         c = scipy.misc.imresize(a[:,:,1],[self.sizeY,self.sizeX,1],interp='nearest')
         d = scipy.misc.imresize(a[:,:,2],[self.sizeY,self.sizeX,1],interp='nearest')
-        a = np.stack([b,c,d],axis=2)
+        a = np.stack([b,c,d],axis=2).astype(np.float64) 
+        
         return a
 
 

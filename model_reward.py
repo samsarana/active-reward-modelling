@@ -50,8 +50,7 @@ def parse_arguments():
     args.env_kwargs['n_goals']       = args.n_goals
     args.env_kwargs['n_lavas']       = args.n_lavas
     args.obs_shape = 3*5*5
-    args.act_shape = 1
-    args.obs_act_shape = 3*5*5 + 1
+    args.obs_act_shape = 3*5*5 + 4
     args.n_actions = 4
     args.acquistion_func = lambda x : x
 
@@ -67,7 +66,10 @@ def make_arg_changes(args):
     else:
         raise RuntimeError("I don't know what observation space {} is!".format(env.observation_space))
     assert isinstance(env.action_space, gym.spaces.Discrete), 'DQN requires discrete action space.'
-    args.act_shape = 1 # [gym doesn't have a nice way to get shape of Discrete space... env.action_space.shape -> () ]
+    if isinstance(env.action_space, gym.spaces.Discrete):
+        args.act_shape = env.action_space.n # [gym doesn't have a nice way to get shape of Discrete space... env.action_space.shape -> () ]
+    else:
+        raise NotImplementedError('Only discrete actions supported at the moment, for DQN')
     args.obs_act_shape = args.obs_shape + args.act_shape
     args.n_actions = env.action_space.n
     obs = env.reset() # get an obs in order to set args.oa_dtype
@@ -119,7 +121,6 @@ def model_reward():
     # compute lower bound for test loss (relative to batch size of args.batch_size_rm, since we use reduction='sum')
     n_indifferent_labels_TEST = Counter(mus_TEST.numpy()).get(0.5, 0)
     loss_lower_bound_TEST = n_indifferent_labels_TEST * math.log(2) / n_labels_total * args.batch_size_rm
-
     for n_labels in range(50, 501, 50):
         n_clips = 2 * n_labels
         # initialise reward model and optimizer
@@ -178,13 +179,14 @@ def collect_random_experience(env, n_clips, args):
         if args.pixel_normalize:
             state = state / 255.
         # make action one-hot
-        if type(env.action_space) == gym.spaces.discrete.Discrete:
+        if isinstance(env.action_space, gym.spaces.Discrete):
             action_one_hot = np.zeros(env.action_space.n)
             action_one_hot[action] = 1.
-        sa_pair = np.append(state, action).astype(args.oa_dtype, casting='unsafe') # in case len(state.shape) > 1 (gridworld, atari), np.append will flatten it
-        assert (sa_pair == np.append(state, action)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
+        sa_pair = np.append(state, action_one_hot).astype(args.oa_dtype, casting='unsafe') # in case len(state.shape) > 1 (gridworld, atari), np.append will flatten it
+        assert (sa_pair == np.append(state, action_one_hot)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
         agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
         # prepare for next step
+        
         state = next_state
         if done:
             n_episodes += 1
