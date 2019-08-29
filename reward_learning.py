@@ -524,7 +524,6 @@ def compute_loss_rm_ensemble(r_hats_batch_draw, mu_batch):
     assert logits_batch.shape == mu_batch.shape
     loss = F.binary_cross_entropy_with_logits(input=logits_batch, target=mu_batch, reduction='sum')
     # return F.binary_cross_entropy(input=p_hat_12_batch, target=mu_batch, reduction='sum')
-    import ipdb; ipdb.set_trace()
     return loss
 
 
