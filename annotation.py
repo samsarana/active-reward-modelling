@@ -7,6 +7,7 @@ import logging
 from itertools import combinations
 from active_learning import *
 from active_learning_logging import *
+from utils import one_hot_action
 
 def generate_rand_clip_pairing(agent_experience, num_labels_requested, args):
     if args.acq_search_strategy == 'christiano':
@@ -169,3 +170,34 @@ class AgentExperience():
             mus = np.where(returns[:, 0] > returns[:, 1], 1, 
                                 np.where(returns[:, 0] == returns[:, 1], 0.5, 0))
         return all_clips_paired, rewards, mus
+
+
+def collect_random_experience(n_clips, args):
+    agent_experience = AgentExperience(n_clips, args)
+    n_steps = n_clips * args.clip_length
+    env = gym.make(args.env_ID, **args.env_kwargs)
+    env.seed(args.random_seed)
+    state, n_episodes = env.reset(), 0
+    for step in range(n_steps):
+        action = env.action_space.sample()
+        next_state, r_true, done, _ = env.step(action) # one continuing episode
+        # record step info
+        # make action one-hot
+        if isinstance(env.action_space, gym.spaces.Discrete):
+            action_one_hot = one_hot_action(action, env)
+        sa_pair = np.append(state, action_one_hot).astype(args.oa_dtype, casting='unsafe') # in case len(state.shape) > 1 (gridworld, atari), np.append will flatten it
+        assert (sa_pair == np.append(state, action_one_hot)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
+        agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
+        # prepare for next step
+        state = next_state
+        if done:
+            n_episodes += 1
+            state = env.reset()
+    return agent_experience
+
+def get_test_data(n_clips_total, n_labels_total, args):
+    agent_experience_test = collect_random_experience(n_clips_total, args)
+    # carve up test experience into clip pairs (with corresponding true rews and mus)
+    clip_pairs_test_, _, mus_test_ = generate_rand_clip_pairing(agent_experience_test, n_labels_total, args)
+    # make them into tensors
+    return torch.from_numpy(clip_pairs_test_).float(), torch.from_numpy(mus_test_).float()
