@@ -63,7 +63,6 @@ def make_arg_changes(args):
     env = gym.make(args.env_ID, **args.env_kwargs)
     if isinstance(env.observation_space, gym.spaces.Box):
         args.obs_shape = env.observation_space.shape[0] # env.observation_space is Box(4,) and calling .shape returns (4,) [gym can be ugly]
-        args.obs_shape_all = env.observation_space.shape # TODO ugly
     else:
         raise RuntimeError("I don't know what observation space {} is!".format(env.observation_space))
     assert isinstance(env.action_space, gym.spaces.Discrete), 'DQN requires discrete action space.'
