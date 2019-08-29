@@ -6,7 +6,7 @@ from collections import Counter
 from q_learning import DQN
 from reward_learning import RewardModel, PrefsBuffer, compute_loss_rm
 from annotation import AgentExperience, generate_rand_clip_pairing
-from reward_learning_utils import one_hot_action
+from utils import one_hot_action
 from tqdm import trange
 
 def parse_arguments():
@@ -184,12 +184,10 @@ def collect_random_experience(env, n_clips, args):
         assert (sa_pair == np.append(state, action_one_hot)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
         agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
         # prepare for next step
-        
         state = next_state
         if done:
             n_episodes += 1
             state = env.reset()
-    logging.info('Finished {} random steps, {} episodes'.format(n_steps, n_episodes))
     return agent_experience
 
 
