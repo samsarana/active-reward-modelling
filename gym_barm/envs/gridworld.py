@@ -22,7 +22,7 @@ class gameOb():
         self.name = name
         
 class UpsampledGridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
-    def __init__(self, partial=False, size=5, random_resets=True, terminate_ep_if_done=False, n_goals=1, n_lavas=1): # sam added defaults
+    def __init__(self, partial=False, size=5, random_resets=True, terminate_ep_if_done=False, n_goals=1, n_lavas=1, pixel_normalize=True): # sam added defaults
         """
         partial: does agent get partial observations or full state?
         size: length and width of square grid.
@@ -31,6 +31,7 @@ class UpsampledGridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
                        Else, they will be placed in the same,
                        fixed positions.
         """
+        self.pixel_normalize = pixel_normalize
         self.sizeX = size
         self.sizeY = size
         self.actions = 4
@@ -175,6 +176,8 @@ class UpsampledGridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
         d = scipy.misc.imresize(a[:,:,2],[84,84,1],interp='nearest')
         # d = np.array(Image.fromarray(a[:,:,2]).resize([84,84,1]))
         a = np.stack([b,c,d],axis=2).astype(np.float64) 
+        if self.pixel_normalize:
+            a = a / 255.
         return a
 
     def step(self,action):
@@ -218,7 +221,7 @@ class UpsampledGridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
 
 
 class GridworldEnv(UpsampledGridworldEnv):
-    def __init__(self, partial=False, size=5, random_resets=True, terminate_ep_if_done=True, n_goals=1, n_lavas=1): # sam added defaults
+    def __init__(self, partial=False, size=5, random_resets=True, terminate_ep_if_done=True, n_goals=1, n_lavas=1, pixel_normalize=True): # sam added defaults
         """
         partial: does agent get partial observations or full state?
         size: length and width of square grid.
@@ -228,6 +231,7 @@ class GridworldEnv(UpsampledGridworldEnv):
                        fixed positions.
         """
         super().__init__()
+        self.pixel_normalize = pixel_normalize
         self.sizeX = size
         self.sizeY = size
         # self.size = size
@@ -301,7 +305,8 @@ class GridworldEnv(UpsampledGridworldEnv):
         c = scipy.misc.imresize(a[:,:,1],[self.sizeY,self.sizeX,1],interp='nearest')
         d = scipy.misc.imresize(a[:,:,2],[self.sizeY,self.sizeX,1],interp='nearest')
         a = np.stack([b,c,d],axis=2).astype(np.float64) 
-        
+        if self.pixel_normalize:
+            a = a / 255.
         return a
 
 

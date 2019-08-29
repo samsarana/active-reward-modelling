@@ -50,6 +50,7 @@ def parse_arguments():
     args.env_kwargs['random_resets'] = not args.grid_deterministic_reset
     args.env_kwargs['n_goals']       = args.n_goals
     args.env_kwargs['n_lavas']       = args.n_lavas
+    args.env_kwargs['pixel_normalize'] = args.pixel_normalize
     args.obs_shape = 3*5*5
     args.obs_act_shape = 3*5*5 + 4
     args.n_actions = 4
@@ -176,8 +177,6 @@ def collect_random_experience(env, n_clips, args):
         action = env.action_space.sample()
         next_state, r_true, done, _ = env.step(action) # one continuing episode
         # record step info
-        if args.pixel_normalize:
-            state = state / 255.
         # make action one-hot
         if isinstance(env.action_space, gym.spaces.Discrete):
             action_one_hot = one_hot_action(action, env)
