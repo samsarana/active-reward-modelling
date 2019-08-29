@@ -160,7 +160,7 @@ def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
         if args.reinit_rm_when_q_learning:
             # logging.debug("Getting rew in q_learning_loss from reinitialised reward_model")
             reward_model, optimizer_rm = init_rm(args)
-        action_one_hot = F.one_hot(action)
+        action_one_hot = F.one_hot(action, num_classes=4)
         assert state.shape == (q_net.batch_size, args.obs_shape)
         assert action_one_hot.shape == (q_net.batch_size, args.act_shape)
         sa_pair = torch.cat((state, action_one_hot.float()), dim=1) # dim 0 = batch, dim 1 = state-action
