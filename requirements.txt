@@ -8,3 +8,4 @@ tqdm
 tb-nightly
 image
 ffmpeg
+scipy==1.2.0
