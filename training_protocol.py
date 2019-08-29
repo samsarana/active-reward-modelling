@@ -217,7 +217,7 @@ def do_pretraining_rollouts(q_net, replay_buffer, env, args):
     num_clips = n_initial_steps // args.clip_length
     logging.info('Stage -1.1: Collecting rollouts from untrained policy, {} agent steps'.format(n_initial_steps))
     agent_experience = AgentExperience(num_clips, args)
-    epsilon_pretrain = 0.5 # for now I'll use a constant epilson during pretraining
+    epsilon_pretrain = 1 # for now I'll use a constant epilson during pretraining
     state = env.reset()
     for _ in range(n_initial_steps):
         action = q_net.act(state, epsilon_pretrain)
