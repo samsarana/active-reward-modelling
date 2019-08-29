@@ -27,7 +27,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, epsilon_schedule
         # record step info
         # sa_pair = torch.tensor(np.append(state, action)).float()
         if isinstance(env.action_space, gym.spaces.Discrete):
-            action_one_hot = one_hot_action(action_one_hot, env)
+            action_one_hot = one_hot_action(action, env)
         sa_pair = np.append(state, action_one_hot).astype(args.oa_dtype, casting='unsafe') # in case len(state.shape) > 1 (gridworld, atari), np.append will flatten it
         assert (sa_pair == np.append(state, action_one_hot)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
         if not args.RL_baseline: agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
