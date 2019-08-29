@@ -17,7 +17,7 @@ def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, 
     reward_model.train() # dropout on
     # logging.info("reward_model weight before train {}: {}".format(i_label, list(reward_model.parameters())[0][0][0]))
     # get TEST data
-    n_labels_total = 500
+    n_labels_total = 50 # actually 500 since args.selection_factor=10
     n_clips_total = 2 * n_labels_total
     clip_pairs_TEST, mus_TEST = get_test_data(n_clips_total, n_labels_total, args)
     assert clip_pairs_TEST.shape == (n_labels_total, 2, args.clip_length, args.obs_act_shape)
