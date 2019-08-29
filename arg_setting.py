@@ -120,9 +120,9 @@ def make_arg_changes(args):
         args.n_epochs_train_rm    = 0
 
     if len(args.n_labels_per_round) == 1:
-        args.n_labels_per_round = args.n_labels_per_round * (args.n_rounds + 1)
+        args.n_labels_per_round = args.n_labels_per_round * (args.n_rounds )#+ 1) # we now consider pretrain to be round 0
 
-    assert len(args.n_labels_per_round) == args.n_rounds + 1
+    assert len(args.n_labels_per_round) == args.n_rounds #+ 1
 
     if args.batch_size_acq == -1:
         args.batch_size_acq = args.n_labels_per_round
