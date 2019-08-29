@@ -31,6 +31,8 @@
 \newcommand{\MI}[1]{\mathbb{I} \left[ #1 \right] }
 \newcommand{\w}{\mathbf{w}}
 \newcommand{\x}{\mathbf{x}}
+\newcommand{\y}{\mathbf{y}}
+\newcommand{\thetab}{\pmb{\theta}}
 
 % these commands are left over from my BBB report; I might never use them
 \newcommand{\vfe}{\mathcal{F}(\data, \theta)}
@@ -140,7 +142,7 @@ The \textit{state-value function} $ v_\pi : \mathcal{S} \mapsto \reals $ for a p
 The \textit{action-value function} $ q_\pi : \mathcal{S} \times \mathcal{A} \mapsto \reals $ for a policy $ \pi $ is defined similarly. It gives the expected return of starting in a state, taking a given action, and following policy $ \pi $ thereafter.
 \begin{definition}[Action-value function]
 	Let $ \pi $ be a policy, $ s \in \mathcal{S} $ be any state and $ a \in \mathcal{A} $ any action. Then the action-value function (or, Q-function) for policy $ \pi $ is:
-	\begin{equation} \label{v_pi}
+	\begin{equation} \label{q_pi}
 	q_\pi(s, a) := \E{\pi}{G_t \mid S_t = s, A_t = a} = \E{\pi}{\sum_{k=0}^{\infty} \gamma^k R_{t+k+1} \mid S_t = s, A_t = a}.
 	\end{equation}
 \end{definition}
@@ -215,17 +217,15 @@ In particular, there has been rapid development in a class of solution methods c
 
 In this section, we first provide background material on deep neural networks, necessary to understand how they approximate a Q-function or policy. We then explain in detail one particular deep reinforcement learning solution method, the deep Q-network, which is important for the rest of this thesis.
 
-\subsection{Deep Neural Networks}
+\subsection{Deep Neural Networks} \label{sec:dnn}
 % model (func approx), data, loss, optimizer (mention batch GD, SGD, minibatch GD, then Adam and RMSProp briefly, since I use these)
 % what is is relation between method of gradient descent and optimizer? where does the former fit into the  model, data, loss, optimizer thing? is it part of "optimizer"?
-The goal of a deep neural network (NN) is to approximate some function $ f^* : X \mapsto Y $ \cite{Goodfellow-et-al-2016}. For example, in image classification, $ X $ may be image pixels, and $ Y $ some image categories, for example, bird, plane or superhero. The neural network specifies a mapping $ y = f(\x ; \theta) $ that depends on some parameters $ \theta $. The task is then to learn the $ \theta $ that give the best approximation to the true function $ f^* $. A deep learning algorithm specifies how to do this.
+The goal of a deep neural network (NN) is to approximate some function $ f^* : \textbf{X} \mapsto \textbf{Y} $ \cite{Goodfellow-et-al-2016}. For example, in image classification, $ \textbf{X} $ may be image pixels, and $ \textbf{Y}Y $ some imge categories, for example, bird, plane or superhero. The neural network specifies a mapping $ y = f(\x ; \theta) $ that depends on some parameters $ \theta $. The task is then to learn the $ \theta $ that give the best approximation to the true function $ f^* $. A deep learning algorithm specifies how to do this.
 
-As in machine learning in general, there are four key components to such an algorithm: model (or function approximator), cost function, optimization procedure and dataset specification.
-
-\subsubsection{Model}
+As in machine learning in general, there are three key components to such an algorithm: model (or function approximator), cost function and optimization procedure andsubsubsection{Model}
 The model, of course, is a deep NN. This simplest form of deep NN is a \textit{deep feedforward network}\footnote{They are also referred to as feedforward neural networks or multilayer perceptrons (MLPs)}. They are called feedforward because when the model is evaluated on input $ \x $, computation flows without ever feeding back into itself in a loop. They are called networks because it is natural to think of these models as being composed of many different functions, each of which is termed a \textit{layer}. Starting from the \textit{input layer}, the output of each layer flows into the next, through each of the \textit{hidden layers} until the \textit{output layer} is reaches and the function returns some value. Deep feedforward networks are deep inasmuch as they have many hidden layers \cite[p.~164]{Goodfellow-et-al-2016}.
 
-\begin{example}
+\begin{example} \label{eg:nn}
 Consider a very simple feedforward NN $ f : \reals^2 \mapsto \reals $ with one hidden layer. $ f $ is composed of three functions: $ f(\x) = f^{(3)}(f^{(2)}(f^{(1)}(\x))) $, where:
 \begin{align*}
 	f^{(1)}(\x) &= \mathbf{z} = \mathbf{W^1}\x \quad \text{for some $ 2\times 2 $ matrix $ \mathbf{W^1} $} \\
@@ -234,23 +234,73 @@ Consider a very simple feedforward NN $ f : \reals^2 \mapsto \reals $ with one h
 \end{align*}
 \end{example}
 
-\subsection{Cost function}
-A cost function is some function that quantifies the performance of our model i.e. how close it is to the true function $ f^* $ we are trying to approximate. It is not clear how to design such a function, not least because we do not have access to $ f^* $. One popular cost function is called the \textit{negative log-likelihood}, which is simply the negative logarithm of the \textit{likelihood function}. Given a parametric family of probability distributions $ p_{\text{model}}(\x ; \theta) $ over the same space, a likelihood function gives the probability of a set of observations for different settings of the model parameters $ \theta $. More formally, consider a set of $ m $ i.i.d. examples $ \mathbb{X} = \{\x_1, \dots, \x_m \} $ drawn from a true but unknown data generating distribution. Then the likelihood function $ L(\theta) $ is defined by:
-\begin{align*}\label{eq:lik}
+\subsubsection{Cost function}
+A \textit{cost function} (or \textit{loss function}) is some function that quantifies the performance of our model i.e. how close it is to the true function $ f^* $ we are trying to approximate. Most modern NNs use the \textit{negative log-likelihood} cost function\footnote{This is also referred to as the \textit{cross-entropy loss} function.} \cite[p.~138]{Goodfellow-et-al-2016}, which is simply the negative logarithm of the \textit{likelihood function}. Given a parametric family of probability distributions $ p_{\text{model}}(\x ; \theta) $ over the same space, a likelihood function gives the probability of a set of observations for different settings of the model parameters $ \theta $. More formally, consider a set of $ m $ i.i.d. examples $ \mathbb{X} = \{\x_1, \dots, \x_m \} $ drawn from a true but unknown data generating distribution. Then the likelihood function $ L(\theta) $ is defined by:
+\begin{align*}
 L(\theta) :=&~ p_{\text{model}}(\mathbb{X} ; \theta) \\
 	=&~ \Pi_{i=1}^m p_{\text{model}}(\x_i ; \theta)
 \end{align*}
-Why log?
-Why negative?
+Taking the logarithm of this function improves numerical stability, and taking its negative value is a convention because optimization in machine learning typically means \textit{minimizing} some function. Finally, we can divide by $ m $, which shows how we can interpret this function cost function as an expectation with respect to the empirical distribution $ \hat{p}_{\text{data}} $ defined by the training data $ \mathbb{X} $. Notice that minimising this modified function will give the same result and maximising the likelihood. So, we define the negative log likelihood cost function $ \text{NLL}(\theta) $ as
+\begin{align} \label{eq:nll}
+\text{NLL}(\theta) :=& -\frac{1}{m} \log L(\theta) \nonumber \\
+=& -\frac{1}{m} \sum_{i=1}^m \log p_{\text{model}}(\x_i ; \theta) \nonumber \\
+=&  -  \E{\x \sim \hat{p}_\text{data}}{\log p_{\text{model}}(\x ; \theta) } 
+\end{align}
+and seek the parameters $ \theta_{\text{ML}} $ which minimise this function:
+\begin{align}
+{\theta}_{\text{ML}} :=&{\arg\min}_{\theta} \text{NLL}(\theta) \nonumber
+\end{align}
 
-\subsection{Optimization procedure}
+In this thesis, we will use $ \text{NLL}(\theta) $ cost function. Our model $ p_{\text{model}} $ is some neural network. Importantly, the NN output must define a probability distribution, which is implemented by making its final layer a softmax or Gaussian probability density function, for categorical and real-valued data, respectively. Furthermore, we actually use a slight generalisation of this procedure to estimate a conditional probability  $ p_{\text{model}}(\y \mid \x; \theta ) $ where $ \x \in \mathbf{X} $ are some inputs and $ \y \in \mathbf{Y} $ some outputs (also called \textit{targets}) of the function $ f^* : \textbf{X} \mapsto \textbf{Y} $ we are trying to approximate. This setting is called \textit{supervised learning}, because the training data is a set of supervised examples i.e. pairs of inputs and correctly labelled outputs. Finally, note that in the real-valued case, using a Gaussian density function on the output of a NN is equivalent to not passing the output values through the density function, and instead simply minimising $ \frac{1}{m} \sum_{i=1}^{m} ( \hat{y}_i - y_i ) $, the mean squared error between the inputs and targets  over the training data $ \langle (\x_i, y_i) \rangle_{i=1}^m $ where $ \hat{y_i} = f(\x_i) $, our model's prediction for input $ \x_i $ \cite[p.~132]{Goodfellow-et-al-2016}.
 
-\subsection{Dataset specification?}
+%Our data (as we shall see) will be generated by an RL agent acting in an environment, and by querying an oracle for preferences about that agent's behaviour. We will optimize the loss function using Adam.
+
+%TODO do I use weight decay? If so, need to include this paragraph
+%The cost function may include additional terms, for example those which add \textit{regularisation}. Such terms discourage the model parameters from simply memorising the training data, which would lead to poor generalisation to unseen examples. One simple example is including a \textit{weight decay} term, which modifies Equation \ref{eq:nll} to:
+%\begin{equation} \label{eq:nllwd}
+%\theta_{\text{ML}} := {\arg\min}_{\theta} ~ \lambda \left\lVert \theta \right\rVert^2_2 - \sum_{i=1}^{m} p_{\text{model}}(\x_i ; \theta)
+%\end{equation}
+
+\subsubsection{Optimization procedure}
+The third component of a deep NN algorithm is the \textit{optimization procedure}. This specifies how we use the cost function to update the NN parameters $ \theta $. Since NNs of interest are typically non-convex functions (due to non-linear layers such $ f^{(2)} $ in Example \ref{eg:nn}), Equation \ref{eq:nll} cannot be optimized in closed form. Thus, we require some numerical optimization procedure \cite[p.~151]{Goodfellow-et-al-2016}; the most common is some variation of \textit{gradient descent}.
+
+Gradient descent works by computing $ \nabla_\theta L(\theta) $, the partial derivate of some cost function $ L(\theta) $ with respect to the model parameters $ \theta $. Since the partial derivate of a function points in the direction of steepest ascent, selecting a new set of parameters $ \theta' = \theta - \epsilon ~ \nabla_\theta L(\theta) $ will mean that $ L(\theta') $ is less than $ L(\theta) $ for some small enough $ \epsilon $ \cite[p.~83]{Goodfellow-et-al-2016}. We can iteratively perform this procedure and eventually reach a \textit{local minimum} i.e. a point where $ L(\theta) $ is lower than at all neighbouring points. $ \epsilon $ is called the \textit{learning rate}; it is typically chosen by trying several small values and choosing that which results in the lowest final $ L(\theta) $.
+
+If $ L(\theta) $ is non-convex then there is no guarantee that this point will be a \textit{global minimum} i.e. a point where $ L(\theta) $ takes its lowest possible value. Much machine learning research is concerned with modifications to this procedure, and how to set initial parameter values in order to avoid getting stuck in local minimum that lead to poor performance. As it turns out, finding local minima that are low enough often leads to very good performance.
+
+One important modification is called \textit{stochastic gradient descent} (SGD). Notice that minimising Equation \ref{eq:nll} via gradient descent requires computing
+\begin{align*}
+\nabla_\theta \text{NLL}(\theta) = \frac{1}{m} \nabla_\theta \sum_{i=1}^{m} - \log p_{\text{model}}(\x_i ; \theta)
+\end{align*}
+on each iteration, which has computational complexity $ O(m) $ \cite[p.~149]{Goodfellow-et-al-2016}. For large training sets, this is infeasible.
+
+SGD is based on the simple idea that this gradient is an expectation over the training data which we can approximate using a small sample \cite[p.~149]{Goodfellow-et-al-2016}:
+\begin{equation}
+\nabla_\theta \text{NLL}(\theta) \approx \frac{1}{m'}  \nabla_\theta \sum_{i=1}^{m'} - \log p_{\text{model}}(\x_i ; \theta)
+\end{equation}
+for some $ \mathbb{B} = \{\x_1, \dots, \x_{m'} \} \subset \mathbb{X} $ called a \textit{minibatch}, sampled uniformly at random from $ \mathbb{X} $.
+
+In this thesis, we use a further variant of SGD called \textit{RMSProp} \cite{tieleman2012lecture}. This maintains individual learning rates for each model parameter and adapts them individually. Specifically, on each learning update, parameter $ \theta_i $ is rescaled according to the inverse square root of an exponentially weighted moving average of the historical squared values of the partial derivate of the cost function with respect to $ \theta_i $. This results in larger learning updates for parameters with small partial derivatives, and smaller learning updates for parameters with larger partial derivates. The intention is to converge to a minimum more rapidly than SGD. Algorithm \ref {alg:rmsprop} gives the precise procedure \cite[p.~304]{Goodfellow-et-al-2016}. 
+\begin{algorithm}
+	\caption{RMSProp.}
+	\label{alg:rmsprop}
+	\begin{algorithmic}[1]
+		\Require Global learning rate $ \epsilon $, decay rate $ \rho $, initial parameters $ \theta $
+		\State Initialise $ \mathbf{r} = 0 $ to accumulate squared gradients for each parameter
+		\Repeat
+		\State Sample minibatch $ \mathbb{B} = \{\x_1, \dots, \x_{m'} \} $
+		\State Compute gradient $ \mathbf{g} \gets \frac{1}{m} \nabla_\theta \sum_i \text{NLL}(\x_i ; \theta) $
+		\State Accumulate squared gradient $ \mathbf{r} \gets \rho \mathbf{r} + (1-\rho) {g} \odot \mathbf{g}  $
+		\State Update parameters: $ \theta \gets \theta - \frac{\epsilon}{\sqrt{r + 10^{-6}}}\odot \mathbf{g} $
+		\Until{convergence}
+	\end{algorithmic}
+\end{algorithm}
+Note that the operations on lines 4-6 are all applied element-wise (that is, to each parameter individually). The adding $ 10^{-6} $ to $ r $ on line 6 improves numerical stability.
 
 \subsection{Deep Q-network} \label{DQN}
-The deep Q-network (DQN) agent approximates $ q_* $ using a deep neural network $ Q(s,a; \theta) $ as the function approximator \cite{Mnih2015}. $ \theta $ are the parameters (weights) of the neural network, which is called a Q-network. It can be trained by performing gradient descent on the parameters $ \theta_i $ at iteration $ i $ to reduce the mean-squared error between $ Q(s,a; \theta_i) $ and the Bellman equation for $ q_*(s,a) $, given in Proposition (\ref{bellman_q*}). Since we do not have access to the true value of this target, we instead use approximate target values $ y = r + max_{a'} ~ Q(s', a' ; \theta_i^-) $, with $ \theta_i^- $ some previous network parameters.
+We now have the necessary background to explain the deep Q-network (DQN). The idea is simply to use a deep NN to approximate the optimal Q-function $ q_* $ using a deep neural network $ Q(s,a; \theta) $ as the function approximator \cite{Mnih2015}. The agent-environment interactions yield experience $\langle (s_t, a_t, r_{t+1}, s_{t+1}) \rangle_{t=0}^T $ which can be used as training data. We can then simply perform gradient descent on the parameters $ \theta_i $ at iteration $ i $ to reduce the mean squared error between predictions $ Q(s,a; \theta_i) $ and targets given by the Bellman equation for $ q_*(s,a) $, from Proposition \ref{bellman_q*}. Since we do not have access to the true value of these targets, we instead use approximate target values $ y = r + max_{a'} ~ Q(s', a' ; \theta_i^-) $, with $ \theta_i^- $ some previous network parameters.
 
-One could then perform standard gradient descent on this loss function using the experience collected by the agent $\langle (s_t, a_t, r_{t+1}, s_{t+1}) \rangle_{t=0}^T $ as data, as one would do in the supervised learning setting. However, there are three important differences in the reinforcement learning setting: correlations both (i) in the data set, and (ii) between $ Q(s,a ; \theta_i) $ and the targets. Furthermore, (iii) updates to $ Q $ may change the policy and thus change the data distribution. This leads to instability in training. To address this, the authors propose two algorithmic innovations. Firstly, instead of training on experience in the order that it is collected, the agent maintains a buffer of experience $ D_t = \{ e_1, e_2, \dots, e_t \} $ where $ e_t = (s_t, a_t, r_{t+1}, s_{t+1}) $. When making learning updates, drawing minibatches uniformly at random from this buffer breaks correlations in the experience sequence and smooths over changes in the data distribution, alleviating problems (i) and (iii). This is termed \textit{experience replay}. Secondly, to reduce correlations between $ Q $ and the targets and alleviate problem (ii), the approximate target values are updated to match the parameters $ Q $ only every $ C $ steps for some hyperparameter $ C > 1 $.
+So far, this looks very similar to the supervised learning setting. However, there are three important differences that come with reinforcement learning. There are two sources of serrelations: both (i) in the data set, and (ii) between $ Q(s,a ; \theta_i) $ and the targets. AlsoFurti) updates to $ Q $ may change the policy and thus change the data distribution. This leads to instability in training. To address this, the authors propose two algorithmic innovations. Firstly, instead of training on experience in the order that it is collected, the agent maintains a buffer of experience $ D_t = \{ e_1, e_2, \dots, e_t \} $ where $ e_t = (s_t, a_t, r_{t+1}, s_{t+1}) $. When making learning updates, drawing minibatches uniformly at random from this buffer breaks correlations in the experience sequence and smooths over changes in the data distribution, alleviating problems (i) and (iii). This is termed \textit{experience replay}. Secondly, to reduce correlations between $ Q $ and the targets and alleviate problem (ii), the approximate target values are updated to match the parameters $ Q $ only every $ C $ steps for some hyperparameter $ C > 1 $.
 
 With these changes, we arrive at a loss function $ \ell_i(\theta_i) $ for each learning update $ i $:
 \begin{align*}
@@ -294,9 +344,10 @@ So far, we have assumed that as the agent interacts with the environment, it rec
 
 To circumvent this issue, a growing body of work studies how to do RL from various forms of human \textit{feedback}, instead of an explicit reward function. Three main feedback methods have been studied, all of which involve a human-in-the-loop providing information to the agent about the desired behaviour. Firstly, an agent may learn from expert demonstrations. This may involve using demonstrations to infer a reward function, an approach known as \textit{inverse reinforcement learning} \cite{Ng2000, Ziebart2008}. One can then use a standard RL algorithm on this recovered reward function. Other methods involve training a policy directly from demonstrations, referred to as \textit{imitation learning} \cite{Ho2016, Hester2017}.
 
-Secondly, an agent may learn from feedback on its current policy in the form of scalar rewards \cite{Knox2009, Warnell2017}. Instead of providing a set of demonstrations, the human-in-the-loop observes the agent's behaviour and gives an appropriate reward. If it is assumed that the human provides this reinforcement according to some latent reward function $ \hat{r} : \mathcal{S} \times \mathcal{A} \mapsto \reals $, then standard supervised learning techniques can be applied to model this function. The agent can then select actions so as to maximise modelled reward.
+Secondly, an agent may learn from feedback on its current policy in the form of scalar rewards \cite{Knox2009, Warnell2017}. Instead of providing a set of demonstrations, the human-in-the-loop observes the agent's behaviour and gives an appropriate reward. If it is assumed that the human provides this reinforcement according to some latent reward function $ \hat{r} : \mathcal{S} \times \mathcal{A} \mapsto \reals $, then standard supervised learning techniques can be applied to model this function. The agent can then select actions so as to maximise expected modelled reward. This approach differs from manually specifying a reward function because the human does not provide a precise function mapping all possible state-action pairs to rewards in advance. Rather, the human remains in the loop, providing reinforcement to the agent in an online fashion.
 
-Finally, an agent may learn from binary preferences over trajectories \cite{Wilson2012, Christiano2017}. As with the \textit{policy feedback} method, the human-in-the-loop observes the agent's behaviour. However, instead of giving scalar rewards, she is periodically presented with a pair of trajectories and must indicate which they prefer\footnote{The human also has the option of expressing indifference, or that the trajectories are incomparable.}. In a similar fashion to the above, we can model the human's preferences $ \hat{r} : \mathcal{S} \times \mathcal{A} \mapsto \reals $. Then, standard RL algorithms can be applied to maximise the expected (modelled) reward over time.
+Finally, an agent may learn from binary preferences over trajectories \cite{Wilson2012, Christiano2017}. As with the \textit{policy feedback} method, the human-in-the-loop observes the agent's behaviour. However, instead of giving reinforcement in the form of scalar rewards, they are periodically presented with a pair of trajectories and must indicate which they prefer\footnote{The human also has the option of expressing indifference, or that the trajectories are incomparable.}. Given some assumptions about how the human's preferences relate to their latent reward function, we can again model $ \hat{r} $ by supervised learningI Then, standard RL algorithms can be applied to maximise the cted $ \rp $ over time.
+%TODO highlight that Warnell doesn't do RL, but rather the agent just selects actions to maximise \rp? I'm confused about why this works. If you don't apply an RL algo, won't the agent be too myopic?
 %TODO is this last paragraph too specfic since it only applies to the reward learning from trajectory preferences in the Deep RL case?
 
 Each of these methods have shown promising results, and some of the advantages and disadvantages are summarised in Table \ref{table:1}.
@@ -322,18 +373,11 @@ Computational efficiency (in simple Atari environments) & On the order of 10 mil
 \end{tabularx}
 \normalsize\doublespacing\justify
 
-Since this dissertation concerns reward learning from trajectory preferences specifically, the remainder of this section explains in more detail the algorithms used to do so. There are two branches of work on this question: that which learns a reward function based on handcrafted features of the environment state, and that which takes the deep learning approach of training a reward model end-to-end without handcrafted features.
+Noticing that the properties on which learning from preferences performs poorly are precisely those on which learning from demonstrations performs well, it is intuitive to think that a combination of feedback methods will give better performance than either one individually. Recent work has confirmed this intuition. Specifically, \cite{Ibarz2018} test this method on nine Atari games \cite{bellemare2013atari}, and show that combined preferences and demonstrations outperform only demonstrations on eight games, and only preferences on the four exploration-heavy games\footnote{The contribution of demonstrations in games without difficult exploration is not significant, except for in two games where demonstrations are harmful compared to using only preferences. The authors hypothesise that this is due to the relatively poor performance of the expert \cite[p.~6]{Ibarz2018}}. \cite{Palan2019} show that in a 2D driving simulator \cite{Byk2017} and two OpenAI Gym environments \cite{brockman2016gym}, using just one expert demonstration reduces by a factor of 3 the number of human preferences required to achieve the same performance \cite[p.~6]{Palan2019}.
 
-\subsection{Reward Learning from Trajectory Preferences with Handcrafted Feature Transformations}
-% Summarise the contributions of the 2017,18,19 papers by Sadigh's lab.
-% (+Batch) Active Preference-Based Learning of Reward Functions (ignore the active part here)
-% DemPref Learning Reward Functions by Integrating Human Demonstrations and Preferences
+This dissertation concerns using active learning to improve the performance of reward learning from trajectory preferences. So far, work on feedback from preferences has taken two different approaches: training a reward model on handcrafted features of the environment, and taking the deep learning approach of training a reward model end-to-end without handcrafted features. As active learning has already been shown to improve performance in the former setting \cite{Byk2017}, we focus on applying active learning in the latter setting. Algorithmic innovation in this setting is also more exciting, because if we want to scale RL to real-world tasks, it is unlikely that we will be able to handcraft all the correct features.
 
-\subsubsection{Active Preference-Based Learning of Reward Functions}
-
-\subsubsection{Batch Active Preference-Based Learning of Reward Functions}
-
-\subsubsection{DemPref}
+In the remainder of this section, we explain in detail the algorithm used for the latter approach, which was developed in \cite{Christiano2017}. We then summarise briefly the difference in learning from preferences with handcrafted features, in which active learning has already been applied successfully.
 
 \subsection{Reward Learning from Trajectory Preferences in Deep RL}
 
@@ -377,9 +421,33 @@ We can then fit the parameters of $ \rp $ by treating the problem as binary clas
 \end{equation}
 Assumption \ref{assumption:1} follows the Elo rating system developed for chess \cite{elo1978rating}. Given a zero-sum game and two players with a scalar rating, Elo specifies a mapping from player ratings (in our case: reward) to the probability of each player winning (in our case: the probability of each clip being preferred by the annotator).
 
+\subsection{Reward Learning from Trajectory Preferences with Handcrafted Feature Transformations}
+\subsubsection{Setting}
+\cite{Byk2017} consider a more narrow setting. There are two vehicles, $ H $ which is ``human driven'', and $ R $ which is a ``robot''. The vehicles are in a 2D environment with each obeying a simple point-mass dynamics model, with state space $ \mathcal{S} $:
+\begin{align*}
+[ \dot{x}~~~ \dot{y}~~~ \dot{\theta} ~~~ \dot{v} ] = [  v \cdot \cos(\theta) ~~~ v \cdot \sin(\theta) ~~~ v \cdot u_1 ~~~ u_2 - \alpha\cdot v  ] 
+\end{align*}
+where $ v $ and $ \theta $ are vehicle velocity and direction respectively. The action space $ \mathcal{A} $ is $ [u_1, u_2] $ which represent steering and acceleration respectively. $ \alpha $ is a friction coefficient.
+
+They assume that $ \hat{r} : \mathcal{S} \times \mathcal{A} \mapsto \reals $ is a linear combination of a set of five features:
+\begin{align*}
+\rp(s,a) = \w^T \phi(s,a).
+\end{align*}
+These five features $ \w = [w_1, w_2, w_3, w_4, w_5] $ are handcrafted, and correspond to (i) distance to road boundary, (ii) distance to centre of road lane with an extra penalty for shifting lane, (iii) difference between vehicle speed and the speed limit, (iv) dot product between $ \theta $ and a vector pointing along the road, and (v) a non-spherical Gaussian over the distance from $ R $ to $ H $ (to penalise collisions).
+
+Like \cite{Christiano2017}, there is annotator who is queried for preferences on trajectory segments. Some $ \w_\text{true} $ is specified in advance, and the annotator uses this to answer the queries as in Process 2 of \cite{Christiano2017}.
+
+\subsubsection{Method}
+\cite{Byk2017} do not attempt to train a policy using the learned reward model. Their performance metric is simply the expected similarity of the true and predicted feature weights:
+\begin{align*}
+m = \mathbb{E}\left[  \frac{\w \cdot \w_\text{true}}{\vert \w \vert \vert \w_\text{true} \vert}  \right]
+\end{align*}
+They generate queries by solving a constrained optimization problem to find the two trajectory segments that will maximise the volume removed from the hypothesis space. Using the same mapping from reward space to preference space as \cite{Christiano2017} (Equation \ref{eq:softmax}), they start with a uniform prior over the space of all $ \w $ (uniform over the unit ball), generate a query, get a preference from the annotator, and perform a Bayesian update on this labelled clip pair. Thanks to the simple function form of their reward model, this Bayesian update has a closed form solution. They repeat this procedure until the reward model is close to the true reward function, according to $ m $.
+
 \chapter{Uncertainty in Deep Learning}
 % Talk about Yarin's thesis, BNNs; maybe Ian Obsband paper for good measure (esp. if I end up using ensemble instead of MC-Dropout?)
-Standard deep learning models output point estimates. For example, a model trained to classify pictures of dogs according to their breed takes a picture of a dog and outputs its predicted breed. However, what will the model do if it is given a picture of a cat? \cite{Gal2017a}.
+As we saw in Section \ref{sec:dnn}, deep NNs output point estimates. %TODO we acutally said they ouput probabilities, so I need to say Yarin's thing about them not truly capturing uncertainty instead
+For example, a model trained to classify pictures of dogs according to their breed takes a picture of a dog and outputs its predicted breed. However, what will the model do if it is given a picture of a cat? \cite{Gal2017a}.
 
 We probably want the model to be able to recognise that this is an out of distribution example, and request more training data, or simply say that it doesn't know the answer. However, since standard deep learning models output only point estimates, the model will just go ahead and classify the cat as some breed of dog, just as confidently as any other input.
 
@@ -395,7 +463,12 @@ reasonably sized model, so we resort to using a variational approximation. Simil
 we use MC dropout [9], which is easy to implement, scales well to large models and datasets, and is
 straightforward to optimise.
 
+%Mention BBB as another method of VI, and that ensemble of models is another way to sample from approximate posterior %TODO what is the citation for this?t
+Explain what VI is by lifting words from your BBB report.
+
 \section{Model Uncertainty in BNNs}
+This section would say basically the same stuff as active learning, because the acquisiiton functions we consider are precisely the ways to get model uncertainty with a BNN in classification setting.
+Not sure if I need to include it, or maybe I should collapse the sections.
 
 \chapter{Active Learning}
 % BALD (Houlsby: Bayesian Active Learning for Classification and Preference Learning)
@@ -467,20 +540,13 @@ Discussion of previous work.
 \subsection{APRIL}
 % APRIL
 
-\subsection{Active Preference-Based Learning of Reward Functions with handcrafted feature transformations}% Summarise the *active learning parts* of the 2017,18,19 papers by Sadigh's lab (I've already summarised the 
-% reward learning parts, above)
-% it probably doesn't make sense to have a subsubsection for each, as I assume the active parts are basically the same?
-% but work this out once you've worked out what the differences are
-
-\subsubsection{Active Preference-Based Learning of Reward Functions}
-
-\subsubsection{Batch Active Preference-Based Learning of Reward Functions}
-
-\subsubsection{DemPref}
-% Learning Reward Functions by Integrating Human Demonstrations and Preferences (DemPref) (they use the `Volume Removal Method' to do Active Learning)
+\subsection{Active Preference-Based Learning of Reward Functions with handcrafted feature transformations}
+% Summarise the active learning method used in 2017 papers by Sadigh's lab
+%(they use the `Volume Removal Method' to do Active Learning)
 
 \subsection{Deep RL from Human Preferences}
-% Christiano: summarise what didn't work, and what might have gone wrong (how to frame this depends on the results that I eventually get to)
+% Christiano: summarise what didn't work, and                                                                       
+% what might have gone wrong -- already written this; just mention that i'll explain it in Section \ref{sec:failure}
 
 
 \part{Innovation}
@@ -491,7 +557,7 @@ Discussion of previous work.
 % I should have already summarised the high level approach in Background
 % And I'll describe the different methods of Active Learning/uncert estimates that I tried
 
-\section{Possible failure modes of active reward modelling}
+\section{Possible failure modes of active reward modelling} \label{sec:failure}
 Before developing our method, it was important to consider the possible failure modes of the previous attempt to apply active learning to reward modelling. \cite{Christiano2017} compute the standard deviation of each clip pair $(\sigma^1, \sigma^2)$ across the ensemble. In the language of acquisition functions, they use $ a_{mean\_std}((\sigma^1, \sigma^2), \rp) $, which in this setting is written as:
 \begin{align*}
 a_{mean\_std}((\sigma^1, \sigma^2), \rp) = \sqrt{\frac{1}{3}\sum_{i=1}^{3}\left(\hat{P_i}(\sigma^1 \succ \sigma^2  ; \rp) - \overline{\hat{P}(\sigma^1 \succ \sigma^2  ; \rp)}\right)^2},
