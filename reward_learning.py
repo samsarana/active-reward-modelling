@@ -18,14 +18,19 @@ def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, 
     for epoch in range(epochs):
         with torch.autograd.detect_anomaly():
             if args.train_rm_ensemble_independently:
+                raise NotImplementedError("Training ensemble separately like this doesn't work in pytorch because the weight decay term is applied to all the params!")
+                # also any momentum term would totally screw up because it would be 0 on n-1 / n of the training loops
+                # If you want to implement train_rm_ensemble_independently properly, you need n different optimizers, kept in a list, and each model is kept in a list
+                # then you just call the training loop 5 times with a for-loop
+                # no ensemble then becomes a special case with list of size 1
                 assert isinstance(reward_model, RewardModelEnsemble)
                 # independent_train_rm_ensemble()
                 loss_total, n_indifferent_labels = 0, 0
                 for ensemble_num in range(reward_model.ensemble_size):
                     clip_pair_batch, mu_batch = prefs_buffer.sample(args.batch_size_rm)
+                    reward_model.zero_grad()
                     r_hats_batch = reward_model.forward_single(clip_pair_batch, ensemble_num, mode='clip_pair_batch', normalise=False).squeeze(-1)
                     loss_rm = compute_loss_rm(r_hats_batch, mu_batch)
-                    optimizer_rm.zero_grad()
                     loss_rm.backward()
                     optimizer_rm.step()
                     # acumulate loss for logging purposes
