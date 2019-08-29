@@ -9,7 +9,7 @@ def parse_arguments():
     parser.add_argument('--default_settings', type=str, default=None, help='Flag to override args with those in default.py. Choice of: acrobot_sam, openai, openai_atari, cartpole, gridworld')
     parser.add_argument('--env_str', type=str, default=None, help='Choice of: acrobot, mountain_car, cartpole, cartpole_old, cartpole_old_rich, frozen_lake, gridworld')
     parser.add_argument('--n_runs', type=int, default=1, help='number of runs to repeat the experiment')
-    parser.add_argument('--n_rounds', type=int, default=5, help='number of rounds to repeat main training loop')
+    parser.add_argument('--n_rounds', type=int, default=10, help='number of rounds to repeat main training loop')
     parser.add_argument('--RL_baseline', action='store_true', help='Do RL baseline instead of reward learning?')
     parser.add_argument('--random_policy', action='store_true', help='Do the experiments with an entirely random policy, to benchmark performance')
     parser.add_argument('--test', action='store_true', help='Flag to make training procedure very short (to check for errors)')
@@ -44,7 +44,7 @@ def parse_arguments():
     parser.add_argument('--exploration_fraction', type=float, default=0.1, help='If `linear` epsilon annealing scheme, over what fraction of entire training period is epsilon annealed?')
     # parser.add_argument('--n_labels_per_round', type=int, default=5, help='How many labels to acquire per round?')
     # parser.add_argument('--n_labels_pretraining', type=int, default=500, help='How many labels to acquire before main training loop begins? Determines no. agent steps in pretraining. If -1 (default), it will be set to n_labels_per_round') # Ibarz: 25k. Removed support for diff no. labels in pretraining
-    parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[20,20,20,20,20], help='How many labels to acquire per round? (in main training loop). len should be n_rounds + 1, since 0th is pretraining labels')
+    parser.add_argument('--n_labels_per_round', type=int, nargs='+', default=[20,20,20,20,20,20,20,20,20,20], help='How many labels to acquire per round? (in main training loop). len should be n_rounds + 1, since 0th is pretraining labels')
     parser.add_argument('--batch_size_acq', type=int, default=-1, help='In acquiring `n_labels_per_round`, what batch size are these acquired in? Reward model is trained after every acquisition batch. If -1 (default), `batch_size_acq` == `n_labels_per_round`, as in Christiano/Ibarz')
     parser.add_argument('--n_agent_steps', type=int, default=150000, help='No. of steps that agent takes per round in environment, while training every agent_gdt_step_period steps') # Ibarz: 100k
     parser.add_argument('--n_agent_steps_pretrain', type=int, default=-1, help='No. of steps that agent takes before main training loop begins. epsilon=0.5 for these steps. If -1 (default) then n_agent_steps_pretrain will be determined by n_labels_per_round (will collect just enough)')
