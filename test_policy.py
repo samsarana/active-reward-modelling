@@ -6,7 +6,7 @@ from gym import wrappers
 from time import time, sleep
 from rl_logging import *
 from atari_preprocessing import *
-from reward_learning_utils import one_hot_action
+from utils import one_hot_action
 
 
 def test_policy(q_net, reward_model, true_reward_stats, args, writers, i_train_round, i_test, num_episodes=100):

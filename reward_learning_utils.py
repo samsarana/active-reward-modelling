@@ -3,12 +3,8 @@ import matplotlib.pyplot as plt
 import torch, logging, pickle
 import torch.optim as optim
 from reward_learning import RewardModel, RewardModelEnsemble, CnnRewardModel
+from utils import one_hot_action
 import gym
-
-def one_hot_action(action, env):
-    action_one_hot = np.zeros(env.action_space.n)
-    action_one_hot[action] = 1.
-    return action_one_hot
 
 def update_running_mean_var(reward_model, acquired_clip_data):
     reward_model.eval() # turn off dropout

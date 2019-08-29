@@ -99,3 +99,8 @@ class ExpSchedule(object):
     def step(self):
         if self.epsilon > self.final_p:
             self.epsilon *= self.decay_rate
+
+def one_hot_action(action, env):
+    action_one_hot = np.zeros(env.action_space.n)
+    action_one_hot[action] = 1.
+    return action_one_hot
