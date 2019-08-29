@@ -1,0 +1,10 @@
+#!/bin/bash
+python main.py --info=RL            --env_str=gridworld --default_settings=gridworld_zac --agent_gets_dones  --n_epochs_train_rm=30000 --grid_size=4 --grid_deterministic_reset --RL_baseline
+python main.py --info=random_policy --env_str=gridworld --default_settings=gridworld_zac --agent_gets_dones                            --grid_size=4 --grid_deterministic_reset --random_policy
+python main.py --info=random_rp     --env_str=gridworld --default_settings=gridworld_zac --agent_gets_dones                            --grid_size=4 --grid_deterministic_reset --n_epochs_train_rm=0
+python main.py --info=RandAcq       --env_str=gridworld --default_settings=gridworld_zac --agent_gets_dones  --n_epochs_train_rm=30000 --grid_size=4 --grid_deterministic_reset
+python main.py --info=RandAcq-ens   --env_str=gridworld --default_settings=gridworld_zac --agent_gets_dones  --n_epochs_train_rm=30000 --grid_size=4 --grid_deterministic_reset --size_rm_ensemble=5
+python main.py --info=BALD          --env_str=gridworld --default_settings=gridworld_zac --agent_gets_dones  --n_epochs_train_rm=30000 --grid_size=4 --grid_deterministic_reset --size_rm_ensemble=5 --uncert_method=ensemble --active_method=BALD
+python main.py --info=BALD-no-batch --env_str=gridworld --default_settings=gridworld_zac --agent_gets_dones  --n_epochs_train_rm=30000 --grid_size=4 --grid_deterministic_reset --size_rm_ensemble=5 --uncert_method=ensemble --active_method=BALD --batch_size_acq 1 1 1 1 1
+python main.py --info=mean_std      --env_str=gridworld --default_settings=gridworld_zac --agent_gets_dones  --n_epochs_train_rm=30000 --grid_size=4 --grid_deterministic_reset --size_rm_ensemble=5 --uncert_method=ensemble --active_method=mean_std
+python main.py --info=var_ratios    --env_str=gridworld --default_settings=gridworld_zac --agent_gets_dones  --n_epochs_train_rm=30000 --grid_size=4 --grid_deterministic_reset --size_rm_ensemble=5 --uncert_method=ensemble --active_method=var_ratios

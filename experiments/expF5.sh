@@ -1,0 +1,3 @@
+#!/bin/bash
+python main.py --info=mean_std      --env_str=gridworld --default_settings=gridworld_zac --agent_gets_dones  --n_epochs_train_rm=30000 --grid_size=4 --grid_deterministic_reset --size_rm_ensemble=5 --uncert_method=ensemble --active_method=mean_std
+python main.py --info=var_ratios    --env_str=gridworld --default_settings=gridworld_zac --agent_gets_dones  --n_epochs_train_rm=30000 --grid_size=4 --grid_deterministic_reset --size_rm_ensemble=5 --uncert_method=ensemble --active_method=var_ratios
