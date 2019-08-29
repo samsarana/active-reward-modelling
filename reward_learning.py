@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from utils import RunningStat
+from annotation import get_test_data
 
 def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_label):
     writer1, writer2 = writers
@@ -15,6 +16,16 @@ def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, 
     logging.info("Training reward model for {} epochs".format(epochs))
     reward_model.train() # dropout on
     # logging.info("reward_model weight before train {}: {}".format(i_label, list(reward_model.parameters())[0][0][0]))
+    # get TEST data
+    n_labels_total = 500
+    n_clips_total = 2 * n_labels_total
+    clip_pairs_TEST, mus_TEST = get_test_data(n_clips_total, n_labels_total, args)
+    assert clip_pairs_TEST.shape == (n_labels_total, 2, args.clip_length, args.obs_act_shape)
+    assert mus_TEST.shape == (n_labels_total,)
+    # compute lower bound for test loss (relative to batch size of args.batch_size_rm, since we use reduction='sum')
+    n_indifferent_labels_TEST = Counter(mus_TEST.numpy()).get(0.5, 0)
+    loss_lower_bound_TEST = n_indifferent_labels_TEST * math.log(2) / n_labels_total * args.batch_size_rm
+    
     for epoch in range(epochs):
         with torch.autograd.detect_anomaly():
             if args.train_rm_ensemble_independently:
@@ -58,6 +69,17 @@ def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, 
                 n_indifferent_labels = Counter(mu_batch.numpy()).get(0.5, 0)
                 loss_lower_bound = n_indifferent_labels * math.log(2)
                 writer2.add_scalar('6.reward_model_loss/label_{}'.format(i_label), loss_lower_bound, epoch)
+        if epoch % 5000 == 0 or epoch == epochs - 1:
+                reward_model.eval() # turn dropout off for computing test loss
+                # pass clip pairs thru reward model to get predicted rewards
+                r_hats_TEST = reward_model(clip_pairs_TEST, mode='clip_pair_batch', normalise=False).squeeze(-1).detach()
+                # compute loss
+                loss_rm_TEST = compute_loss_rm(r_hats_TEST, mus_TEST)  / n_labels_total * args.batch_size_rm
+                # log them
+                writer1.add_scalar('6a.reward_model_test_loss/label_{}'.format(i_label), loss_rm_TEST, epoch)
+                # log lower bound too
+                writer2.add_scalar('6a.reward_model_test_loss/label_{}'.format(i_label), loss_lower_bound_TEST, epoch)
+                reward_model.train() # turn dropout back on
     # logging.info("reward_model weight after  train {}: {}".format(i_label, list(reward_model.parameters())[0][0][0]))
     return reward_model
 
