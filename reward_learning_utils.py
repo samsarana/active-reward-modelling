@@ -17,7 +17,12 @@ def update_running_mean_var(reward_model, acquired_clip_data):
     for clip_pair in clip_pairs:
         clip_pair_tensor = torch.from_numpy(clip_pair).unsqueeze(0).float() # unsqueeze first to get batch dimension so it's compatible with mode='clip_pair_batch'
         if isinstance(reward_model, RewardModelEnsemble):
-            raise NotImplementedError
+            for ensemble_num in range(reward_model.ensemble_size):
+                r_hats = reward_model.forward_single(clip_pair_tensor, ensemble_num, mode='clip_pair_batch').detach().reshape(-1).numpy()
+                assert r_hats.shape == (2 * clip_length,)
+                for r_hat in r_hats:
+                    running_stat = getattr(reward_model, 'running_stats{}'.format(ensemble_num))
+                    running_stat.push(r_hat)
         elif isinstance(reward_model, RewardModel) or isinstance(reward_model, CnnRewardModel):
             r_hats = reward_model(clip_pair_tensor, mode='clip_pair_batch').detach().reshape(-1).numpy()
             assert r_hats.shape == (2 * clip_length,)
