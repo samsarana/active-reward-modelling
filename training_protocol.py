@@ -225,8 +225,10 @@ def do_pretraining_rollouts(q_net, replay_buffer, env, args):
         next_state, r_true, done, _ = env.step(action)    
         # record step information
         # sa_pair = torch.tensor(np.append(state, action)).float() # old code. float32s used too much memory when observation shape too large
-        sa_pair = np.append(state, action).astype(args.oa_dtype, casting='unsafe') # casting='unsafe' is default; i want to make explicit that this could be a dangerous line
-        assert (sa_pair == np.append(state, action)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
+        if isinstance(env.action_space, gym.spaces.Discrete):
+            action_one_hot = one_hot_action(action, env)
+        sa_pair = np.append(state, action_one_hot).astype(args.oa_dtype, casting='unsafe') # casting='unsafe' is default; i want to make explicit that this could be a dangerous line
+        assert (sa_pair == np.append(state, action_one_hot)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
         agent_experience.add(sa_pair, r_true) # add reward too in order to produce synthetic prefs
         if args.agent_gets_dones:
             replay_buffer.push(state, action, r_true, next_state, done)

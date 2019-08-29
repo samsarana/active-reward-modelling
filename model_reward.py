@@ -6,6 +6,7 @@ from collections import Counter
 from q_learning import DQN
 from reward_learning import RewardModel, PrefsBuffer, compute_loss_rm
 from annotation import AgentExperience, generate_rand_clip_pairing
+from reward_learning_utils import one_hot_action
 from tqdm import trange
 
 def parse_arguments():
@@ -180,8 +181,7 @@ def collect_random_experience(env, n_clips, args):
             state = state / 255.
         # make action one-hot
         if isinstance(env.action_space, gym.spaces.Discrete):
-            action_one_hot = np.zeros(env.action_space.n)
-            action_one_hot[action] = 1.
+            action_one_hot = one_hot_action(action, env)
         sa_pair = np.append(state, action_one_hot).astype(args.oa_dtype, casting='unsafe') # in case len(state.shape) > 1 (gridworld, atari), np.append will flatten it
         assert (sa_pair == np.append(state, action_one_hot)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
         agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
