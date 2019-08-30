@@ -221,7 +221,7 @@ class UpsampledGridworldEnv(gym.Env): # sam subclassed gameEnv as gym.Env
 
 
 class GridworldEnv(UpsampledGridworldEnv):
-    def __init__(self, partial=False, size=5, random_resets=True, terminate_ep_if_done=True, n_goals=1, n_lavas=1, pixel_normalize=True): # sam added defaults
+    def __init__(self, partial=False, size=5, random_resets=True, terminate_ep_if_done=True, n_goals=1, n_lavas=0, pixel_normalize=True): # sam added defaults
         """
         partial: does agent get partial observations or full state?
         size: length and width of square grid.
@@ -267,8 +267,6 @@ class GridworldEnv(UpsampledGridworldEnv):
         self.objects.append(hero)
         bug = gameOb(self.newPosition('goal'),1,1.,1,1,'goal')
         self.objects.append(bug)
-        hole = gameOb(self.newPosition('fire'),1,1.,0,-1,'fire')
-        self.objects.append(hole)
         if self.n_goals >= 2:
             bug2 = gameOb(self.newPosition('goal2'),1,1.,1,1,'goal2')
             self.objects.append(bug2)
@@ -278,6 +276,9 @@ class GridworldEnv(UpsampledGridworldEnv):
         if self.n_goals >= 4:
             bug4 = gameOb(self.newPosition('goal4'),1,1.,1,1,'goal4')
             self.objects.append(bug4)
+        if self.n_lavas >= 1:
+            hole = gameOb(self.newPosition('fire'),1,1.,0,-1,'fire')
+            self.objects.append(hole)
         if self.n_lavas >= 2:
             hole2 = gameOb(self.newPosition('fire2'),1,1.,0,-1,'fire2')
             self.objects.append(hole2)
