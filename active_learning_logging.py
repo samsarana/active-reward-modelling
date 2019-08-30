@@ -2,6 +2,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import csv
 from collections import Counter
 import gym
 from gym import wrappers
@@ -18,28 +19,12 @@ def log_acquisition(idx, info_per_clip_pair, clip_pairs, rews, mus, rand_clip_pa
          `clip_pairs`: batch of clip pairs (shape=batch_size, 2, clip_length, obs_act_length)
     """
     writer1, writer2 = writers
-    if args.active_method:
-        assert info_per_clip_pair is not None
-        assert len(info_per_clip_pair.shape) == 1
-        total_info = info_per_clip_pair.sum()
-        selected_info = info_per_clip_pair[idx].sum()
-        writer1.add_scalar('5b.info_gain_per_label', selected_info, i_label)
-        writer2.add_scalar('5b.info_gain_per_label', total_info, i_label)
-        # num_pairs = len(info_per_clip_pair)
-        # colours = ['tab:orange' if i in idx else 'tab:blue' for i in range(num_pairs)]
-        # info_bars = plt.figure()
-        # plt.title('Information gain per clip pair')
-        # plt.xlabel('Clip pairs')
-        # plt.ylabel('Metric of info gain')
-        # plt.bar(np.arange(num_pairs), info_per_clip_pair, color=colours)
-        # writer1.add_figure('3.info_gain_per_clip_pair', info_bars, i_label)
-
+    # log no. labels of each type acquired
     mu_counts = dict(Counter(mus))
     rand_mu_counts = dict(Counter(rand_mus))
     label_counts = np.array([[mu_counts.get(0, 0), mu_counts.get(0.5, 0), mu_counts.get(1, 0)],
                           [rand_mu_counts.get(0, 0), rand_mu_counts.get(0.5, 0), rand_mu_counts.get(1, 0)]
                          ])
-    # log no. labels of each type acquired
     writer1.add_scalar('5c.0_labels', mu_counts.get(0, 0), i_label)
     writer1.add_scalar('5c.0.5_labels', mu_counts.get(0.5, 0), i_label)
     writer1.add_scalar('5c.1_labels', mu_counts.get(1, 0), i_label)
@@ -47,43 +32,61 @@ def log_acquisition(idx, info_per_clip_pair, clip_pairs, rews, mus, rand_clip_pa
     writer2.add_scalar('5c.0.5_labels', rand_mu_counts.get(0.5, 0), i_label)
     writer2.add_scalar('5c.1_labels', rand_mu_counts.get(1, 0), i_label)
 
-    # save video of clip pairs. TODO this code doesn't work. the video is only of the first frame
-    if args.save_pair_videos:
-        batch_size, _, clip_length, obs_act_length = clip_pairs.shape
-        for i_batch in range(batch_size):
-            for pair_num in range(2):
-                clip = clip_pairs[i_batch][pair_num]
-                env = gym.make(args.env_ID, **args.env_kwargs)
-                fname = '{}/videos/clip_pairs/i_label={}i_batch={}pair={}time={}/'.format(
-                    args.logdir, i_label, i_batch, pair_num, str(time()))
-                env = wrappers.Monitor(env, fname)
-                # env._before_reset()
-                env.reset()
-                # env._flush()
-                env.reset_video_recorder()
-                # env._after_reset()
-                for step in range(clip_length):
-                    obs = clip[step][:args.obs_shape]
-                    action = clip[step][args.obs_shape:]
-                    if 'Acrobot' in args.env_ID:
-                        theta1 = np.arccos(obs[0])
-                        if obs[1] < 0: # sin(theta1) > 0
-                            theta1 = -theta1
-                        theta2 = np.arccos(obs[2])
-                        if obs[3] < 0: # sin(theta2) > 0
-                            theta2 = -theta2
-                        state = np.array([theta1, theta2, obs[4], obs[5]])
-                    elif 'CartPole' in args.env_ID:
-                        state = obs
-                    else:
-                        raise NotImplementedError("You haven't told me how to map observations to states for environment {}".format(args.env_ID))
-                    # env._before_step(action)
-                    env.state = state
-                    # env._flush(force=True)
-                    env.video_recorder.capture_frame()
-                    # env._after_step(obs, rews[i_batch][pair_num][step], False, {})
-                    # sleep(1e-3)
-                env.close()
+    with open('./logs/acqs.csv', 'a', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile, delimiter=',')
+        csv_writer.writerow(['i_label', i_label])
+        csv_writer.writerow(['idx'])
+        csv_writer.writerow(idx)
+        csv_writer.writerow(['STATISTICS'])
+        actions = clip_pairs[...,-args.act_shape:]
+        rand_actions = rand_clip_pairs[...,-args.act_shape:]
+        sum_actions      = actions.sum(axis=(0,1,2))
+        sum_rand_actions = rand_actions.sum(axis=(0,1,2))
+        csv_writer.writerow(['rews.var'])
+        csv_writer.writerow([rews.var()])
+        csv_writer.writerow(['rand_rews.var'])
+        csv_writer.writerow([rand_rews.var()])
+        csv_writer.writerow(['sum_actions'])
+        csv_writer.writerow(sum_actions)
+        csv_writer.writerow(['sum_rand_actions'])
+        csv_writer.writerow(sum_rand_actions)
+        csv_writer.writerow(['ACQUIRED'])
+        csv_writer.writerow(['actions'])
+        csv_writer.writerow(actions)
+        csv_writer.writerow(['rews'])
+        csv_writer.writerow(rews)
+        csv_writer.writerow(['mus'])
+        csv_writer.writerow(mus)
+        csv_writer.writerow(['CANDIDATE'])
+        csv_writer.writerow(['rand_actions'])
+        csv_writer.writerow(rand_actions)
+        csv_writer.writerow(['rand_rews'])
+        csv_writer.writerow(rand_rews)
+        csv_writer.writerow(['rand_mus'])
+        csv_writer.writerow(rand_mus)
+
+
+    if args.active_method:
+        assert info_per_clip_pair is not None
+        assert len(info_per_clip_pair.shape) == 1
+        total_info = info_per_clip_pair.sum()
+        selected_info = info_per_clip_pair[idx].sum()
+        writer1.add_scalar('5b.info_gain_per_label', selected_info, i_label)
+        writer2.add_scalar('5b.info_gain_per_label', total_info, i_label)
+        num_pairs = len(info_per_clip_pair)
+        colours = ['tab:orange' if i in idx else 'tab:blue' for i in range(num_pairs)]
+        info_bars = plt.figure()
+        plt.title('Information gain per clip pair')
+        plt.xlabel('Clip pairs')
+        plt.ylabel('Metric of info gain')
+        plt.bar(np.arange(num_pairs), info_per_clip_pair, color=colours)
+        writer1.add_figure('3.info_gain_per_clip_pair', info_bars, i_label)
+        with open('./logs/acqs.csv', 'a', newline='') as csvfile:
+            csv_writer = csv.writer(csvfile, delimiter=',')
+            csv_writer.writerow(['info_per_clip_pair_ACQUIRED'])
+            csv_writer.writerow([mutual_info.item() for mutual_info in info_per_clip_pair[idx]])
+            csv_writer.writerow(['info_per_clip_pair_CANDIDATE'])
+            csv_writer.writerow([mutual_info.item() for mutual_info in info_per_clip_pair])
     return label_counts
 
 def log_total_mu_counts(mu_counts, writers, args):
