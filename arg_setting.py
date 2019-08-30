@@ -93,6 +93,7 @@ def parse_arguments():
     parser.add_argument('--grid_deterministic_reset', action='store_true', help='Do objects in grid reset to same positions once episode terminates?')
     parser.add_argument('--grid_no_terminate_ep_if_done', action='store_true', help='Flag to make env.step() not give done=True when agent reaches goal or lava, but only when env.spec.max_episode_steps is reached.')
     parser.add_argument('--pixel_normalize', action='store_true', help='Divide pixel value by 255.')
+    parser.add_argument('--grid_n_lavas', type=int, default=0, help='Number of lavas in gridworld')
      
     args = parser.parse_args()
     args = make_arg_changes(args)
@@ -192,6 +193,7 @@ def make_arg_changes(args):
         args.env_kwargs['size']                 = args.grid_size
         args.env_kwargs['random_resets']        = not args.grid_deterministic_reset
         args.env_kwargs['terminate_ep_if_done'] = not args.grid_no_terminate_ep_if_done
+        args.env_kwargs['n_lavas']              = args.grid_n_lavas
 
     # check some things about RL training
     assert args.n_agent_steps % args.clip_length == 0,\
