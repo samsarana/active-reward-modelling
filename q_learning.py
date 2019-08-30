@@ -140,7 +140,7 @@ class ReplayBuffer():
         return len(self.buffer)
 
 
-def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
+def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model_ensemble=None,
                     normalise_rewards=True, true_reward_stats=None):
     """Defines the Q-Learning loss function.
        Help on interpreting variables:
@@ -155,23 +155,25 @@ def q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=None,
        expected_q_value : batch_dim. implements y_i.
     """
     state, action, true_reward, next_state, done = replay_buffer.sample(q_net.batch_size)
-    # compute r_hats according to current reward_model and/or normalise rewards
-    if reward_model: # RL from preferences
-        if args.reinit_rm_when_q_learning:
-            # logging.debug("Getting rew in q_learning_loss from reinitialised reward_model")
-            reward_model, optimizer_rm = init_rm(args)
+    # compute r_hats according to current reward_model_ensemble and/or normalise rewards
+    if reward_model_ensemble: # RL from preferences
+        # if args.reinit_rm_when_q_learning:
+        #     logging.info("Using reinitialised reward model to compute rewards. AGENT SHOULD NOT TRAIN!")
+        #     reward_model_ensemble, _ = init_rm(args)
         action_one_hot = F.one_hot(action, num_classes=4)
         assert state.shape == (q_net.batch_size, args.obs_shape)
         assert action_one_hot.shape == (q_net.batch_size, args.act_shape)
         sa_pair = torch.cat((state, action_one_hot.float()), dim=1) # dim 0 = batch, dim 1 = state-action
         assert sa_pair.shape == (q_net.batch_size, args.obs_act_shape)
-        reward_model.eval() # turn off dropout at 'test' time i.e. when getting rewards to send to DQN
         if args.no_ensemble_for_reward_pred:
-            assert isinstance(reward_model, RewardModelEnsemble)
-            rew = reward_model.forward_single(sa_pair, mode='batch', normalise=normalise_rewards).detach()
+            raise NotImplementedError("You haven't updated this for reward_model of type list")
         else:
-            rew = reward_model(sa_pair, mode='batch', normalise=normalise_rewards).detach()
-        rew = rew.squeeze()
+            r_preds = []
+            for reward_model in reward_model_ensemble:
+                reward_model.eval() # dropout off at 'test' time i.e. when logging performance
+                r_preds.append(reward_model(sa_pair, normalise=normalise_rewards).detach())
+            rew = torch.cat(r_preds, dim=1).mean(dim=1) # each element in list r_preds has shape (B, args.size_rm_ensemble). cat and mean along ensemble dimension
+            assert rew.shape == (q_net.batch_size,)
     else:
         # logging.debug("Using TRUE REWARD")
         if normalise_rewards: # RL w normalised rewards
