@@ -55,7 +55,7 @@ def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer, epsilon_schedule
                 if args.RL_baseline:
                     loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, normalise_rewards=args.normalise_rewards, true_reward_stats=true_reward_stats)
                 else:
-                    loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=reward_model, normalise_rewards=args.normalise_rewards)
+                    loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, reward_model_ensemble=reward_model, normalise_rewards=args.normalise_rewards)
                 optimizer_agent.zero_grad()
                 loss_agent.backward()
                 optimizer_agent.step()
