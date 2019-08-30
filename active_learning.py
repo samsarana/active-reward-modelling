@@ -150,7 +150,7 @@ def sample_p_hat_12_per_batch(reward_model, rand_clip_pairs, args):
     return p_hat_12_per_batch_draw
 
 
-def sample_reward_model(reward_model, clips, args):
+def sample_reward_model(reward_model_ensemble, clips, args):
     """Takes array `clips` which must have shape[-1] == args.obs_act_shape
        and uses sampling method `args.uncert_method` to generate samples
        from the approximate poserior `reward_model`.
@@ -160,20 +160,20 @@ def sample_reward_model(reward_model, clips, args):
     batch_size = clips.shape[0] # TODO remove; this is only used for asserts
     clips_tensor = torch.from_numpy(clips).float()
     if args.uncert_method == 'MC':
-        reward_model.train() # MC dropout
-        r_preds_per_oa_pair = torch.cat([
-            reward_model(clips_tensor, mode='batch').detach() for _ in range(args.num_MC_samples)
-        ], dim=-1) # concatenate r_preds for same s-a pairs together
-        check_num_samples = args.num_MC_samples
+        raise NotImplementedError("You haven't updated MC-Dropout to work with reward_models of type list")
+        # reward_model.train() # MC dropout
+        # r_preds_per_oa_pair = torch.cat([
+        #     reward_model(clips_tensor, mode='batch').detach() for _ in range(args.num_MC_samples)
+        # ], dim=-1) # concatenate r_preds for same s-a pairs together
+        # check_num_samples = args.num_MC_samples
     elif args.uncert_method == 'ensemble':
-        reward_model.eval() # dropout off at 'test' time i.e. when each model in ensemble to get uncertainty estimate. TODO check if this is correct
-        r_preds_per_oa_pair = reward_model.forward_all(clips_tensor, mode='batch').detach() # TODO check this line
-        check_num_samples = reward_model.ensemble_size
+        assert len(reward_model_ensemble) > 1
+        r_preds = []
+        for reward_model in reward_model_ensemble:
+            reward_model.eval() # dropout off at 'test' time i.e. when each model in ensemble to get uncertainty estimate. TODO check if this is correct
+            r_preds.append(reward_model(clips_tensor).detach().double()) # all entropy calculations now done to double precision (Andreas' advice)
+        r_preds_per_oa_pair = torch.cat(r_preds, dim=-1) # cat r^(s,a) values along innermost dimension
+        assert r_preds_per_oa_pair.shape == (batch_size, 2, args.clip_length, args.size_rm_ensemble)
     else:
         raise NotImplementedError("You specified {} as the `uncert_method`, but I don't know what that is!".format(args.uncert_method))
-    assert r_preds_per_oa_pair.shape[0] == batch_size
-    assert r_preds_per_oa_pair.shape[-2] == args.clip_length 
-    assert r_preds_per_oa_pair.shape[-1] == check_num_samples
-    if len(r_preds_per_oa_pair.shape) == 4:
-        r_preds_per_oa_pair.shape[1] == 2
-    return r_preds_per_oa_pair.double() # all entropy calculations now done to double precision (Andreas' advice)
+    return r_preds_per_oa_pair
