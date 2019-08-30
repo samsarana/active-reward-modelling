@@ -37,10 +37,6 @@ def training_protocol(env, args, writers, returns_summary, i_run):
         reward_model, prefs_buffer, mu_counts_total, true_reward_stats = acquire_labels_and_train_rm(
             agent_experience, reward_model, prefs_buffer, optimizer_rm,
             args, writers, mu_counts_total, true_reward_stats, i_train_round=0)
-
-        # Compute mean and variance of true and predicted reward after training (for normalising rewards sent to agent)
-        # reward_model = compute_mean_var(reward_model, prefs_buffer) # saves mean and var of reward model as attributes
-    # true_reward_stats = prefs_buffer.compute_mean_var_GT() if args.normalise_rewards else None
     
     # evaluate reward model correlation after pretraining (currently not interested)
     # if not args.RL_baseline:
@@ -61,29 +57,11 @@ def training_protocol(env, args, writers, returns_summary, i_run):
                                                                  agent_experience, reward_model, returns_summary,
                                                                  true_reward_stats, args, writers, i_run, i_train_round)
 
-        # for sub_round in range(args.agent_test_frequency): # code more readable if this for-loop converted to if-statement
-        #     logging.info("Begin train {}".format(sub_round))
-        #     q_net, q_target, replay_buffer, agent_experience = do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
-        #                                                              agent_experience, reward_model, returns_summary,
-        #                                                              true_reward_stats, args, writers, i_run, i_train_round)
-        #     # Stage 1.1b: Evalulate RL agent performance
-        #     logging.info("Begin test {}".format(sub_round))
-        #     test_returns = test_policy(q_net, reward_model, true_reward_stats, args, writers, i_train_round, sub_round)
-        #     mean_ret_true = log_tested_policy(test_returns, writers, returns_summary, args, i_run, i_train_round, sub_round, env)
-        #     # save current policy
-        #     save_policy(q_net, optimizer_agent, i_train_round, sub_round, args)
-        #     # Possibly end training if mean_ret_true is above the threshold
-        #     if not args.continue_once_solved and env.spec.reward_threshold != None and mean_ret_true >= env.spec.reward_threshold:
-        #         raise SystemExit("Environment solved, moving onto next run.")
-
         # Stage 1.2 - 1.3: acquire labels from recent rollouts and train reward model on current dataset
         if i_train_round != args.n_rounds and (not args.RL_baseline or args.normalise_rewards):
             reward_model, prefs_buffer, mu_counts_total, true_reward_stats = acquire_labels_and_train_rm(
                 agent_experience, reward_model, prefs_buffer, optimizer_rm,
                 args, writers, mu_counts_total, true_reward_stats, i_train_round)
-            # Compute mean and variance of true and predicted reward after training (for normalising rewards sent to agent)
-            # reward_model = compute_mean_var(reward_model, prefs_buffer) # saves mean and var of reward model as attributes
-        # true_reward_stats = prefs_buffer.compute_mean_var_GT() if args.normalise_rewards else None
         
         pd.DataFrame(returns_summary).to_csv('./logs/{}.csv'.format(args.info), index_label=['ep return type', 'round no.', 'test no.'])
         # Evaluate reward model correlation (currently not interested)
@@ -126,81 +104,6 @@ def acquire_labels_and_train_rm(agent_experience, reward_model, prefs_buffer, op
     return reward_model, prefs_buffer, mu_counts_total, true_reward_stats
 
 
-# def do_RL(env, q_net, q_target, optimizer_agent, replay_buffer,
-#           agent_experience, reward_model, true_reward_stats, args,
-#           writers, i_train_round, sub_round):
-#     writer1, writer2 = writers
-#     returns = {'ep': {'true': 0, 'pred': 0, 'true_norm': 0, 'pred_norm': 0},
-#                     'all': {'true': [], 'pred': [], 'true_norm': [], 'pred_norm': []}}
-#     # Do RL!
-#     state = env.reset()
-#     is_saving_video, done_saving_video = False, False
-#     if args.reinit_agent:
-#         start_step = sub_round * args.n_agent_steps_before_test
-#     else:
-#         start_step = i_train_round * args.n_agent_steps + sub_round * args.n_agent_steps_before_test
-#     step_range = range(start_step, start_step + args.n_agent_steps_before_test)
-#     n_episodes = 0
-#     for step in step_range:
-#         # agent interact with env
-#         epsilon = args.exploration.value(step)
-#         action = q_net.act(state, epsilon)
-#         assert env.action_space.contains(action)
-#         next_state, r_true, done, _ = env.step(action) # one continuing episode
-#         # record step info
-#         # sa_pair = torch.tensor(np.append(state, action)).float()
-#         sa_pair = np.append(state, action).astype(args.oa_dtype, casting='unsafe') # in case len(state.shape) > 1 (gridworld, atari), np.append will flatten it
-#         assert (sa_pair == np.append(state, action)).all() # check casting done safely. should be redundant since i set oa_dtype based on env, earlier. but you can never be too careful since this would fail silently!
-#         if not args.RL_baseline: agent_experience.add(sa_pair, r_true) # include reward in order to later produce synthetic prefs
-#         if args.agent_gets_dones:
-#             replay_buffer.push(state, action, r_true, next_state, done)
-#         else:
-#             replay_buffer.push(state, action, r_true, next_state, False) # done=False since agent thinks the task is continual; r_true used only when args.RL baseline
-#         returns = log_agent_step(sa_pair, r_true, returns, true_reward_stats, reward_model, args)
-#         # prepare for next step
-#         state = next_state
-#         if done:
-#             if args.save_video and not (is_saving_video or done_saving_video) and (args.n_agent_steps_before_test - step < 4*env.spec.max_episode_steps):
-#                 # save the final 4ish train episodes (see https://github.com/openai/gym/wiki/FAQ#how-do-i-export-the-run-to-a-video-file)
-#                 env = wrappers.Monitor(env, args.logdir + '/videos/train/' + str(time()) + '/')
-#                 is_saving_video = True # don't call the env wrapper again
-#             # if is_saving_video and step >= args.n_agent_train_steps_before_test: # don't need this anymore as i take non-training steps at start
-#             #     env = gym.make(args.env_ID, **args.env_kwargs) # unwrap Monitor wrapper during non-training steps
-#             #     env.seed(args.random_seed)
-#             #     done_saving_video = True
-#             state = env.reset()
-#             returns = log_agent_episode(returns, writers, step, i_train_round, sub_round, args, is_test=False)
-#             n_episodes += 1
-
-#             # q_net gradient step
-#         # if step >= args.agent_learning_starts and step % args.agent_gdt_step_period == 0 and \
-#         #         len(replay_buffer) >= 3*args.batch_size_agent:
-#             if step >= args.agent_learning_starts and len(replay_buffer) >= 3*args.batch_size_agent: # we now make learning updates at the end of every episode
-#                 if args.RL_baseline:
-#                     loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, normalise_rewards=args.normalise_rewards, true_reward_stats=true_reward_stats)
-#                 else:
-#                     loss_agent = q_learning_loss(q_net, q_target, replay_buffer, args, reward_model=reward_model, normalise_rewards=args.normalise_rewards)
-#                 optimizer_agent.zero_grad()
-#                 loss_agent.backward()
-#                 optimizer_agent.step()
-#                 writer1.add_scalar('7.agent_loss/round_{}'.format(i_train_round), loss_agent, step)
-#                 # scheduler.step() # Ibarz doesn't mention lr annealing...
-#                 writer1.add_scalar('8.agent_epsilon/round_{}'.format(i_train_round), epsilon, step)
-#                 # if q_net.epsilon > q_net.epsilon_stop:
-#                 #     q_net.epsilon *= q_net.epsilon_decay
-
-#         # update q_target
-#         if step % args.target_update_period == 0: # update target parameters
-#             for target_param, local_param in zip(q_target.parameters(), q_net.parameters()):
-#                 target_param.data.copy_(q_net.tau*local_param.data + (1.0-q_net.tau)*target_param.data)
-#             # q_target.load_state_dict(q_net.state_dict()) # old hard update code            
-
-#     # log mean return this training round
-#     log_RL_loop(returns, n_episodes, args, i_train_round, sub_round, writers)
-    
-#     return q_net, q_target, replay_buffer, agent_experience
-
-
 def do_pretraining_rollouts(q_net, replay_buffer, env, args):
     """Agent interact with environment and collect experience.
        Number of steps taken determined by `n_labels_pretraining`.
@@ -238,41 +141,6 @@ def do_pretraining_rollouts(q_net, replay_buffer, env, args):
         if done:
             state = env.reset()
     return agent_experience, replay_buffer
-
-
-# def do_random_experiment(env, args, returns_summary, writers, i_run):
-#     """TODO refactor this s.t. I can reuse training_protocol()?
-#        At least make training_protocol() more friendly to slotting
-#        in different agents. I'll need to do this when I want to use
-#        SAC, anyway.
-#     """
-#     writer1, _ = writers
-#     for i_train_round in range(args.n_rounds):
-#         logging.info('[Start Round {}]'.format(i_train_round))
-#         returns = {'ep': 0, 'all': []}
-#         logging.info('Taking random actions for {} steps'.format(args.n_agent_steps))
-#         for sub_round in range(args.agent_test_frequency):
-#             start_step = sub_round * args.n_agent_steps_before_test
-#             step_range = range(start_step, start_step + args.n_agent_steps_before_test)
-#             env.reset()
-#             for step in step_range:
-#                 # agent interact with env
-#                 action = env.action_space.sample()
-#                 assert env.action_space.contains(action)
-#                 _, r_true, done, _ = env.step(action)
-#                 returns['ep'] += r_true # record step info
-
-#                 if done:
-#                     state = env.reset()
-#                     writer1.add_scalar('4a.train_ep_return_per_step/round_{}'.format(i_train_round), returns['ep'], step)
-#                     returns['all'].append(returns['ep'])
-#                     returns['ep'] = 0
-
-#             # log mean recent return this sub round
-#             mean_true_return = np.sum(np.array(returns['all'])) / len(returns['all'])
-#             i_train_sub_round = args.agent_test_frequency * i_train_round + sub_round
-#             writer1.add_scalar('3a.train_mean_ep_return_per_sub_round', mean_true_return, i_train_sub_round)
-#             test_and_log_random_policy(writers, returns_summary, args, i_run, i_train_round, sub_round)
 
 
 def do_random_experiment(env, args, returns_summary, writers, i_run):
