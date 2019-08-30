@@ -91,4 +91,4 @@ def test_and_log_random_policy(returns_summary, step, i_test, i_train_round, i_r
     writer1, _ = writers
     mean_ret_true_test = np.sum(np.array(returns['all'])) / num_episodes
     returns_summary[i_run][('1.true', i_train_round, i_test)] = mean_ret_true_test # dict format that is friendly to creating a multiindex pd.DataFrame downstream
-    writer1.add_scalar('1a.test_mean_ep_return_per_step', mean_ret_true_test, step)
+    writer1.add_scalar('1a.test_mean_ep_return_per_step/round_{}'.format(i_train_round), mean_ret_true_test, step)
