@@ -445,7 +445,7 @@ m = \mathbb{E}\left[  \frac{\w \cdot \w_\text{true}}{\vert \w \vert \vert \w_\te
 They generate queries by solving a constrained optimization problem to find the two trajectory segments that will maximise the volume removed from the hypothesis space. Using the same mapping from reward space to preference space as \cite{Christiano2017} (Equation \ref{eq:softmax}), they start with a uniform prior over the space of all $ \w $ (uniform over the unit ball), generate a query, get a preference from the annotator, and perform a Bayesian update on this labelled clip pair. Thanks to the simple function form of their reward model, this Bayesian update has a closed form solution. They repeat this procedure until the reward model is close to the true reward function, according to $ m $.
 
 \chapter{Uncertainty in Deep Learning}
-% Talk about Yarin's thesis, BNNs; maybe Ian Obsband paper for good measure (esp. if I end up using ensemble instead of MC-Dropout?)
+When using a deep NN for almost any practical application, it is undesirable to 
 As we saw in Section \ref{sec:dnn}, deep NNs output point estimates. %TODO we acutally said they ouput probabilities, so I need to say Yarin's thing about them not truly capturing uncertainty instead
 For example, a model trained to classify pictures of dogs according to their breed takes a picture of a dog and outputs its predicted breed. However, what will the model do if it is given a picture of a cat? \cite{Gal2017a}.
 
