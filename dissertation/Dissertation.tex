@@ -445,13 +445,18 @@ m = \mathbb{E}\left[  \frac{\w \cdot \w_\text{true}}{\vert \w \vert \vert \w_\te
 They generate queries by solving a constrained optimization problem to find the two trajectory segments that will maximise the volume removed from the hypothesis space. Using the same mapping from reward space to preference space as \cite{Christiano2017} (Equation \ref{eq:softmax}), they start with a uniform prior over the space of all $ \w $ (uniform over the unit ball), generate a query, get a preference from the annotator, and perform a Bayesian update on this labelled clip pair. Thanks to the simple function form of their reward model, this Bayesian update has a closed form solution. They repeat this procedure until the reward model is close to the true reward function, according to $ m $.
 
 \chapter{Uncertainty in Deep Learning}
-When using a deep NN for almost any practical application, it is undesirable to 
-As we saw in Section \ref{sec:dnn}, deep NNs output point estimates. %TODO we acutally said they ouput probabilities, so I need to say Yarin's thing about them not truly capturing uncertainty instead
-For example, a model trained to classify pictures of dogs according to their breed takes a picture of a dog and outputs its predicted breed. However, what will the model do if it is given a picture of a cat? \cite{Gal2017a}.
+If we are to use deep NNs for practical applications, it is crucial that they output not only point estimates, but also their uncertainty in those estimates. For example, suppose a deep NN is being used to drive an autonomous vehicle. If it encounter a situation in which it is uncertain about whether to brake or not, we probably want it to hand over control to a human driver, rather than blindly taking its best guess. Equally, if a deep NN is being used for medical diagnosis and is confronted with an unfamiliar stimulus, it should request more data or alert a human doctor.
 
-We probably want the model to be able to recognise that this is an out of distribution example, and request more training data, or simply say that it doesn't know the answer. However, since standard deep learning models output only point estimates, the model will just go ahead and classify the cat as some breed of dog, just as confidently as any other input.
+In Section \ref{sec:dnn}, we explained that NNs output probability distributions. For example, with categorical data, the final layer of the network is typically a softmax function, which gives the probability of the input being in each of the possible classes. However, such probability distributions do not in fact accurately reflect uncertainty \cite[p.~13]{Gal2017a}. The field of \textit{Bayesian Deep Learning} aims to equip neural networks with the ability to accurate uncertainty alongside point estimates. To do so, we place probability distributions over each weight in the network, rather than single values as in standard NNs. Such models are called Bayesian neural networks (BNNs). We then perform Bayesian inference on the weights on the network, i.e. we compute a posterior distribution over the weights, given the training data. Then, given the posterior distribution over weights, to answer predictive queries we take expectations under this distribution:
+\begin{align*}
+P(\hat{y} \mid \hat{x}) = \E{ P(w|D) }{P(\hat{y} \mid \hat{x}, w) }
+\end{align*}
+However, this proper ‘dogmatic’ Bayes approach is intractable: taking an expectation under the posterior distribution on weights effectively means computing a forward pass with an infinite ensemble of neural networks, each with one possible configuration of the weights, then weighting their outputs according to the posterior distribution.
 
-Thus, the field of Bayesian Deep Learning aims to equip neural networks with the ability to output a point estimate along with its uncertainty in that estimate. Historically, many of the attempts to do so were not very practical. For example, one algorithm, Bayes by Backprop, requires doubling the number of model parameters, making training more computationally expensive, and is very sensitive to hyperparameter tuning. However, recent techniques allow almost any network trained with a stochastic regularisation technique, such as dropout, to, given an input, obtain a predictive mean and variance (uncertainty), without any complicated augmentation to the network \cite[p.~15]{Gal2017a}.
+When we cannot do exact Bayesian inference, there are two common approximation methods: Markov Chain Monte Carlo and Variational Inference (VI). The paper proposes to use the latter.
+
+
+Historically, many of the attempts to do so were not very practical. For example, one algorithm, Bayes by Backprop \cite{Blundell2015}, requires doubling the number of model parameters, making training more computationally expensive, and is very sensitive to hyperparameter tuning. However, recent techniques allow almost any network trained with a stochastic regularisation technique, such as dropout, to, given an input, obtain a predictive mean and variance (uncertainty), without any complicated augmentation to the network \cite[p.~15]{Gal2017a}.
 
 \section{Bayesian Neural Networks} \label{sec:bnns}
 From Andreas:
@@ -466,8 +471,21 @@ straightforward to optimise.
 %Mention BBB as another method of VI, and that ensemble of models is another way to sample from approximate posterior %TODO what is the citation for this?t
 Explain what VI is by lifting words from your BBB report.
 
+\subsection{Bayes by Backprop}
+Typically, when we train a neural network, it learns single point estimates for each of its weights, to minimise some loss function, given some data. To do bayesian inference on a neural network, we calculate the posterior distribution of the weights given the training data, $ P(w|D) $. Figure \ref{fig:fig1} illustrates the difference.
+
+Then, given the posterior distribution over weights, to answer predictive queries we take expectations under this distribution:
+\begin{align*}
+P(\hat{y} \mid \hat{x}) = \E{ P(w|D) }{P(\hat{y} \mid \hat{x}, w) }
+\end{align*}
+However, this proper ‘dogmatic’ Bayes approach is intractable: taking an expectation under the posterior distribution on weights effectively means computing a forward pass with an infinite ensemble of neural networks, each with one possible configuration of the weights, then weighting their outputs according to the posterior distribution.
+
+When we cannot do exact Bayesian inference, there are two common approximation methods: Markov Chain Monte Carlo and Variational Inference (VI). The paper proposes to use the latter.
+
+
+
 \section{Model Uncertainty in BNNs}
-This section would say basically the same stuff as active learning, because the acquisiiton functions we consider are precisely the ways to get model uncertainty with a BNN in classification setting.
+This section would say basically the same stuff as active learning, because the acquisition functions we consider are precisely the ways to get model uncertainty with a BNN in classification setting.
 Not sure if I need to include it, or maybe I should collapse the sections.
 
 \chapter{Active Learning}
