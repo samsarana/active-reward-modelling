@@ -6,27 +6,18 @@ from reward_learning import RewardModel, RewardModelEnsemble, CnnRewardModel
 from utils import one_hot_action
 import gym
 
-def update_running_mean_var(reward_model, acquired_clip_data):
-    reward_model.eval() # turn off dropout
+def update_running_mean_var(reward_model_ensemble, acquired_clip_data):
     clip_pairs, _, _ = acquired_clip_data
     _, _, clip_length, obs_act_shape = clip_pairs.shape
     for clip_pair in clip_pairs:
         clip_pair_tensor = torch.from_numpy(clip_pair).unsqueeze(0).float() # unsqueeze first to get batch dimension so it's compatible with mode='clip_pair_batch'
-        if isinstance(reward_model, RewardModelEnsemble):
-            for ensemble_num in range(reward_model.ensemble_size):
-                r_hats = reward_model.forward_single(clip_pair_tensor, ensemble_num, mode='clip_pair_batch').detach().reshape(-1).numpy()
-                assert r_hats.shape == (2 * clip_length,)
-                for r_hat in r_hats:
-                    running_stat = getattr(reward_model, 'running_stats{}'.format(ensemble_num))
-                    running_stat.push(r_hat)
-        elif isinstance(reward_model, RewardModel) or isinstance(reward_model, CnnRewardModel):
-            r_hats = reward_model(clip_pair_tensor, mode='clip_pair_batch').detach().reshape(-1).numpy()
+        for reward_model in reward_model_ensemble:
+            reward_model.eval() # turn off dropout
+            r_hats = reward_model(clip_pair_tensor).detach().reshape(-1).numpy()
             assert r_hats.shape == (2 * clip_length,)
             for r_hat in r_hats:
                 reward_model.running_stats.push(r_hat)
-        else:
-            raise NotImplementedError("I don't understand reward models of type {}".format(type(reward_model)))
-    return reward_model
+    return reward_model_ensemble
 
 
 def compute_mean_var(reward_model, prefs_buffer):
@@ -66,12 +57,13 @@ def compute_mean_var(reward_model, prefs_buffer):
     return reward_model
 
 
-def save_reward_model(reward_model, rm_optimizer, i_round, args):
-    path = '{}/checkpts/rm/{}.pt'.format(args.logdir, i_round)
-    torch.save({
-        'rm_state_dict': reward_model.state_dict(),
-        'rm_optimizer_state_dict': rm_optimizer.state_dict(),
-        }, path)
+def save_reward_model(reward_model_ensemble, rm_optimizers, i_round, args):
+    for i_model, (reward_model, optimizer) in enumerate(zip(reward_model_ensemble, rm_optimizers)):
+        path = '{}/checkpts/rm/rm{}-round{}.pt'.format(args.logdir, i_model, i_round)
+        torch.save({
+            'rm_state_dict': reward_model.state_dict(),
+            'rm_optimizer_state_dict': optimizer.state_dict(),
+            }, path)
 
 
 def save_preferece_info(prefs_buffer, true_reward_stats, i_round, args):
