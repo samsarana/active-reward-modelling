@@ -1,7 +1,7 @@
 import numpy as np
 import torch, logging
 
-def log_agent_step(sa_pair, r_true, rets, true_reward_stats, reward_model, args):
+def log_agent_step(sa_pair, r_true, rets, true_reward_stats, reward_model_ensemble, args):
     rets['ep']['true'] += r_true
     if args.normalise_rewards:
         assert true_reward_stats != None, "You told me to normalise true reward but haven't told me their mean and var!"
@@ -9,12 +9,14 @@ def log_agent_step(sa_pair, r_true, rets, true_reward_stats, reward_model, args)
         rets['ep']['true_norm'] += (r_true - true_reward_stats.mean) / np.sqrt(true_reward_stats.var + 1e-8)
     # also log reward the agent thinks it's getting according to current reward_model
     if not args.RL_baseline:
-        reward_model.eval() # dropout off at 'test' time i.e. when logging performance
-        sa_tensor = torch.tensor(sa_pair).float()
-        r_pred = reward_model(sa_tensor, mode='single').detach().item()
-        r_pred_norm = reward_model(sa_tensor, mode='single', normalise=True).detach().item()
-        rets['ep']['pred'] += r_pred
-        rets['ep']['pred_norm'] += r_pred_norm
+        r_preds, r_preds_norm = [], []
+        for reward_model in reward_model_ensemble:
+            reward_model.eval() # dropout off at 'test' time i.e. when logging performance
+            sa_tensor = torch.tensor(sa_pair).float()
+            r_preds.append(reward_model(sa_tensor).detach().item())
+            r_preds_norm.append(reward_model(sa_tensor, normalise=True).detach().item())
+        rets['ep']['pred'] += sum(r_preds) / len(r_preds)
+        rets['ep']['pred_norm'] += sum(r_preds_norm) / len(r_preds_norm)
     return rets
 
 
