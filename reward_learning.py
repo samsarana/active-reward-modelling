@@ -10,78 +10,49 @@ import torch.optim as optim
 from utils import RunningStat
 from annotation import get_test_data
 
-def train_reward_model(reward_model, prefs_buffer, optimizer_rm, args, writers, i_label):
+def train_reward_model(reward_model_ensemble, prefs_buffer, optimizers_rm, args, writers, i_label):
     writer1, writer2 = writers
-    epochs = args.n_epochs_pretrain_rm if i_label <= -1 else args.n_epochs_train_rm
-    logging.info("Training reward model for {} epochs".format(epochs))
-    reward_model.train() # dropout on
-    # logging.info("reward_model weight before train {}: {}".format(i_label, list(reward_model.parameters())[0][0][0]))
     # get TEST data
     n_labels_total = 500
     n_clips_total = 2 * n_labels_total
     clip_pairs_TEST, mus_TEST = get_test_data(n_clips_total, n_labels_total, args)
     assert clip_pairs_TEST.shape == (n_labels_total, 2, args.clip_length, args.obs_act_shape)
     assert mus_TEST.shape == (n_labels_total,)
-    # compute lower bound for test loss (relative to batch size of args.batch_size_rm, since we use reduction='sum')
+    # compute lower bound for test loss (relative to reward model batch size, since we use reduction='sum')
+    batch_size_rm = min(args.batch_size_rm, prefs_buffer.current_length) # mpreviously I was computing this inside prefs_buffer. do it here so i know how many samples we actually take, so i can rescale loss_lower_bound_TEST appropriately
     n_indifferent_labels_TEST = Counter(mus_TEST.numpy()).get(0.5, 0)
-    loss_lower_bound_TEST = n_indifferent_labels_TEST * math.log(2) / n_labels_total * args.batch_size_rm
-    
-    for epoch in range(epochs):
-        with torch.autograd.detect_anomaly():
-            if args.train_rm_ensemble_independently:
-                raise NotImplementedError("Training ensemble separately like this doesn't work in pytorch because the weight decay term is applied to all the params!")
-                # also any momentum term would totally screw up because it would be 0 on n-1 / n of the training loops
-                # If you want to implement train_rm_ensemble_independently properly, you need n different optimizers, kept in a list, and each model is kept in a list
-                # then you just call the training loop 5 times with a for-loop
-                # no ensemble then becomes a special case with list of size 1
-                assert isinstance(reward_model, RewardModelEnsemble)
-                # independent_train_rm_ensemble()
-                loss_total, n_indifferent_labels = 0, 0
-                for ensemble_num in range(reward_model.ensemble_size):
-                    clip_pair_batch, mu_batch = prefs_buffer.sample(args.batch_size_rm)
-                    reward_model.zero_grad()
-                    r_hats_batch = reward_model.forward_single(clip_pair_batch, ensemble_num, mode='clip_pair_batch', normalise=False).squeeze(-1)
-                    loss_rm = compute_loss_rm(r_hats_batch, mu_batch)
-                    loss_rm.backward()
-                    optimizer_rm.step()
-                    # acumulate loss for logging purposes
-                    loss_total += loss_rm.detach().item()
-                    n_indifferent_labels += Counter(mu_batch.numpy()).get(0.5, 0)
-                writer1.add_scalar('6.reward_model_loss/label_{}'.format(i_label), loss_total / reward_model.ensemble_size, epoch)
-                # compute lower bound for loss_rm and plot this too
-                loss_lower_bound = n_indifferent_labels / reward_model.ensemble_size * math.log(2)
-                writer2.add_scalar('6.reward_model_loss/label_{}'.format(i_label), loss_lower_bound, epoch)
-            else:
-                # get a single minibatch
-                clip_pair_batch, mu_batch = prefs_buffer.sample(args.batch_size_rm)
-                if isinstance(reward_model, RewardModelEnsemble):
-                    r_hats_batch_draw = reward_model.forward_all(clip_pair_batch, mode='clip_pair_batch', normalise=False).squeeze(-1)
-                    loss_rm = compute_loss_rm_ensemble(r_hats_batch_draw, mu_batch)
-                else:
-                    assert isinstance(reward_model, RewardModel) or isinstance(reward_model, CnnRewardModel)
-                    r_hats_batch = reward_model(clip_pair_batch, mode='clip_pair_batch', normalise=False).squeeze(-1)
-                    loss_rm = compute_loss_rm(r_hats_batch, mu_batch)
-                optimizer_rm.zero_grad()
-                loss_rm.backward()
-                optimizer_rm.step()
-                writer1.add_scalar('6.reward_model_loss/label_{}'.format(i_label), loss_rm, epoch)
-                # compute lower bound for loss_rm and plot this too
-                n_indifferent_labels = Counter(mu_batch.numpy()).get(0.5, 0)
-                loss_lower_bound = n_indifferent_labels * math.log(2)
-                writer2.add_scalar('6.reward_model_loss/label_{}'.format(i_label), loss_lower_bound, epoch)
-        if epoch % 5000 == 0 or epoch == epochs - 1:
+    loss_lower_bound_TEST = n_indifferent_labels_TEST * math.log(2) / n_labels_total * batch_size_rm
+    # train reward model!
+    epochs = args.n_epochs_pretrain_rm if i_label <= -1 else args.n_epochs_train_rm
+    logging.info("Training reward model for {} epochs".format(epochs))
+    for i_model, (reward_model, optimizer_rm) in enumerate(zip(reward_model_ensemble, optimizers_rm)):
+        reward_model.train() # dropout on
+        for epoch in range(epochs):
+            # get a minibatch
+            clip_pair_batch, mu_batch = prefs_buffer.sample(batch_size_rm)
+            r_hats_batch = reward_model(clip_pair_batch, normalise=False).squeeze(-1)
+            loss_rm = compute_loss_rm(r_hats_batch, mu_batch)
+            optimizer_rm.zero_grad()
+            loss_rm.backward()
+            optimizer_rm.step()
+            writer1.add_scalar('6.reward_model_{}_loss/label_{}'.format(i_model, i_label), loss_rm, epoch)
+            # compute lower bound for loss_rm and plot this too
+            n_indifferent_labels = Counter(mu_batch.numpy()).get(0.5, 0)
+            loss_lower_bound = n_indifferent_labels * math.log(2)
+            writer2.add_scalar('6.reward_model_{}_loss/label_{}'.format(i_model, i_label), loss_lower_bound, epoch)
+            # compute test loss every so often
+            if epoch % 5000 == 0 or epoch == epochs - 1:
                 reward_model.eval() # turn dropout off for computing test loss
                 # pass clip pairs thru reward model to get predicted rewards
-                r_hats_TEST = reward_model(clip_pairs_TEST, mode='clip_pair_batch', normalise=False).squeeze(-1).detach()
+                r_hats_TEST = reward_model(clip_pairs_TEST, normalise=False).squeeze(-1).detach()
                 # compute loss
-                loss_rm_TEST = compute_loss_rm(r_hats_TEST, mus_TEST)  / n_labels_total * args.batch_size_rm
+                loss_rm_TEST = compute_loss_rm(r_hats_TEST, mus_TEST)  / n_labels_total * batch_size_rm
                 # log them
-                writer1.add_scalar('6a.reward_model_test_loss/label_{}'.format(i_label), loss_rm_TEST, epoch)
+                writer1.add_scalar('6a.reward_model_{}_test_loss/label_{}'.format(i_model, i_label), loss_rm_TEST, epoch)
                 # log lower bound too
-                writer2.add_scalar('6a.reward_model_test_loss/label_{}'.format(i_label), loss_lower_bound_TEST, epoch)
+                writer2.add_scalar('6a.reward_model_{}_test_loss/label_{}'.format(i_model, i_label), loss_lower_bound_TEST, epoch)
                 reward_model.train() # turn dropout back on
-    # logging.info("reward_model weight after  train {}: {}".format(i_label, list(reward_model.parameters())[0][0][0]))
-    return reward_model
+    return reward_model_ensemble
 
 
 class CnnRewardModel(nn.Module):
@@ -267,12 +238,7 @@ class RewardModel(nn.Module):
             )
         self.running_stats = RunningStat()
 
-    def forward(self, x, mode=None, normalise=False):
-        """
-        `mode` is unused... this is silly code but see docstr
-        of CnnRewardModel.forward() for why I'm doing it this
-        way
-        """        
+    def forward(self, x, normalise=False):     
         r_hat = self.layers(x)
         if normalise:
             r_hat = (r_hat - self.running_stats.mean) / np.sqrt(self.running_stats.var + 1e-8)
@@ -532,19 +498,16 @@ def init_rm(args):
        reward learning: reward model and optimizer.
     """
     logging.info('Initialising reward model')
+    reward_models = []
     if args.rm_archi == 'mlp':
-        if args.size_rm_ensemble >= 2:
-            reward_model = RewardModelEnsemble(args.obs_shape, args.act_shape, args)
-        else:
-            reward_model = RewardModel(args.obs_shape, args.act_shape, args)
+        for _ in range(args.size_rm_ensemble):
+            reward_models.append(RewardModel(args.obs_shape, args.act_shape, args))
     else:
-        assert args.rm_archi == 'cnn' or args.rm_archi == 'cnn_mod'
-        if args.size_rm_ensemble >= 2:
-            raise NotImplementedError("U haven't yet implemented ensemble of CNN reward models!")
-        else:
-            reward_model = CnnRewardModel(args.obs_shape, args.act_shape, args)
-    optimizer_rm = optim.Adam(reward_model.parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm)
-    return reward_model, optimizer_rm
+        raise NotImplementedError("CNN reward model not updated to be of type list")
+    optimizers_rm = []
+    for i in range(args.size_rm_ensemble):
+        optimizers_rm.append(optim.Adam(reward_models[i].parameters(), lr=args.lr_rm, weight_decay=args.lambda_rm))
+    return reward_models, optimizers_rm
 
 
 
