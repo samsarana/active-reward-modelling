@@ -1,6 +1,6 @@
 """Functions to do Active Learning"""
 
-import random, logging
+import random, logging, csv
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -13,9 +13,26 @@ def acq_random(rand_clip_pairs, num_labels, reward_model, args):
 
 
 def acq_BALD(rand_clip_pairs, num_labels, args, reward_model):
-    info_per_clip_pair = compute_info_gain(rand_clip_pairs, reward_model, args)
-    idx = np.argpartition(info_per_clip_pair, -num_labels)[-num_labels:].numpy() # see: tinyurl.com/ya7xr4kn
-    return idx, info_per_clip_pair
+    epistemic, predictive, aleatoric = compute_info_gain(rand_clip_pairs, reward_model, args)
+    idx = np.argpartition(epistemic, -num_labels)[-num_labels:].numpy() # see: tinyurl.com/ya7xr4kn
+    # cheeky -- logging predictive and aleatoric uncert as well. i shouldn't do this here. or i should at least refactor this into a new function in active_learning_logging.py
+    with open('./logs/acqs.csv', 'a', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile, delimiter=',')
+        csv_writer.writerow(['predictive_uncert_ACQUIRED (with mean)'])
+        csv_writer.writerow([predictive[idx].mean().item()] + [mutual_info.item() for mutual_info in predictive[idx]])
+        csv_writer.writerow(['predictive_uncert_CANDIDATE (with mean)'])
+        csv_writer.writerow([predictive.mean().item()] + [mutual_info.item() for mutual_info in predictive])
+
+        csv_writer.writerow(['aleatoric_uncert_ACQUIRED (with mean)'])
+        csv_writer.writerow([aleatoric[idx].mean().item()] + [mutual_info.item() for mutual_info in aleatoric[idx]])
+        csv_writer.writerow(['aleatoric_uncert_CANDIDATE (with mean)'])
+        csv_writer.writerow([aleatoric.mean().item()] + [mutual_info.item() for mutual_info in aleatoric])
+
+        csv_writer.writerow(['epistemic_ACQUIRED (with mean)'])
+        csv_writer.writerow([epistemic[idx].mean().item()] + [mutual_info.item() for mutual_info in epistemic[idx]])
+        csv_writer.writerow(['epistemic_CANDIDATE (with mean)'])
+        csv_writer.writerow([epistemic.mean().item()] + [mutual_info.item() for mutual_info in epistemic])
+    return idx, epistemic
 
 def compute_info_gain(rand_clip_pairs, reward_model, args):
     """Takes np.array rand_clip_pairs with shape
@@ -42,12 +59,18 @@ def compute_info_gain(rand_clip_pairs, reward_model, args):
 
     info_gain = H_y_xD - E_H_y_xDw
     # assert (info_gain >= 0).all()
-    return info_gain
+    return info_gain, H_y_xD, E_H_y_xDw
 
 
 def acq_mean_std(rand_clip_pairs, num_labels, args, reward_model):
     info_per_clip_pair = compute_sample_var_clip_pair(rand_clip_pairs, reward_model, args)
     idx = np.argpartition(info_per_clip_pair, -num_labels)[-num_labels:].numpy() # see: tinyurl.com/ya7xr4kn
+    with open('./logs/acqs.csv', 'a', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile, delimiter=',')
+        csv_writer.writerow(['mean_std_ACQUIRED (with mean)'])
+        csv_writer.writerow([info_per_clip_pair[idx].mean().item()] + [mutual_info.item() for mutual_info in info_per_clip_pair[idx]])
+        csv_writer.writerow(['mean_std_CANDIDATE (with mean)'])
+        csv_writer.writerow([info_per_clip_pair.mean().item()] + [mutual_info.item() for mutual_info in info_per_clip_pair])
     return idx, info_per_clip_pair
 
 def compute_sample_var_clip_pair(rand_clip_pairs, reward_model, args): # TODO pairwise combine the next 8 functions?
@@ -72,6 +95,12 @@ def compute_sample_var_clip_pair(rand_clip_pairs, reward_model, args): # TODO pa
 def acq_max_entropy(rand_clip_pairs, num_labels, args, reward_model):
     info_per_clip_pair = compute_pred_entropy(rand_clip_pairs, reward_model, args)
     idx = np.argpartition(info_per_clip_pair, -num_labels)[-num_labels:].numpy() # see: tinyurl.com/ya7xr4kn
+    with open('./logs/acqs.csv', 'a', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile, delimiter=',')
+        csv_writer.writerow(['entropy_ACQUIRED (with mean)'])
+        csv_writer.writerow([info_per_clip_pair[idx].mean().item()] + [mutual_info.item() for mutual_info in info_per_clip_pair[idx]])
+        csv_writer.writerow(['entropy_CANDIDATE (with mean)'])
+        csv_writer.writerow([info_per_clip_pair.mean().item()] + [mutual_info.item() for mutual_info in info_per_clip_pair])
     return idx, info_per_clip_pair
 
 def compute_pred_entropy(rand_clip_pairs, reward_model, args):
@@ -100,6 +129,12 @@ def compute_pred_entropy(rand_clip_pairs, reward_model, args):
 def acq_var_ratios(rand_clip_pairs, num_labels, args, reward_model):
     info_per_clip_pair = compute_var_ratio(rand_clip_pairs, reward_model, args)
     idx = np.argpartition(info_per_clip_pair, -num_labels)[-num_labels:].numpy() # see: tinyurl.com/ya7xr4kn
+    with open('./logs/acqs.csv', 'a', newline='') as csvfile:
+        csv_writer = csv.writer(csvfile, delimiter=',')
+        csv_writer.writerow(['var_ratios_ACQUIRED (with mean)'])
+        csv_writer.writerow([info_per_clip_pair[idx].mean().item()] + [mutual_info.item() for mutual_info in info_per_clip_pair[idx]])
+        csv_writer.writerow(['var_ratios_CANDIDATE (with mean)'])
+        csv_writer.writerow([info_per_clip_pair.mean().item()] + [mutual_info.item() for mutual_info in info_per_clip_pair])
     return idx, info_per_clip_pair
 
 def compute_var_ratio(rand_clip_pairs, reward_model, args):
