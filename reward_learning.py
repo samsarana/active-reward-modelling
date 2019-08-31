@@ -41,7 +41,7 @@ def train_reward_model(reward_model_ensemble, prefs_buffer, optimizers_rm, args,
             loss_lower_bound = n_indifferent_labels * math.log(2)
             writer2.add_scalar('6.reward_model_{}_loss/label_{}'.format(i_model, i_label), loss_lower_bound, epoch)
             # compute test loss every so often
-            if epoch % 5000 == 0 or epoch == epochs - 1:
+            if epoch % 1000 == 0 or epoch == epochs - 1:
                 reward_model.eval() # turn dropout off for computing test loss
                 # pass clip pairs thru reward model to get predicted rewards
                 r_hats_TEST = reward_model(clip_pairs_TEST, normalise=False).squeeze(-1).detach()
