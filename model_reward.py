@@ -36,8 +36,6 @@ def parse_arguments():
     parser.add_argument('--size_rm_ensemble', type=int, default=1, help='If active_method == ensemble then this must be >= 2')
     parser.add_argument('--selection_factor', type=int, default=1, help='when doing active learning, 1/selection_factor of the randomly sampled clip pairs are sent to human for evaluation')
 
-    parser.add_argument('--pixel_normalize', action='store_true', help='Divide pixel value by 255.')
-
     # settings that apply only to gridworld
     parser.add_argument('--grid_size', type=int, default=5, help='Length and width of grid')
     parser.add_argument('--n_goals', type=int, default=1)
@@ -46,11 +44,10 @@ def parse_arguments():
     args = parser.parse_args()
     # make cheeky mofifications
     args.env_kwargs = {}
-    args.env_kwargs['size']          = args.grid_size
-    args.env_kwargs['random_resets'] = not args.grid_deterministic_reset
-    args.env_kwargs['n_goals']       = args.n_goals
-    args.env_kwargs['n_lavas']       = args.n_lavas
-    args.env_kwargs['pixel_normalize'] = args.pixel_normalize
+    args.env_kwargs['size']            = args.grid_size
+    args.env_kwargs['random_resets']   = not args.grid_deterministic_reset
+    args.env_kwargs['n_goals']         = args.n_goals
+    args.env_kwargs['n_lavas']         = args.n_lavas
     args.obs_shape = 3*5*5
     args.obs_act_shape = 3*5*5 + 4
     args.n_actions = 4
