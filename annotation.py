@@ -198,6 +198,6 @@ def collect_random_experience(n_clips, args):
 def get_test_data(n_clips_total, n_labels_total, args):
     agent_experience_test = collect_random_experience(n_clips_total, args)
     # carve up test experience into clip pairs (with corresponding true rews and mus)
-    clip_pairs_test_, _, mus_test_ = generate_rand_clip_pairing(agent_experience_test, n_labels_total // args.selection_factor, args) # we don't want to collect any extra here, so just divide by selection_factor
+    clip_pairs_test_, _, mus_test_ = agent_experience_test.sample_pairs(n_labels_total)
     # make them into tensors
     return torch.from_numpy(clip_pairs_test_).float(), torch.from_numpy(mus_test_).float()
