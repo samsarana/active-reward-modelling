@@ -129,7 +129,7 @@ def gridworld_zac_defaults(args):
     args.batch_size_rm = 16 # Zac uses 64 batch size, but 16 clip pairs (Ibarz) is aleady 32*25=800 state-actions!
     args.lr_rm = 5e-3
     # args.n_epochs_train_rm = 30000 # as used by Zac in 4x4_pixnorm_onehot_check
-    args.clip_length = 10
+    # args.clip_length = 10
     return args
 
 
