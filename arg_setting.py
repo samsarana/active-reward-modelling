@@ -126,6 +126,8 @@ def make_arg_changes(args):
 
     if args.batch_size_acq == -1:
         args.batch_size_acq = args.n_labels_per_round
+    elif len(args.batch_size_acq) == 1:
+        args.batch_size_acq = args.batch_size_acq * args.n_rounds
     
     if args.RL_baseline:
         args.n_acq_batches_per_round = np.zeros_like(args.n_labels_per_round)
