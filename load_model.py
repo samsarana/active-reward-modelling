@@ -4,6 +4,7 @@ from collections import Counter
 from q_learning import DQN
 from reward_learning import RewardModel, PrefsBuffer, compute_loss_rm
 from annotation import AgentExperience, generate_rand_clip_pairing
+from utils import one_hot_action
 
 class Args:
     """
@@ -13,11 +14,11 @@ class Args:
     def __init__(self):
         # env settings
         self.env_ID = 'Gridworld-v0'
-        self.env_kwargs = {'partial': False, 'size': 5, 'random_resets': True, 'terminate_ep_if_done': True}
+        self.env_kwargs = {'size': 4, 'random_resets': True, 'n_lavas': 1}
         self.random_seed = 0
-        self.obs_shape = 3*5*5
-        self.act_shape = 1
-        self.obs_act_shape = 3*5*5 + 1
+        self.obs_shape = 3*4*4
+        self.act_shape = 4
+        self.obs_act_shape = 3*4*4 + 4
         self.n_actions = 4
         self.oa_dtype = None
         # agent settings
@@ -28,10 +29,11 @@ class Args:
         self.gamma = 0.99
         self.target_update_tau = 0.001
         # reward model settings
-        self.h1_rm = 128
-        self.h2_rm = 256
-        self.h3_rm = 256
-        self.clip_length = 25
+        self.h1_rm = 64
+        self.h2_rm = 64
+        self.h3_rm = None
+        self.p_dropout_rm = 0.5
+        self.clip_length = 10
         self.prefs_buffer_size = None
         self.force_label_choice = False
         self.n_sample_reps = 1
@@ -41,11 +43,12 @@ class Args:
     
 
 def load_objects(args):
-    checkpoint_dir = './logs_old/in_progress/sam1/RandAcq/0/checkpts/'
-    checkpoint_agent    = torch.load(checkpoint_dir + 'agent/1-99.pt')
-    checkpoint_rm       = torch.load(checkpoint_dir + 'rm/0.pt')
-    checkpoint_prefs    = torch.load(checkpoint_dir + 'prefs/buff-0.pkl')
-    checkpoint_stats    = torch.load(checkpoint_dir + 'prefs/stats-0.pkl')
+    # checkpoint_dir = './logs_old/in_progress/sam2/RandAcq/0/checkpts/'
+    checkpoint_dir = './logs_old/in_progress/sam2/RandAcq/0/checkpts/'
+    checkpoint_agent    = torch.load(checkpoint_dir + 'agent/10-4.pt')
+    checkpoint_rm       = torch.load(checkpoint_dir + 'rm/rm0-round9.pt')
+    # checkpoint_prefs    = torch.load(checkpoint_dir + 'prefs/buff-9.pkl')
+    # checkpoint_stats    = torch.load(checkpoint_dir + 'prefs/stats-9.pkl')
     # load DQN
     q_net = DQN(args.obs_shape, args.n_actions, args)
     q_net.load_state_dict(checkpoint_agent['policy_state_dict'])
@@ -55,11 +58,11 @@ def load_objects(args):
     reward_model.load_state_dict(checkpoint_rm['rm_state_dict'])
     reward_model.eval()
     # load prefs_buffer and true_reward_stats
-    with open(checkpoint_prefs, 'rb') as in_path:
-        prefs_buffer = pickle.load(in_path)
-    with open(checkpoint_stats, 'rb') as in_path:
-        true_reward_stats = pickle.load(in_path)
-    return q_net, reward_model, prefs_buffer, true_reward_stats
+    # with open(checkpoint_prefs, 'rb') as in_path:
+    #     prefs_buffer = pickle.load(in_path)
+    # with open(checkpoint_stats, 'rb') as in_path:
+    #     true_reward_stats = pickle.load(in_path)
+    return q_net, reward_model#, prefs_buffer, true_reward_stats
 
 
 def collect_random_experience(env, n_clips, args):
@@ -128,7 +131,8 @@ def show_video(n_episodes=5, n_render_steps_per_ep=10, mode='agent'):
         'a': 2,
         'd': 3
     }
-    q_net, reward_model, prefs_buffer, true_reward_stats = load_objects(args)
+    # q_net, reward_model, prefs_buffer, true_reward_stats = load_objects(args)
+    q_net, reward_model = load_objects(args)
     # create environment
     env = gym.make(args.env_ID, **args.env_kwargs)
     env.seed(args.random_seed)
@@ -159,7 +163,8 @@ def show_video(n_episodes=5, n_render_steps_per_ep=10, mode='agent'):
                     is_valid_key = True
         next_state, r_true, done, _ = env.step(action)
         # compute predicted reward
-        sa_pair = torch.from_numpy(np.append(state, action)).float()
+        action_one_hot = one_hot_action(action, env)
+        sa_pair = torch.from_numpy(np.append(state, action_one_hot)).float()
         assert sa_pair.shape == (args.obs_shape + args.act_shape,)
         r_pred = reward_model(sa_pair).detach().item()
         r_pred_norm = reward_model(sa_pair, normalise=True).detach().item()
@@ -199,4 +204,5 @@ def show_video(n_episodes=5, n_render_steps_per_ep=10, mode='agent'):
 
 
 if __name__ == '__main__':
-    compute_rm_validation_loss()
+    # compute_rm_validation_loss()
+    show_video(mode='human')
