@@ -4,6 +4,7 @@
 \usepackage[font=footnotesize,labelfont=bf]{caption}
 \usepackage[nottoc]{tocbibind} % adds Bibliography to TOCs
 \usepackage[linktocpage]{hyperref}
+\graphicspath{ {./figures/} }
 
 \hypersetup{
 	colorlinks,
@@ -373,7 +374,7 @@ Computational efficiency (in simple Atari environments) & On the order of 10 mil
 \end{tabularx}
 \normalsize\doublespacing\justify
 
-Noticing that the properties on which learning from preferences performs poorly are precisely those on which learning from demonstrations performs well, it is intuitive to think that a combination of feedback methods will give better performance than either one individually. Recent work has confirmed this intuition. Specifically, \cite{Ibarz2018} test this method on nine Atari games \cite{bellemare2013atari}, and show that combined preferences and demonstrations outperform only demonstrations on eight games, and only preferences on the four exploration-heavy games\footnote{The contribution of demonstrations in games without difficult exploration is not significant, except for in two games where demonstrations are harmful compared to using only preferences. The authors hypothesise that this is due to the relatively poor performance of the expert \cite[p.~6]{Ibarz2018}}. \cite{Palan2019} show that in a 2D driving simulator \cite{Byk2017} and two OpenAI Gym environments \cite{brockman2016gym}, using just one expert demonstration reduces by a factor of 3 the number of human preferences required to achieve the same performance \cite[p.~6]{Palan2019}.
+Noticing that the properties on which learning from preferences performs poorly are precisely those on which learning from demonstrations performs well, it is intuitive to think that a combination of feedback methods will give better performance than either one individually. Recent work has confirmed this intuition. Specifically, \cite{Ibarz2018} test this method on nine Atari games \cite{bellemare2013arcade}, and show that combined preferences and demonstrations outperform only demonstrations on eight games, and only preferences on the four exploration-heavy games\footnote{The contribution of demonstrations in games without difficult exploration is not significant, except for in two games where demonstrations are harmful compared to using only preferences. The authors hypothesise that this is due to the relatively poor performance of the expert \cite[p.~6]{Ibarz2018}}. \cite{Palan2019} show that in a 2D driving simulator \cite{Byk2017} and two OpenAI Gym environments \cite{brockman2016gym}, using just one expert demonstration reduces by a factor of 3 the number of human preferences required to achieve the same performance \cite[p.~6]{Palan2019}.
 
 This dissertation concerns using active learning to improve the performance of reward learning from trajectory preferences. So far, work on feedback from preferences has taken two different approaches: training a reward model on handcrafted features of the environment, and taking the deep learning approach of training a reward model end-to-end without handcrafted features. As active learning has already been shown to improve performance in the former setting \cite{Byk2017}, we focus on applying active learning in the latter setting. Algorithmic innovation in this setting is also more exciting, because if we want to scale RL to real-world tasks, it is unlikely that we will be able to handcraft all the correct features.
 
@@ -565,7 +566,12 @@ Discussion of previous work.
 \subsection{Deep RL from Human Preferences}
 % Christiano: summarise what didn't work, and                                                                       
 % what might have gone wrong -- already written this; just mention that i'll explain it in Section \ref{sec:failure}
-
+\cite{Christiano2017} compute the standard deviation of each clip pair $(\sigma^1, \sigma^2)$ across the ensemble. In the language of acquisition functions, they use $ a_{mean\_std}((\sigma^1, \sigma^2), \rp) $, which in this setting is written as:
+\begin{align*}
+a_{mean\_std}((\sigma^1, \sigma^2), \rp) = \sqrt{\frac{1}{3}\sum_{i=1}^{3}\left(\hat{P_i}(\sigma^1 \succ \sigma^2  ; \rp) - \overline{\hat{P}(\sigma^1 \succ \sigma^2  ; \rp)}\right)^2},
+\end{align*}
+%TODO the 1/3 and the sqrt look kinda ugly. is there a better but still precise presentation of this?
+where $ \hat{P_i}(\sigma^1 \succ \sigma^2  ; \rp) $ is the prediction $ \hat{P}(\sigma^1 \succ \sigma^2  ; \rp) $ according to component $ i $ of the ensemble, and $ \overline{\hat{P}(\sigma^1 \succ \sigma^2  ; \rp)} $ is the average of these predictions.
 
 \part{Innovation}
 
@@ -574,33 +580,49 @@ Discussion of previous work.
 % I can leave gorey detail to Experiments/Appendix
 % I should have already summarised the high level approach in Background
 % And I'll describe the different methods of Active Learning/uncert estimates that I tried
+Our aim is to find out whether active learning can be used to decrease the number of queries required to align an RL agent with the intentions of a user. Building on the previous work in \cite{Christiano2017}, in which active learning did not help, we form hypotheses to explain this failure. We form an experiment to test each hypothesis. Our results suggest that the success of active reward modelling depends on properties of the environment and intentions of the user, making it difficult to answer the question in general.
+
+The first section of this chapter explains our hypotheses, each of which corresponds to a different possible failure mode. Section 2 details the core active reward modelling training protocol, which we modify in various ways to test our hypotheses. Section 3 ... Section 4 outlines and motivates our choices of how to implement the method.
 
 \section{Possible failure modes of active reward modelling} \label{sec:failure}
-Before developing our method, it was important to consider the possible failure modes of the previous attempt to apply active learning to reward modelling. \cite{Christiano2017} compute the standard deviation of each clip pair $(\sigma^1, \sigma^2)$ across the ensemble. In the language of acquisition functions, they use $ a_{mean\_std}((\sigma^1, \sigma^2), \rp) $, which in this setting is written as:
-\begin{align*}
-a_{mean\_std}((\sigma^1, \sigma^2), \rp) = \sqrt{\frac{1}{3}\sum_{i=1}^{3}\left(\hat{P_i}(\sigma^1 \succ \sigma^2  ; \rp) - \overline{\hat{P}(\sigma^1 \succ \sigma^2  ; \rp)}\right)^2},
-\end{align*}
-%TODO the 1/3 and the sqrt look kinda ugly. is there a better but still precise presentation of this?
-where $ \hat{P_i}(\sigma^1 \succ \sigma^2  ; \rp) $ is the prediction $ \hat{P}(\sigma^1 \succ \sigma^2  ; \rp) $ according to component $ i $ of the ensemble, and $ \overline{\hat{P}(\sigma^1 \succ \sigma^2  ; \rp)} $ is the average of these predictions.
+In this section, we list our hypotheses about different possible failure modes of active reward modelling and then explain each in more detail. Hypotheses 1-4 apply to active learning in general, whilst hypotheses 5-7 apply specifically to learning from preference in deep RL.
+\begin{enumerate} %TODO tidy up language here
+	\item Uncertainty estimate method
+	\item Quality of acquisition function
+	\item Not reinitialising reward model
+    \item Acquisition size
+	\item Pool dataset too uniform
+	\item Pool dataset is sufficiently non-uniform but we cannot search $ O(n^2) $ MI matrix, and the solution of randomly sampling $ 10x $ clip pairs does not suffice to find the rare clips
+	\item Some problem of applying acquisition functions to preference space
+\end{enumerate}
 
-The quality of uncertainty estimates and acquisition function is one possible failure mode. Indeed, \cite[p.~6]{Christiano2017} explain the failure of their implementation as due to $ a_{mean\_std}((\sigma^1, \sigma^2), \rp) $ across an ensemble of three networks as a ``crude approximation'' to reward predictor uncertainty. Possible solutions to this failure mode are to use a different acquisition function (such as BALD \cite{Houlsby2011}), or to derive uncertainty estimates using a different method (such as MC-Dropout \cite{Gal2015} or Bayes by Backprop \cite{Blundell2015}).
+\subsection{Failure modes of active learning in general}
+The quality of uncertainty estimates and acquisition function are two possible failure modes. Indeed, \cite[p.~6]{Christiano2017} explain the failure of their implementation as due to $ a_{mean\_std}((\sigma^1, \sigma^2), \rp) $ across an ensemble of three networks as a ``crude approximation'' to reward predictor uncertainty. Possible solutions to this failure mode are to use a different acquisition function (such as BALD \cite{Houlsby2011}), or to derive uncertainty estimates using a different method (such as MC-Dropout \cite{Gal2015} or Bayes by Backprop \cite{Blundell2015}).
 %TODO insert citation Gal finds mean-std + MC-dropout cannot beat random (Figure 1 of AL Image paper)
 
-Additionally, there are three features of the application of active learning to reward modelling that are not present in the standard supervised learning case. Firstly, the pool dataset is not known in advance, but is gathered as the RL agent encounters new states. This seems to present an exploration problem: naively, the agent's exploration is guided by the current reward function estimate, $ \rp $. Thus, the agent may not explore novel states and collect diverse clip pairs for the pool dataset. If the pool dataset is not diverse, it may be hard to beat the random acquisition baseline with active learning, since the data may all be more or less equally informative.
+Thirdly, the implementation in \cite{Christiano2017} initialises the reward model once at the beginning of training, then finetunes that model i.e. trains on more preferences as they are acquired. As training continues, the model will have been trained on preferences gathered early during training much more than those gathered towards the end of training. This may decrease the quality of the uncertainty estimates; preferences gathered later may still have relatively high uncertainty. %TODO cite Gal who says that you should reinitialise the model and retrain before making new acquisitions.
+\cite{Christiano2017} propose to alleviate this problem by maintaining only the most recent 3000 preferences in the annotation buffer, but it is not clear that this unprincipled method will lead to well-calibrated uncertainty estimates.
+%This failure mode is also related to continual learning and catastrophic forgetting.
+
+Fourthly, when performing \textit{batch acquisition}, that is, acquiring the top $ b $ points that maximise an acquisition function \cite{Gal2017b}, may lead to the acquisition of points that are informative individually, but jointly are much less informative than the sum of their parts. In particular, the acquisitions may not be very diverse. Indeed, \cite[p.~8]{Kirsch2019a} show that with acquisition size 5, BALD underperforms random acquisition on the EMNIST image dataset \cite{cohen2017emnist} when acquiring new images with acquisition size 5. Specifically, they observe that BALD several classes are under-represented in the acquisitions made by BALD. \cite{Christiano2017} use acquisition sizes of up to 500\footnote{The first batch of acquisitions is of size 500. For subsequent acquisitions, it is unclear what acquisition size they use.}.
+
+\subsection{Failure modes of active learning in the reward modelling setting}
+Unlike active learning in the standard supervised case, the pool dataset in active reward modelling is not known in advance, but is gathered as the RL agent encounters new states. If the trajectories of the RL agent at a certain stage of training are all similar, then the informativeness of the clip pairs in the pool dataset may be close to uniform. In this case, we would not expect active learning to improve on random acquisition. This is a fifth possible failure mode of active reward modelling.
+%This seems to present an exploration problem: naively, the agent's exploration is guided by the current reward function estimate, $ \rp $. Thus, the agent may not explore novel states and collect diverse clip pairs for the pool dataset. If the pool dataset is not diverse, it may be hard to beat the random acquisition baseline with active learning, since the data may all be more or less equally informative.
 %TODO do I need to define diverse more rigorously
+% TODO this doesn't quite make the same categorisation of points I want to make. We should disentangle failure from uniformly informative pool dataset to non-uniform but "doubly hard exploration" pool dataset/O(n^2) problem
 
-Secondly, since the objects that we acquire are \textit{clip pairs} rather than, for example, single images, yet the (growing) dataset is comprised of single clips, evaluating the acquisition function over the dataset is a complexity $ O(n^2) $ operation, for $ n $ the number of clips acquired. Therefore, the standard active learning procedure of evaluating the acquisition function on each point in the pool dataset and picking that which maximises it, quickly becomes unfeasible as the dataset grows in size. To get around this issue, in order to acquire $ k $ clip pairs, \cite{Christiano2017} randomly sample $ 10k $ clip pairs and select the $ k $ with the highest score according to $ a_{mean\_std} $. However, it is not clear that this method suffices to find clip pairs that are more informative than random acquisition: a factor of 10 may simply be too small.
+A further difference between active supervised learning and active reward modelling setting is that the objects we acquire are \textit{clip pairs} rather than, for example, single images. This means that evaluating an acquisition function over the dataset is a complexity $ O(n^2) $ operation, for $ n $ the number of clips acquired. Therefore, the standard active learning procedure of evaluating the acquisition function on each point in the pool dataset and picking that which maximises it, quickly becomes unfeasible as the dataset grows in size. To circumvent this issue, in order to acquire $ k $ clip pairs, \cite{Christiano2017} propose randomly sampling $ 10k $ clip pairs and selecting the $ k $ with the highest score according to $ a_{mean\_std} $. However, it is not clear that this method suffices to find clip pairs that are more informative than random acquisition: a factor of 10 may simply be too small. If it is important to query the annotator about behaviour that occurs rarely, this behaviour may never be included in the pool of clip pairs over which the acquisition function is evaluated. This is related to exploration problems. In general, RL methods struggle to solve tasks which require difficult exploration, for example the Atari game Montezuma's Revenge. However, exploration is a doubly hard problem for RL from preferences: not only does the agent have to explore states of the environment which are difficult to reach, but also the trajectories generated in that exploration have to be sampled at random into the pool of clip pairs over which the acquisition function is evaluated.
 
-Thirdly, it is not clear that the standard acquisition functions can be applied out of the box to learning \textit{in the preference space}. Consider the following example: we are deciding whether to acquire clip pair $ c_1 = (\sigma^1, \sigma^2) $ or $ c_2 = (\sigma^3, \sigma^4) $ to acquire. Suppose further that the reward model is uncertain whether $ c_1 $ has label $ 0 $ or $ 0.5 $\footnote{TODO I may need to spell this out more, in terms of draws from the posterior giving something like 0, 0.5, 0, 0.5 ... Can I borrow Yarin's presentation in thesis of a similar case?}; and uncertain whether $ p_2 $ has label $ 0 $ or $ 1 $. Now, $ a_{mean\_std}(c_1, \rp) =  $, whereas $ a_{mean\_std}(c_2, \rp) =  $, and thus we will acquire $ c_2 $. Yet, when learning in the preference space, using disagreement between models in an ensemble as the basis for an acquisition function may not capture all that we care about. It may be important, for example, to acquire clip pairs that allow the model to make deductions based on transitivity of the preference relation. For suppose that we have already acquired some clip pair $ (\sigma^0, \sigma^1) $. Then acquiring $ (\sigma^1, \sigma^2) $ would in effect give for free the label of $ (\sigma^0, \sigma^2) $, whereas the acquisition of $ (\sigma^3, \sigma^4) $ would not. Thus, we may need a better proxy than simply disagreement for active learning in the preference space.
+A seventh possible failure mode, it is not clear that the standard acquisition functions can be applied out of the box to learning \textit{in the preference space}. Consider the following example: we are deciding whether to acquire clip pair $ c_1 = (\sigma^1, \sigma^2) $ or $ c_2 = (\sigma^3, \sigma^4) $ to acquire. Suppose further that the reward model is uncertain whether $ c_1 $ has label $ 0 $ or $ 0.5 $\footnote{TODO I may need to spell this out more, in terms of draws from the posterior giving something like 0, 0.5, 0, 0.5 ... Can I borrow Yarin's presentation in thesis of a similar case?}; and uncertain whether $ p_2 $ has label $ 0 $ or $ 1 $. Now, $ a_{mean\_std}(c_1, \rp) =  $, whereas $ a_{mean\_std}(c_2, \rp) =  $, and thus we will acquire $ c_2 $. Yet, when learning in the preference space, using disagreement between models in an ensemble as the basis for an acquisition function may not capture all that we care about. It may be important, for example, to acquire clip pairs that allow the model to make deductions based on transitivity of the preference relation. For suppose that we have already acquired some clip pair $ (\sigma^0, \sigma^1) $. Then acquiring $ (\sigma^1, \sigma^2) $ would in effect give for free the label of $ (\sigma^0, \sigma^2) $, whereas the acquisition of $ (\sigma^3, \sigma^4) $ would not. Thus, we may need a better proxy than simply disagreement for active learning in the preference space.
 %TODO I'm highly uncertain about whether this point is correct
-
-There are other possible failure modes that apply to active learning in general. When performing \textit{batch acquisition}, that is, acquiring the top $ b $ points that maximise an acquisition function \cite{Gal2017b}, may lead to the acquisition of points that are informative individually, but jointly are much less informative than the sum of their parts. In particular, the acquisitions may not be very diverse. Indeed, \cite[p.~8]{Kirsch2019a} show that with acquisition size 5, BALD underperforms random acquisition on the EMNIST image dataset \cite{cohen2017emnist} when acquiring new images with acquisition size 5. Specifically, they observe that BALD several classes are under-represented in the acquisitions made by BALD. \cite{Christiano2017} use acquisition sizes of up to 500.
 
 Finally, it is worth noting that sometimes random acquisition just does perform strongly. At the beginning of training, the uncertainty estimates used by the acquisition function may have biased noise, while random acquisition has no such bias. At the end of training, if most of the pool data have been acquired, active learning will show little improvement over random acquisition. Thus, depending on the setting, there is a potentially small window in which active learning may help. The usefulness of active learning depends on how large this window is. In active reward modelling, is it an open question how large this window is for different tasks.
 %TODO is there any literature on the question of if/when rand acq just is very good? What do Yarin, Andreas, Houlsby graphs look like at beginning, end?
 %TODO say something about it being an open question which acqisition function to use etc/active learning with deep NNs is still not super well understood?
 
-\section{ARMA}
+\section{ARMA} \ref{sec:arma}
+%TODO make this section flow better. we didn't really develop this training protocol, it's basically Ibarz. Here, we are just describing precisely what the training protocol is.
 In this section we present the training protocol we developed. Specifically, we explain how to apply acquisition functions to reward modelling. %TODO do we really? what does this mean?
 \begin{algorithm}
 	\caption{ARMA: Active Reward Modelling for Agent Alignment.}
@@ -625,35 +647,75 @@ In this section we present the training protocol we developed. Specifically, we 
 		\EndFor
 	\end{algorithmic}
 \end{algorithm}
-%TODO mention reinitialising agent (every round)?
-%TODO mention reinitialsing reward model (before every time it is trained)? (cite Andreas/Yarin) Mention (capping) acquisition batch size?
+%TODO mention reinitialising agent because that way we can be sure DQN is not failing due to outdated rewards.
+%TODO mention *optionally* reinitialsing reward model (before every time it is trained)? (cite Andreas/Yarin) Mention (capping) acquisition batch size?
 %TODO in any case I don't want to confuse the algorithm so I'd probs mention these things in text below
 %This follows \cite{Christiano2017}, which reduces the chance of the parameters of $ \rp $ collapsing to some bad local minimum before training begins. %TODO this is not a valid reason given that we reintialise the reward model before each training. So (as I have done) perhaps we can safely remove all the pretraining (at least from the simplified presentation of the algorithm). Though this would mean that the first round of agent training is pure rubbish (although, not in Acrobot :P -- on the contrary, that would have been v useful information!). Ok so now I've changed the order of the 1 1/2 loop to simplify the algorithm. I think this is more clear given our method. The old algorithm is in clippings.tex
-In our implementation, we use DQN for our RL agent. Thus line \ref{line:call_dqn} represents calling Algorithm \ref{alg:dqn} as a subroutine, except with rewards from $ \rp $ instead of from the environment.
+In our implementation, we use DQN for our RL agent. Thus line \ref{line:call_dqn} represents calling Algorithm \ref{alg:dqn} as a subroutine, except with rewards from $ \rp $ instead of from the environment. Following the majority of previous work, all our experiments will use a synthetic annotator to label clip pairs i.e. for each clip pair $ (\sigma^1, \sigma^2) $ sent for evaluation, we query the ground truth reward function of the environment for the total reward of each state-action pair in each of the two clips, and return a preference according to which clip has higher total reward.
 
 \section{Acquisition Functions and Uncertainty Estimates}
 We tried each of the four acquisition functions explained in Section \ref{sec:acq_funcs}. Each require the ability to get uncertainty estimates by sampling from some appropriate posterior to the reward model $ \rp $ that we are optimizing. For this, we parameterise $ \rp $ with an ensemble of 5 neural networks. Each network has a different random initialisation and is trained independently, that is to say, using independent random minibatches for gradient descent\footnote{TODO mention that there is no principled way to implement ensemble, and that using different minibatches is a design choice?}. For a given input $ (s,a) \in \mathcal{S} \times \mathcal{A} $, we can draw 5 samples from the approximate posterior of $ \rp $: one for each forward pass through a network in the ensemble. There are other methods for sampling from an approximate posterior (see Section \ref{sec:bnns}), but we choose this method because while it is computationally more expensive than, for example, MC-Dropout, it introduces no additional hyperparameters to be tuned. This minimises the number of possible failure modes of our implementation, facilitating easier diagnosis of unsuccessful experiments.
-%TODO what is the source to justify the use of ensemble as approximate posterior?
+%TODO make it clear that ensemble is not an approximate posterior, but that it is a good proxy for it, or something. cite Deep Ensembles and The power of ensembles for active learning in image classification
 
 \section{Implementation Details}
 The training protocol is implemented mostly in Python \cite{van1995python}. We use gradient descent to optimize the parameters of the deep Q-network and reward model. Pytorch \cite{paszke2017automatic} is an open source machine learning library, built on top of Python, which provides tools to perform automatic differentiation. This allows us to compute gradient without differentiating by hand our loss function with respect to our model parameters. We implement the buffers for collecting agent experience, storing annotated clips in SciPy \cite{jones2001}, which is also built on top of Python. This gives finer control over data representation and sampling.
 
-\chapter{Experimental Details}
-%TODO does it make sense to separate experiment details from method? I think so.
+\chapter{Experiments and Results}
+%TODO it feels to make most sense to me to combine these, since otherwise there's just too much to remember, and also the previous results motivate the next experiment, so it would be unclear why I'm running an experiment in such and such a way without the previous results. But having a whole chapter with Experiments and Results seems like a lot. I'm just going to write it, and then see how it reads after.
+%TODO split this chapter into sections
 % Here I'll give the experimental details
 % Gym. incl. why I chose it
 % Cartpole/the envs I use
 % Hyperparameter settings (and all the other args e.g. number of labels acquired per round, number of repetitions etc.) (maybe put these in appendix)
 % Links to code
-We used the environments provided by OpenAI Gym to run our experiments.
+Our first set of experiments test hypotheses 1-4: failure modes of active learning in general. We use the \textit{CartPole} environment, a classic RL task formulated in \cite{barto1983neuronlik}. As shown in Figure \ref{fig:cartpole}, the environment features a pole attached to a cart, which moves on a one-dimensional line. The pole starts upright; the objective is to keep the pole from falling by applying a force of $ +1 $ or $ -1 $ to the cart. The episode ends when the cart is more than $ 2.4 $ units from the centre or the pole falls to more than $ 15 $ degrees from vertical. We used the implementation of this environment provided by \textit{OpenAI Gym} \cite{brockman2016gym} to run our experiments.
+\begin{figure}[h]
+\label{fig:cartpole}
+\centering
+\includegraphics[width=0.5\textwidth]{cartpole-v0}
+\caption{The CartPole environment \cite{gym2019cartpole}}
+\end{figure}
 
-\section{CartPole-v0}
+As mentioned in Section \label{sec:arma}, clips are annotated according to the ground truth reward function of the environment. There are several ways of implementing this function which all encode the same goal of keeping the pole upright; see Appendix \ref{appendix:a} for the function we use. This reward function is hidden from the agent; it receives only rewards from the reward model, which is trained on preferences according to the ground truth reward.
 
-\chapter{Results}
-%TODO does it make sense to separate experiment details from results? I'm less certain.
-% Here I'll describe the results in a shiny way
+To evaluate the performance of agents, we use the ground truth reward function as in \cite{Christiano2017}. As with many RL environments provided by OpenAI Gym, there is a defined threshold above which the agent is considered to have ``solved'' the environment. Our performance metric is the number of preferences required for an agent to reach this threshold.
+
+Insert plot of first attempt showing mean episode against number of labels required. Make the point that variance is high.
+
+\section{Hypothesis 3: Reward model retraining}
+Our first experiment tests the hypothesis that not retraining the reward model from scratch after every acquisition gives low quality uncertainty estimates. We run the training protocol given in Algorithm \ref{alg:arma} twice in the CartPole environment, changing whether the reward model is reinitialised in this manner. On each round, 10 preferences are acquired.
+
+As shown in Figure \ref{fig:retrain}, we find that under both conditions, random acquisition and BALD show similar performance, but reward model retraining improves the performance of both. Therefore, whilst it is possible that the uncertainty estimates are harmed by not retraining, it is unclear how much of BALD's performance improvement is due to reward model retraining being better practice in general, because it gives equal weight to all the acquired data (the reason for which we see improvement in random acquisition, too).
+\begin{figure}[h]
+	\label{fig:retrain}
+	\centering
+	\includegraphics[width=0.75\textwidth]{reinit_rm}
+	\caption{Number of labels required to solve CartPole by reward modelling with random acquisition and BALD, with and without retraining reward model after each acquisition. Results are averaged over 20 runs; error bars show standard error.}
+\end{figure}
+
+\section{Hypothesis 4: Acquisition size}
+Next, we test the hypothesis that making acquisitions of size greater than 1 harms the performance of BALD-driven reward modelling. We run the training protocol in CartPole with acquisition size 10 and 1, and find that performance improves when making acquisitions of size 1, as per Figure \ref{fig:acq_size}\footnote{Note that the performance of BALD with acquisition size 10 is worse than that shown in Figure \ref{fig:retrain} because we performed the acquisition size experiment before realising that not retraining the \textit{agent} from scratch on each round also impairs performance, as mentioned in Section \ref{sec:arma}. In neither condition of this experiment do we retrain the agent.}. This indicates that when the acquisition size is too large, BALD acquires clip pairs that are individually informative, but are jointly less informative than the sum of their parts.
+\begin{figure}[h]
+	\label{fig:acq_size}
+	\centering
+	\includegraphics[width=0.75\textwidth]{acq_size}
+	\caption{Number of labels required to solve CartPole by reward modelling with BALD, using acquisition sizes 1 and 10. Results are averaged over 20 repeats for acquisition size 10 and 6 repeats for acquisition size 1; error bars show standard error.}
+\end{figure}
+
+\section{Hypothesis 5: Uncertainty estimates and Acquisition Functions}
+Having established... we try all the acquisition functions. Plus MC-Dropout.
+\begin{figure}[h]
+	\label{fig:cartpole_final}
+	\centering
+	\includegraphics[width=0.75\textwidth]{cartpole_final}
+	\caption{Number of labels required to solve CartPole by reward modelling with.... Results are averaged over 20 repeats; error bars show standard error.}
+\end{figure}
+Results are better overall because of the 4 reasons I jotted down. Mention this.
+
+%\chapter{Results}
+%%TODO does it make sense to separate experiment details from results? I'm less certain.
 % Graphs and comments on whether I achieved the goal of applying active learning to increase the sample efficiency of reward modelling
-\section{CartPole-v0}
+%\section{CartPole-v0}
 %\includegraphics[scale=1]{./results_A1}
 
 \chapter{Conclusions}
@@ -661,6 +723,11 @@ We used the environments provided by OpenAI Gym to run our experiments.
 \section{Evaluation}
 % critical assessment of the work that has been done and the process of doing it
 % perhaps include subsections for approaches that were tried and did not work; and personal development
+\subsection{Personal Development}
+Not to seek to make the thing work, but to wonder, why? To notice confusion rather than running from it. 'Acrobot shouldn't solve in one label'. Led to us finding it was a bad environment for testing reward modelling.
+Random acquisition with ensemble underperforming random without ensemble early in training -> realised that not implementing per-component normalisation of reward models; not normalising at training time correctly. (Well, in fact this was a case of running from this confusion for ages, before finally---and begrudgingly---facing up to it. In some sense this was a key learning point; feeling that noticing confusion pays off in the long run.)
+Ignoring occasional NaNs was another example. When I finally debugged it rationally, I found that normalising observations greatly improves reward model performance.
+
 \section{Future Work}
 
 % acknowledgements
@@ -672,6 +739,14 @@ We used the environments provided by OpenAI Gym to run our experiments.
 \appendixpage
 \noappendicestocpagenum
 \addappheadtotoc
-\chapter{Some Appendix Material}
+\chapter{Appendix A} \label{appendix:a}
+\section{CartPole Experimental Details}
+\subsection{Ground truth reward function}
+OpenAI Gym implementation of CartPole gives $ +1 $ reward on every time step. Since we follow the approach taken in \cite{Christiano2017} where all clip pairs are of equal length, using this reward for the synthetic evaluation of clips would give the same total reward to every clip. Therefore, we instead use the reward function given in  \cite[p.~59]{Sutton2018}: $ 0 $ on every time step, except for failure steps---when the cart moves more than $ 2.4 $ units from the centre or the pole falls to more than $ 15 $ degrees from vertical---for which $ -1 $ is given. Note, however, that we use the OpenAI Gym reward for testing agent performance, because there is a defined threshold for ``solving'' the environment according to this reward function, which is a useful performance metric.
+\subsection{Experiment 1 details} %TODO these in a table
+Train agent for 3000 steps (sufficient for convergence)
+Train reward model for 2000 epochs (sufficient for convergence)
+Hyperparameters (get from cartpole-defaults)
+
 
 \end{document}

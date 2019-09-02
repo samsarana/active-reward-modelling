@@ -33,16 +33,22 @@
 \BOOKMARK [-1][-]{part.2}{II Innovation}{}% 33
 \BOOKMARK [0][-]{chapter.5}{Method}{part.2}% 34
 \BOOKMARK [1][-]{section.5.1}{Possible failure modes of active reward modelling}{chapter.5}% 35
-\BOOKMARK [1][-]{section.5.2}{ARMA}{chapter.5}% 36
-\BOOKMARK [1][-]{section.5.3}{Acquisition Functions and Uncertainty Estimates}{chapter.5}% 37
-\BOOKMARK [1][-]{section.5.4}{Implementation Details}{chapter.5}% 38
-\BOOKMARK [0][-]{chapter.6}{Experimental Details}{part.2}% 39
-\BOOKMARK [1][-]{section.6.1}{CartPole-v0}{chapter.6}% 40
-\BOOKMARK [0][-]{chapter.7}{Results}{part.2}% 41
-\BOOKMARK [1][-]{section.7.1}{CartPole-v0}{chapter.7}% 42
-\BOOKMARK [0][-]{chapter.8}{Conclusions}{part.2}% 43
-\BOOKMARK [1][-]{section.8.1}{Summary}{chapter.8}% 44
-\BOOKMARK [1][-]{section.8.2}{Evaluation}{chapter.8}% 45
-\BOOKMARK [1][-]{section.8.3}{Future Work}{chapter.8}% 46
-\BOOKMARK [0][-]{chapter*.11}{References}{part.2}% 47
-\BOOKMARK [0][-]{appendix.A}{Some Appendix Material}{part.2}% 48
+\BOOKMARK [2][-]{subsection.5.1.1}{Failure modes of active learning in general}{section.5.1}% 36
+\BOOKMARK [2][-]{subsection.5.1.2}{Failure modes of active learning in the reward modelling setting}{section.5.1}% 37
+\BOOKMARK [1][-]{section.5.2}{ARMA}{chapter.5}% 38
+\BOOKMARK [1][-]{section.5.3}{Acquisition Functions and Uncertainty Estimates}{chapter.5}% 39
+\BOOKMARK [1][-]{section.5.4}{Implementation Details}{chapter.5}% 40
+\BOOKMARK [0][-]{chapter.6}{Experiments and Results}{part.2}% 41
+\BOOKMARK [1][-]{section.6.1}{Hypothesis 3: Reward model retraining}{chapter.6}% 42
+\BOOKMARK [1][-]{section.6.2}{Hypothesis 4: Acquisition size}{chapter.6}% 43
+\BOOKMARK [1][-]{section.6.3}{Hypothesis 5: Uncertainty estimates and Acquisition Functions}{chapter.6}% 44
+\BOOKMARK [0][-]{chapter.7}{Conclusions}{part.2}% 45
+\BOOKMARK [1][-]{section.7.1}{Summary}{chapter.7}% 46
+\BOOKMARK [1][-]{section.7.2}{Evaluation}{chapter.7}% 47
+\BOOKMARK [2][-]{subsection.7.2.1}{Personal Development}{section.7.2}% 48
+\BOOKMARK [1][-]{section.7.3}{Future Work}{chapter.7}% 49
+\BOOKMARK [0][-]{chapter*.15}{References}{part.2}% 50
+\BOOKMARK [0][-]{appendix.A}{Appendix A}{part.2}% 51
+\BOOKMARK [1][-]{section.A.1}{CartPole Experimental Details}{appendix.A}% 52
+\BOOKMARK [2][-]{subsection.A.1.1}{Ground truth reward function}{section.A.1}% 53
+\BOOKMARK [2][-]{subsection.A.1.2}{Experiment 1 details}{section.A.1}% 54

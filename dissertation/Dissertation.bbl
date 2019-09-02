@@ -6,14 +6,32 @@ Amodei, D., Olah, C., Steinhardt, J., Christiano, P., Schulman, J., and
 \newblock {Concrete Problems in AI Safety}.
 \newblock pages 1--29.
 
+\bibitem[Barto et~al., 1983]{barto1983neuronlike}
+Barto, A.~G., Sutton, R.~S., and Anderson, C.~W. (1983).
+\newblock Neuronlike adaptive elements that can solve difficult learning
+  control problems.
+\newblock {\em IEEE transactions on systems, man, and cybernetics},
+  (5):834--846.
+
+\bibitem[Bellemare et~al., 2013]{bellemare2013arcade}
+Bellemare, M.~G., Naddaf, Y., Veness, J., and Bowling, M. (2013).
+\newblock The arcade learning environment: An evaluation platform for general
+  agents.
+\newblock {\em Journal of Artificial Intelligence Research}, 47:253--279.
+
 \bibitem[Blundell et~al., 2015]{Blundell2015}
 Blundell, C., Cornebise, J., Kavukcuoglu, K., and Wierstra, D. (2015).
 \newblock {Weight Uncertainty in Neural Networks}.
 \newblock 37.
 
-\bibitem[Brockman et~al., 2016]{brockman2016gym}
+\bibitem[Brockman et~al., 2016a]{gym2019cartpole}
 Brockman, G., Cheung, V., Pettersson, L., Schneider, J., Schulman, J., Tang,
-  J., and Zaremba, W. (2016).
+  J., and Zaremba, W. (2016a).
+\newblock The cartpole-v0 environment.
+
+\bibitem[Brockman et~al., 2016b]{brockman2016gym}
+Brockman, G., Cheung, V., Pettersson, L., Schneider, J., Schulman, J., Tang,
+  J., and Zaremba, W. (2016b).
 \newblock Openai gym.
 \newblock {\em arXiv preprint arXiv:1606.01540}.
 
