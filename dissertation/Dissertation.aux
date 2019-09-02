@@ -190,6 +190,7 @@
 \citation{Gal2015}
 \citation{Blundell2015}
 \citation{Christiano2017}
+\citation{Kirsch2019a}
 \citation{Christiano2017}
 \citation{Gal2017b}
 \citation{Kirsch2019a}
@@ -201,6 +202,9 @@
 \@writefile{toc}{\contentsline {section}{\numberline {5.2}ARMA}{42}{section.5.2}\protected@file@percent }
 \@writefile{loa}{\contentsline {algorithm}{\numberline {3}{\ignorespaces ARMA: Active Reward Modelling for Agent Alignment.\relax }}{42}{algorithm.3}\protected@file@percent }
 \newlabel{alg:arma}{{3}{42}{ARMA: Active Reward Modelling for Agent Alignment.\relax }{algorithm.3}{}}
+\newlabel{line:sample_exp}{{9}{42}{ARMA: Active Reward Modelling for Agent Alignment.\relax }{algorithm.3}{}}
+\newlabel{line:acquire}{{10}{42}{ARMA: Active Reward Modelling for Agent Alignment.\relax }{algorithm.3}{}}
+\newlabel{line:train_r}{{12}{42}{ARMA: Active Reward Modelling for Agent Alignment.\relax }{algorithm.3}{}}
 \newlabel{line:call_dqn}{{16}{42}{ARMA: Active Reward Modelling for Agent Alignment.\relax }{algorithm.3}{}}
 \citation{van1995python}
 \citation{paszke2017automatic}
@@ -214,30 +218,48 @@
 \@writefile{toc}{\contentsline {chapter}{\numberline {6}Experiments and Results}{44}{chapter.6}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{fig:cartpole}{{\caption@xref {fig:cartpole}{ on input line 673}}{44}{Experiments and Results}{figure.caption.11}{}}
 \@writefile{lof}{\contentsline {figure}{\numberline {6.1}{\ignorespaces The CartPole environment \cite  {gym2019cartpole}\relax }}{44}{figure.caption.11}\protected@file@percent }
+\newlabel{fig:cartpole}{{6.1}{44}{The CartPole environment \cite {gym2019cartpole}\relax }{figure.caption.11}{}}
 \newlabel{sec:arma}{{6}{44}{Experiments and Results}{figure.caption.11}{}}
 \citation{Christiano2017}
-\@writefile{toc}{\contentsline {section}{\numberline {6.1}Hypothesis 3: Reward model retraining}{45}{section.6.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {6.2}Hypothesis 4: Acquisition size}{45}{section.6.2}\protected@file@percent }
-\newlabel{fig:retrain}{{\caption@xref {fig:retrain}{ on input line 688}}{46}{Hypothesis 3: Reward model retraining}{figure.caption.12}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.2}{\ignorespaces Number of labels required to solve CartPole by reward modelling with random acquisition and BALD, with and without retraining reward model after each acquisition. Results are averaged over 20 runs; error bars show standard error.\relax }}{46}{figure.caption.12}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {6.3}Hypothesis 5: Uncertainty estimates and Acquisition Functions}{46}{section.6.3}\protected@file@percent }
-\newlabel{fig:acq_size}{{\caption@xref {fig:acq_size}{ on input line 697}}{47}{Hypothesis 4: Acquisition size}{figure.caption.13}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.3}{\ignorespaces Number of labels required to solve CartPole by reward modelling with BALD, using acquisition sizes 1 and 10. Results are averaged over 20 repeats for acquisition size 10 and 6 repeats for acquisition size 1; error bars show standard error.\relax }}{47}{figure.caption.13}\protected@file@percent }
-\newlabel{fig:cartpole_final}{{\caption@xref {fig:cartpole_final}{ on input line 706}}{47}{Hypothesis 5: Uncertainty estimates and Acquisition Functions}{figure.caption.14}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.4}{\ignorespaces Number of labels required to solve CartPole by reward modelling with.... Results are averaged over 20 repeats; error bars show standard error.\relax }}{47}{figure.caption.14}\protected@file@percent }
+\citation{Christiano2017}
+\citation{Christiano2017}
+\citation{rlblogpost}
+\@writefile{lof}{\contentsline {figure}{\numberline {6.2}{\ignorespaces Mean episode return of agent trained via reward modelling using random acquisition and BALD. The performance of standard RL, a random policy, and an agent trained on a randomly initialised reward model are also shown. Results are averaged over 40 runs except for the random reward model condition which is averaged over 20. Error bars show standard error. Note that the performance of the agents trained via reward modelling is worse than those in the following sections due to less extensive hyperparameter tuning.\relax }}{46}{figure.caption.12}\protected@file@percent }
+\newlabel{fig:cartpole_curve}{{6.2}{46}{Mean episode return of agent trained via reward modelling using random acquisition and BALD. The performance of standard RL, a random policy, and an agent trained on a randomly initialised reward model are also shown. Results are averaged over 40 runs except for the random reward model condition which is averaged over 20. Error bars show standard error. Note that the performance of the agents trained via reward modelling is worse than those in the following sections due to less extensive hyperparameter tuning.\relax }{figure.caption.12}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.1}Hypothesis 3: Reward model retraining}{46}{section.6.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.3}{\ignorespaces Number of labels required to solve CartPole by reward modelling with random acquisition and BALD, with and without retraining reward model after each acquisition. Results are averaged over 20 runs; error bars show standard error.\relax }}{47}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:retrain}{{6.3}{47}{Number of labels required to solve CartPole by reward modelling with random acquisition and BALD, with and without retraining reward model after each acquisition. Results are averaged over 20 runs; error bars show standard error.\relax }{figure.caption.13}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.2}Hypothesis 4: Acquisition size}{47}{section.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.3}Hypotheses 1 and 2: Uncertainty estimates and acquisition functions}{47}{section.6.3}\protected@file@percent }
+\citation{Kirsch2019a}
+\@writefile{lof}{\contentsline {figure}{\numberline {6.4}{\ignorespaces Number of labels required to solve CartPole by reward modelling with BALD, using acquisition sizes 1 and 10. Results are averaged over 20 repeats for acquisition size 10 and 6 repeats for acquisition size 1; error bars show standard error.\relax }}{48}{figure.caption.14}\protected@file@percent }
+\newlabel{fig:acq_size}{{6.4}{48}{Number of labels required to solve CartPole by reward modelling with BALD, using acquisition sizes 1 and 10. Results are averaged over 20 repeats for acquisition size 10 and 6 repeats for acquisition size 1; error bars show standard error.\relax }{figure.caption.14}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6.5}{\ignorespaces Number of labels required to solve CartPole by reward modelling using various acquisition functions. The performance of using random acquisition with an ensemble of reward models, and BALD with uncertainty estimates from MC-Dropout with is also shown. Results are averaged over 20 repeats; error bars show standard error.\relax }}{49}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:cartpole_final}{{6.5}{49}{Number of labels required to solve CartPole by reward modelling using various acquisition functions. The performance of using random acquisition with an ensemble of reward models, and BALD with uncertainty estimates from MC-Dropout with is also shown. Results are averaged over 20 repeats; error bars show standard error.\relax }{figure.caption.15}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.4}Hypothesis 5: Uniform informativeness of pool dataset}{49}{section.6.4}\protected@file@percent }
+\citation{Kirsch2019a}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {4}{\ignorespaces Acquiring a batch of clip pairs with acquisition size 1.\relax }}{50}{algorithm.4}\protected@file@percent }
+\newlabel{alg:acq1}{{4}{50}{Acquiring a batch of clip pairs with acquisition size 1.\relax }{algorithm.4}{}}
+\newlabel{line:sample_exp2}{{1}{50}{Acquiring a batch of clip pairs with acquisition size 1.\relax }{algorithm.4}{}}
+\newlabel{line:acq2}{{3}{50}{Acquiring a batch of clip pairs with acquisition size 1.\relax }{algorithm.4}{}}
+\citation{Mnih2015}
+\newlabel{fig:sub1}{{6.6a}{51}{Standard CartPole\relax }{figure.caption.16}{}}
+\newlabel{sub@fig:sub1}{{a}{51}{Standard CartPole\relax }{figure.caption.16}{}}
+\newlabel{fig:sub2}{{6.6b}{51}{Repeated CartPole\relax }{figure.caption.16}{}}
+\newlabel{sub@fig:sub2}{{b}{51}{Repeated CartPole\relax }{figure.caption.16}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6.6}{\ignorespaces Number of labels required to solve two variants of CartPole, using BALD and random acquisition functions for sampling clip pairs. Results are averaged over 20 repeats; error bars show standard error.\relax }}{51}{figure.caption.16}\protected@file@percent }
+\newlabel{fig:cartpole_rep}{{6.6}{51}{Number of labels required to solve two variants of CartPole, using BALD and random acquisition functions for sampling clip pairs. Results are averaged over 20 repeats; error bars show standard error.\relax }{figure.caption.16}{}}
 \bibstyle{apalike}
 \bibdata{library,additional}
-\@writefile{toc}{\contentsline {chapter}{\numberline {7}Conclusions}{48}{chapter.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {7}Conclusions}{53}{chapter.7}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\@writefile{toc}{\contentsline {section}{\numberline {7.1}Summary}{48}{section.7.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {7.2}Evaluation}{48}{section.7.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.1}Personal Development}{48}{subsection.7.2.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {7.3}Future Work}{48}{section.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.1}Summary}{53}{section.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.2}Evaluation}{53}{section.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.1}Personal Development}{53}{subsection.7.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.3}Future Work}{53}{section.7.3}\protected@file@percent }
 \bibcite{Amodei2016}{Amodei et\nobreakspace  {}al., 2016}
-\bibcite{barto1983neuronlike}{Barto et\nobreakspace  {}al., 1983}
 \bibcite{bellemare2013arcade}{Bellemare et\nobreakspace  {}al., 2013}
 \bibcite{Blundell2015}{Blundell et\nobreakspace  {}al., 2015}
 \bibcite{gym2019cartpole}{Brockman et\nobreakspace  {}al., 2016a}
@@ -245,8 +267,8 @@
 \bibcite{Byk2017}{B\IeC {\i }y\IeC {\i }k and Sadigh, 2017}
 \bibcite{Christiano2017}{Christiano et\nobreakspace  {}al., 2017}
 \bibcite{cohen2017emnist}{Cohen et\nobreakspace  {}al., 2017}
-\@writefile{toc}{\contentsline {chapter}{References}{49}{chapter*.15}\protected@file@percent }
 \bibcite{cohn1996active}{Cohn et\nobreakspace  {}al., 1996}
+\@writefile{toc}{\contentsline {chapter}{References}{54}{chapter*.17}\protected@file@percent }
 \bibcite{elo1978rating}{Elo, 1978}
 \bibcite{freeman1965elementary}{Freeman, 1965}
 \bibcite{fujimoto2018addressing}{Fujimoto et\nobreakspace  {}al., 2018}
@@ -259,6 +281,7 @@
 \bibcite{Ho2016}{Ho and Ermon, 2016}
 \bibcite{Houlsby2011}{Houlsby et\nobreakspace  {}al., 2011}
 \bibcite{Ibarz2018}{Ibarz et\nobreakspace  {}al., 2018}
+\bibcite{rlblogpost}{Irpan, 2018}
 \bibcite{jones2001}{Jones et\nobreakspace  {}al., 2001}
 \bibcite{kampffmeyer2016semantic}{Kampffmeyer et\nobreakspace  {}al., 2016}
 \bibcite{kendall2015bayesian}{Kendall et\nobreakspace  {}al., 2015}
@@ -280,11 +303,13 @@
 \bibcite{Ziebart2008}{Ziebart et\nobreakspace  {}al., 2008}
 \citation{Christiano2017}
 \citation{Sutton2018}
-\@writefile{toc}{\contentsline {chapter}{Appendices}{}{section*.16}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {A}Appendix A}{55}{appendix.A}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{Appendices}{}{section*.18}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {A}Appendix A}{60}{appendix.A}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{appendix:a}{{A}{55}{Appendix A}{appendix.A}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {A.1}CartPole Experimental Details}{55}{section.A.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {A.1.1}Ground truth reward function}{55}{subsection.A.1.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {A.1.2}Experiment 1 details}{55}{subsection.A.1.2}\protected@file@percent }
+\newlabel{appendix:a}{{A}{60}{Appendix A}{appendix.A}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {A.1}CartPole Experimental Details}{60}{section.A.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.1.1}Ground truth reward function}{60}{subsection.A.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.1.2}Experiment 1 details}{60}{subsection.A.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.1.3}Other modifications made between testing hypothesis 4 and hypothesis 1 and 2}{61}{subsection.A.1.3}\protected@file@percent }
+\newlabel{sec:other_changes}{{A.1.3}{61}{Other modifications made between testing hypothesis 4 and hypothesis 1 and 2}{subsection.A.1.3}{}}

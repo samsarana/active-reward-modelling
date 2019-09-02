@@ -6,13 +6,6 @@ Amodei, D., Olah, C., Steinhardt, J., Christiano, P., Schulman, J., and
 \newblock {Concrete Problems in AI Safety}.
 \newblock pages 1--29.
 
-\bibitem[Barto et~al., 1983]{barto1983neuronlike}
-Barto, A.~G., Sutton, R.~S., and Anderson, C.~W. (1983).
-\newblock Neuronlike adaptive elements that can solve difficult learning
-  control problems.
-\newblock {\em IEEE transactions on systems, man, and cybernetics},
-  (5):834--846.
-
 \bibitem[Bellemare et~al., 2013]{bellemare2013arcade}
 Bellemare, M.~G., Naddaf, Y., Veness, J., and Bowling, M. (2013).
 \newblock The arcade learning environment: An evaluation platform for general
@@ -117,6 +110,11 @@ Houlsby, N., Husz{\'{a}}r, F., Ghahramani, Z., and Lengyel, M. (2011).
 Ibarz, B., Leike, J., Pohlen, T., Irving, G., Legg, S., and Amodei, D. (2018).
 \newblock {Reward learning from human preferences and demonstrations in Atari}.
 \newblock (2017):1--20.
+
+\bibitem[Irpan, 2018]{rlblogpost}
+Irpan, A. (2018).
+\newblock Deep reinforcement learning doesn't work yet.
+\newblock \url{https://www.alexirpan.com/2018/02/14/rl-hard.html}.
 
 \bibitem[Jones et~al., 2001]{jones2001}
 Jones, E., Oliphant, T., Peterson, P., et~al. (2001).

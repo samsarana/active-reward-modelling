@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (MiKTeX 2.9.7140 64-bit) (preloaded format=pdflatex 2019.8.14)  2 SEP 2019 01:30
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (MiKTeX 2.9.7140 64-bit) (preloaded format=pdflatex 2019.8.14)  2 SEP 2019 15:30
 entering extended mode
 **./Dissertation.tex
 (Dissertation.tex
@@ -571,37 +571,6 @@ Package: everysel 2011/10/28 v1.2 EverySelectfont Package (MS)
 \RaggedRightParindent=\skip80
 \JustifyingParindent=\skip81
 )
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/pgf/frontendlayer\
-tikz.sty"
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/pgf/basiclayer\pgf
-.sty"
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/pgf/utilities\pgfr
-cs.sty"
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/utilities\pg
-futil-common.tex"
-\pgfutil@everybye=\toks34
-\pgfutil@tempdima=\dimen193
-\pgfutil@tempdimb=\dimen194
-
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/utilities\pg
-futil-common-lists.tex"))
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/utilities\pg
-futil-latex.def"
-\pgfutil@abb=\box64
-
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/ms\everyshi.sty"
-Package: everyshi 2001/05/15 v3.00 EveryShipout Package (MS)
-))
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/utilities\pg
-frcs.code.tex"
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf\pgf.revision
-.tex")
-Package: pgfrcs 2019/08/03 v3.1.4b (3.1.4b)
-))
-Package: pgf 2019/08/03 v3.1.4b (3.1.4b)
-
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/pgf/basiclayer\pgf
-core.sty"
 ("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/graphics\graphicx.
 sty"
 Package: graphicx 2017/06/01 v1.1a Enhanced LaTeX Graphics (DPC,SPQR)
@@ -619,291 +588,42 @@ File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
 )
 Package graphics Info: Driver file: pdftex.def on input line 99.
 )
-\Gin@req@height=\dimen195
-\Gin@req@width=\dimen196
+\Gin@req@height=\dimen193
+\Gin@req@width=\dimen194
 )
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/pgf/systemlayer\pg
-fsys.sty"
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/systemlayer\
-pgfsys.code.tex"
-Package: pgfsys 2019/08/03 v3.1.4b (3.1.4b)
+("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/caption\subcaption
+.sty"
+Package: subcaption 2018/05/01 v1.1-162 Sub-captions (AR)
 
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/utilities\pg
-fkeys.code.tex"
-\pgfkeys@pathtoks=\toks35
-\pgfkeys@temptoks=\toks36
+("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/caption\caption.st
+y"
+Package: caption 2018/10/06 v3.3-154 Customizing captions (AR)
 
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/utilities\pg
-fkeysfiltered.code.tex"
-\pgfkeys@tmptoks=\toks37
-))
-\pgf@x=\dimen197
-\pgf@y=\dimen198
-\pgf@xa=\dimen199
-\pgf@ya=\dimen256
-\pgf@xb=\dimen257
-\pgf@yb=\dimen258
-\pgf@xc=\dimen259
-\pgf@yc=\dimen260
-\pgf@xd=\dimen261
-\pgf@yd=\dimen262
-\w@pgf@writea=\write3
-\r@pgf@reada=\read2
-\c@pgf@counta=\count295
-\c@pgf@countb=\count296
-\c@pgf@countc=\count297
-\c@pgf@countd=\count298
-\t@pgf@toka=\toks38
-\t@pgf@tokb=\toks39
-\t@pgf@tokc=\toks40
-\pgf@sys@id@count=\count299
-
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/systemlayer\
-pgf.cfg"
-File: pgf.cfg 2019/08/03 v3.1.4b (3.1.4b)
-)
-Driver file for pgf: pgfsys-pdftex.def
-
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/systemlayer\
-pgfsys-pdftex.def"
-File: pgfsys-pdftex.def 2019/08/03 v3.1.4b (3.1.4b)
-
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/systemlayer\
-pgfsys-common-pdf.def"
-File: pgfsys-common-pdf.def 2019/08/03 v3.1.4b (3.1.4b)
-)))
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/systemlayer\
-pgfsyssoftpath.code.tex"
-File: pgfsyssoftpath.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-\pgfsyssoftpath@smallbuffer@items=\count300
-\pgfsyssoftpath@bigbuffer@items=\count301
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/systemlayer\
-pgfsysprotocol.code.tex"
-File: pgfsysprotocol.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-))
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcore.code.tex"
-Package: pgfcore 2019/08/03 v3.1.4b (3.1.4b)
-
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/math\pgfmath
-.code.tex"
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/math\pgfmath
-calc.code.tex"
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/math\pgfmath
-util.code.tex")
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/math\pgfmath
-parser.code.tex"
-\pgfmath@dimen=\dimen263
-\pgfmath@count=\count302
-\pgfmath@box=\box65
-\pgfmath@toks=\toks41
-\pgfmath@stack@operand=\toks42
-\pgfmath@stack@operation=\toks43
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/math\pgfmath
-functions.code.tex"
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/math\pgfmath
-functions.basic.code.tex")
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/math\pgfmath
-functions.trigonometric.code.tex")
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/math\pgfmath
-functions.random.code.tex")
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/math\pgfmath
-functions.comparison.code.tex")
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/math\pgfmath
-functions.base.code.tex")
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/math\pgfmath
-functions.round.code.tex")
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/math\pgfmath
-functions.misc.code.tex")
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/math\pgfmath
-functions.integerarithmetics.code.tex")))
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/math\pgfmath
-float.code.tex"
-\c@pgfmathroundto@lastzeros=\count303
-))
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/math\pgfint.
-code.tex")
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcorepoints.code.tex"
-File: pgfcorepoints.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-\pgf@picminx=\dimen264
-\pgf@picmaxx=\dimen265
-\pgf@picminy=\dimen266
-\pgf@picmaxy=\dimen267
-\pgf@pathminx=\dimen268
-\pgf@pathmaxx=\dimen269
-\pgf@pathminy=\dimen270
-\pgf@pathmaxy=\dimen271
-\pgf@xx=\dimen272
-\pgf@xy=\dimen273
-\pgf@yx=\dimen274
-\pgf@yy=\dimen275
-\pgf@zx=\dimen276
-\pgf@zy=\dimen277
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcorepathconstruct.code.tex"
-File: pgfcorepathconstruct.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-\pgf@path@lastx=\dimen278
-\pgf@path@lasty=\dimen279
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcorepathusage.code.tex"
-File: pgfcorepathusage.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-\pgf@shorten@end@additional=\dimen280
-\pgf@shorten@start@additional=\dimen281
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcorescopes.code.tex"
-File: pgfcorescopes.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-\pgfpic=\box66
-\pgf@hbox=\box67
-\pgf@layerbox@main=\box68
-\pgf@picture@serial@count=\count304
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcoregraphicstate.code.tex"
-File: pgfcoregraphicstate.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-\pgflinewidth=\dimen282
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcoretransformations.code.tex"
-File: pgfcoretransformations.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-\pgf@pt@x=\dimen283
-\pgf@pt@y=\dimen284
-\pgf@pt@temp=\dimen285
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcorequick.code.tex"
-File: pgfcorequick.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcoreobjects.code.tex"
-File: pgfcoreobjects.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcorepathprocessing.code.tex"
-File: pgfcorepathprocessing.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcorearrows.code.tex"
-File: pgfcorearrows.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-\pgfarrowsep=\dimen286
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcoreshade.code.tex"
-File: pgfcoreshade.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-\pgf@max=\dimen287
-\pgf@sys@shading@range@num=\count305
-\pgf@shadingcount=\count306
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcoreimage.code.tex"
-File: pgfcoreimage.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcoreexternal.code.tex"
-File: pgfcoreexternal.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-\pgfexternal@startupbox=\box69
-))
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcorelayers.code.tex"
-File: pgfcorelayers.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcoretransparency.code.tex"
-File: pgfcoretransparency.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcorepatterns.code.tex"
-File: pgfcorepatterns.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/basiclayer\p
-gfcorerdf.code.tex"
-File: pgfcorerdf.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-)))
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/modules\pgfm
-oduleshapes.code.tex"
-File: pgfmoduleshapes.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-\pgfnodeparttextbox=\box70
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/modules\pgfm
-oduleplot.code.tex"
-File: pgfmoduleplot.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/pgf/compatibility\
-pgfcomp-version-0-65.sty"
-Package: pgfcomp-version-0-65 2019/08/03 v3.1.4b (3.1.4b)
-\pgf@nodesepstart=\dimen288
-\pgf@nodesepend=\dimen289
-)
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/pgf/compatibility\
-pgfcomp-version-1-18.sty"
-Package: pgfcomp-version-1-18 2019/08/03 v3.1.4b (3.1.4b)
-))
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/pgf/utilities\pgff
-or.sty"
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/pgf/utilities\pgfk
-eys.sty"
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/utilities\pg
-fkeys.code.tex"))
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/pgf/math\pgfmath.s
+("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/caption\caption3.s
 ty"
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/math\pgfmath
-.code.tex"))
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/utilities\pg
-ffor.code.tex"
-Package: pgffor 2019/08/03 v3.1.4b (3.1.4b)
+Package: caption3 2018/09/12 v1.8c caption3 kernel (AR)
+Package caption3 Info: TeX engine: e-TeX on input line 64.
+\captionmargin=\dimen195
+\captionmargin@=\dimen196
+\captionwidth=\dimen197
+\caption@tempdima=\dimen198
+\caption@indent=\dimen199
+\caption@parindent=\dimen256
+\caption@hangindent=\dimen257
+)
+\c@caption@flags=\count295
+\c@ContinuedFloat=\count296
+Package caption Info: float package is loaded.
+Package caption Info: listings package is loaded.
+Package caption Info: longtable package is loaded.
 
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/math\pgfmath
-.code.tex")
-\pgffor@iter=\dimen290
-\pgffor@skip=\dimen291
-\pgffor@stack=\toks44
-\pgffor@toks=\toks45
+("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/caption\ltcaption.
+sty"
+Package: ltcaption 2018/08/26 v1.4-95 longtable captions (AR)
 ))
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/frontendlaye
-r/tikz\tikz.code.tex"
-Package: tikz 2019/08/03 v3.1.4b (3.1.4b)
-
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/libraries\pg
-flibraryplothandlers.code.tex"
-File: pgflibraryplothandlers.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-\pgf@plot@mark@count=\count307
-\pgfplotmarksize=\dimen292
+\c@subfigure=\count297
+\c@subtable=\count298
 )
-\tikz@lastx=\dimen293
-\tikz@lasty=\dimen294
-\tikz@lastxsaved=\dimen295
-\tikz@lastysaved=\dimen296
-\tikz@lastmovetox=\dimen297
-\tikz@lastmovetoy=\dimen298
-\tikzleveldistance=\dimen299
-\tikzsiblingdistance=\dimen300
-\tikz@figbox=\box71
-\tikz@figbox@bg=\box72
-\tikz@tempbox=\box73
-\tikz@tempbox@bg=\box74
-\tikztreelevel=\count308
-\tikznumberofchildren=\count309
-\tikznumberofcurrentchild=\count310
-\tikz@fig@count=\count311
-
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/modules\pgfm
-odulematrix.code.tex"
-File: pgfmodulematrix.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-\pgfmatrixcurrentrow=\count312
-\pgfmatrixcurrentcolumn=\count313
-\pgf@matrix@numberofcolumns=\count314
-)
-\tikz@expandcount=\count315
-
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/generic/pgf/frontendlaye
-r/tikz/libraries\tikzlibrarytopaths.code.tex"
-File: tikzlibrarytopaths.code.tex 2019/08/03 v3.1.4b (3.1.4b)
-)))
 ("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/geometry\geometry.
 sty"
 Package: geometry 2018/04/16 v5.8 Page Geometry
@@ -921,47 +641,21 @@ Package ifvtex Info: VTeX not detected.
 sty"
 Package: ifxetex 2010/09/12 v0.6 Provides ifxetex conditional
 )
-\Gm@cnth=\count316
-\Gm@cntv=\count317
-\c@Gm@tempcnt=\count318
-\Gm@bindingoffset=\dimen301
-\Gm@wd@mp=\dimen302
-\Gm@odd@mp=\dimen303
-\Gm@even@mp=\dimen304
-\Gm@layoutwidth=\dimen305
-\Gm@layoutheight=\dimen306
-\Gm@layouthoffset=\dimen307
-\Gm@layoutvoffset=\dimen308
-\Gm@dimlist=\toks46
+\Gm@cnth=\count299
+\Gm@cntv=\count300
+\c@Gm@tempcnt=\count301
+\Gm@bindingoffset=\dimen258
+\Gm@wd@mp=\dimen259
+\Gm@odd@mp=\dimen260
+\Gm@even@mp=\dimen261
+\Gm@layoutwidth=\dimen262
+\Gm@layoutheight=\dimen263
+\Gm@layouthoffset=\dimen264
+\Gm@layoutvoffset=\dimen265
+\Gm@dimlist=\toks34
 
 ("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/geometry\geometry.
 cfg"))
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/caption\caption.st
-y"
-Package: caption 2018/10/06 v3.3-154 Customizing captions (AR)
-
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/caption\caption3.s
-ty"
-Package: caption3 2018/09/12 v1.8c caption3 kernel (AR)
-Package caption3 Info: TeX engine: e-TeX on input line 64.
-\captionmargin=\dimen309
-\captionmargin@=\dimen310
-\captionwidth=\dimen311
-\caption@tempdima=\dimen312
-\caption@indent=\dimen313
-\caption@parindent=\dimen314
-\caption@hangindent=\dimen315
-)
-\c@caption@flags=\count319
-\c@ContinuedFloat=\count320
-Package caption Info: float package is loaded.
-Package caption Info: listings package is loaded.
-Package caption Info: longtable package is loaded.
-
-("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/caption\ltcaption.
-sty"
-Package: ltcaption 2018/08/26 v1.4-95 longtable captions (AR)
-))
 ("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/tocbibind\tocbibin
 d.sty"
 Package: tocbibind 2010/10/13 v1.5k extra ToC listings
@@ -1024,9 +718,9 @@ Package: auxhook 2016/05/16 v1.4 Hooks for auxiliary files (HO)
 .sty"
 Package: kvoptions 2016/05/16 v3.12 Key value format for package options (HO)
 )
-\@linkdim=\dimen316
-\Hy@linkcounter=\count321
-\Hy@pagecounter=\count322
+\@linkdim=\dimen266
+\Hy@linkcounter=\count302
+\Hy@pagecounter=\count303
 
 ("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/hyperref\pd1enc.de
 f"
@@ -1034,7 +728,7 @@ File: pd1enc.def 2019/06/12 v6.88h Hyperref: PDFDocEncoding definition (HO)
 Now handling font encoding PD1 ...
 ... no UTF-8 mapping file for font encoding PD1
 )
-\Hy@SavedSpaceFactor=\count323
+\Hy@SavedSpaceFactor=\count304
 
 ("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/00miktex\hyperref.
 cfg"
@@ -1048,16 +742,16 @@ Package hyperref Info: Plain pages OFF on input line 4565.
 Package hyperref Info: Backreferencing OFF on input line 4570.
 Package hyperref Info: Implicit mode ON; LaTeX internals redefined.
 Package hyperref Info: Bookmarks ON on input line 4803.
-\c@Hy@tempcnt=\count324
+\c@Hy@tempcnt=\count305
  ("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/url\url.sty"
 \Urlmuskip=\muskip17
 Package: url 2013/09/16  ver 3.4  Verb mode for urls, etc.
 )
 LaTeX Info: Redefining \url on input line 5156.
-\XeTeXLinkMargin=\dimen317
-\Fld@menulength=\count325
-\Field@Width=\dimen318
-\Fld@charsize=\dimen319
+\XeTeXLinkMargin=\dimen267
+\Fld@menulength=\count306
+\Field@Width=\dimen268
+\Fld@charsize=\dimen269
 Package hyperref Info: Hyper figures OFF on input line 6411.
 Package hyperref Info: Link nesting OFF on input line 6416.
 Package hyperref Info: Hyper index ON on input line 6419.
@@ -1067,17 +761,17 @@ Package hyperref Info: Link coloring with OCG OFF on input line 6436.
 Package hyperref Info: PDF/A mode OFF on input line 6441.
 LaTeX Info: Redefining \ref on input line 6481.
 LaTeX Info: Redefining \pageref on input line 6485.
-\Hy@abspage=\count326
-\c@Item=\count327
-\c@Hfootnote=\count328
+\Hy@abspage=\count307
+\c@Item=\count308
+\c@Hfootnote=\count309
 )
 Package hyperref Info: Driver (autodetected): hpdftex.
 
 ("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/hyperref\hpdftex.d
 ef"
 File: hpdftex.def 2019/06/12 v6.88h Hyperref driver for pdfTeX
-\Fld@listcount=\count329
-\c@bookmark@seq@number=\count330
+\Fld@listcount=\count310
+\c@bookmark@seq@number=\count311
 
 ("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/oberdiek\rerunfile
 check.sty"
@@ -1088,15 +782,15 @@ Package uniquecounter Info: New unique counter `rerunfilecheck' on input line 2
 \Hy@SectionHShift=\skip82
 )
 Package hyperref Info: Option `colorlinks' set `true' on input line 14.
-\c@claim=\count331
-\c@theorem=\count332
-\c@lemma=\count333
-\c@hypothesis=\count334
-\c@corollary=\count335
-\c@proposition=\count336
-\c@definition=\count337
-\c@assumption=\count338
-\c@example=\count339
+\c@claim=\count312
+\c@theorem=\count313
+\c@lemma=\count314
+\c@hypothesis=\count315
+\c@corollary=\count316
+\c@proposition=\count317
+\c@definition=\count318
+\c@assumption=\count319
+\c@example=\count320
 
 
 LaTeX Warning: Unused global option(s):
@@ -1119,22 +813,22 @@ LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 58.
 LaTeX Font Info:    ... okay on input line 58.
 LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 58.
 LaTeX Font Info:    ... okay on input line 58.
-\c@lstlisting=\count340
+\c@lstlisting=\count321
 
 ("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/context/base/mkii\supp-p
 df.mkii"
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count341
-\scratchdimen=\dimen320
-\scratchbox=\box75
-\nofMPsegments=\count342
-\nofMParguments=\count343
-\everyMPshowfont=\toks47
-\MPscratchCnt=\count344
-\MPscratchDim=\dimen321
-\MPnumerator=\count345
-\makeMPintoPDFobject=\count346
-\everyMPtoPDFconversion=\toks48
+\scratchcounter=\count322
+\scratchdimen=\dimen270
+\scratchbox=\box64
+\nofMPsegments=\count323
+\nofMParguments=\count324
+\everyMPshowfont=\toks35
+\MPscratchCnt=\count325
+\MPscratchDim=\dimen271
+\MPnumerator=\count326
+\makeMPintoPDFobject=\count327
+\everyMPtoPDFconversion=\toks36
 )
 ("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/oberdiek\epstopdf-
 base.sty"
@@ -1152,8 +846,10 @@ G,.JBIG2,.JB2,.eps]
 (grfext)             \AppendGraphicsExtensions on input line 456.
 ) ABD: EverySelectfont initializing macros
 LaTeX Info: Redefining \selectfont on input line 58.
+Package caption Info: Begin \AtBeginDocument code.
+Package caption Info: hyperref package is loaded.
+Package caption Info: End \AtBeginDocument code.
 
-ABD: EveryShipout initializing macros
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
 *geometry* verbose mode - [ preamble ] result:
@@ -1188,10 +884,7 @@ ABD: EveryShipout initializing macros
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
-Package caption Info: Begin \AtBeginDocument code.
-Package caption Info: hyperref package is loaded.
-Package caption Info: End \AtBeginDocument code.
-\AtBeginShipoutBox=\box76
+\AtBeginShipoutBox=\box65
 Package hyperref Info: Link coloring ON on input line 58.
 
 ("C:\Users\samck\AppData\Local\Programs\MiKTeX 2.9\tex/latex/hyperref\nameref.s
@@ -1202,14 +895,14 @@ Package: nameref 2016/05/21 v2.44 Cross-referencing by name of section
 estring.sty"
 Package: gettitlestring 2016/05/16 v1.5 Cleanup title references (HO)
 )
-\c@section@level=\count347
+\c@section@level=\count328
 )
 LaTeX Info: Redefining \ref on input line 58.
 LaTeX Info: Redefining \pageref on input line 58.
 LaTeX Info: Redefining \nameref on input line 58.
  (Dissertation.out) (Dissertation.out)
-\@outlinefile=\write4
-\openout4 = `Dissertation.out'.
+\@outlinefile=\write3
+\openout3 = `Dissertation.out'.
 
 LaTeX Font Info:    Try loading font information for U+msa on input line 64.
 
@@ -1245,8 +938,8 @@ l.31 ...odel Uncertainty in BNNs}{30}{section.3.2}
                                                   % [1
 
 ] [2])
-\tf@toc=\write5
-\openout5 = `Dissertation.toc'.
+\tf@toc=\write4
+\openout4 = `Dissertation.toc'.
 
  [3] [4
 
@@ -1633,7 +1326,7 @@ Overfull \hbox (58.97655pt too wide) in paragraph at lines 600--602
  []
 
 [39] [40] [41] [42]
-Overfull \hbox (26.33942pt too wide) in paragraph at lines 661--662
+Overfull \hbox (26.33942pt too wide) in paragraph at lines 660--661
 \OT1/cmr/m/n/10.95 The train-ing pro-to-col is im-ple-mented mostly in Python [
 []].
  []
@@ -1642,127 +1335,128 @@ Overfull \hbox (26.33942pt too wide) in paragraph at lines 661--662
 Chapter 6.
 
 LaTeX Warning: Citation `barto1983neuronlik' on page 44 undefined on input line
- 671.
+ 670.
 
-
-Package caption Warning: \label without proper reference on input line 673.
-See the caption package documentation for explanation.
-
-
-LaTeX Warning: Reference `fig:cartpole' on page 44 undefined on input line 671.
-
-
-<./figures/cartpole-v0.jpg, id=725, 602.25pt x 401.5pt>
+<./figures/cartpole-v0.jpg, id=733, 602.25pt x 401.5pt>
 File: ./figures/cartpole-v0.jpg Graphic file (type jpg)
 <use ./figures/cartpole-v0.jpg>
-Package pdftex.def Info: ./figures/cartpole-v0.jpg  used on input line 675.
+Package pdftex.def Info: ./figures/cartpole-v0.jpg  used on input line 673.
 (pdftex.def)             Requested size: 199.1693pt x 132.77722pt.
 [44
 
  <./figures/cartpole-v0.jpg>]
 
-Package caption Warning: \label without proper reference on input line 688.
-See the caption package documentation for explanation.
+pdfTeX warning: pdflatex.exe (file ./figures/cartpole_curve.pdf): PDF inclusion
+: found PDF version <1.7>, but at most version <1.5> allowed
+<./figures/cartpole_curve.pdf, id=748, 845.07718pt x 597.432pt>
+File: ./figures/cartpole_curve.pdf Graphic file (type pdf)
+<use ./figures/cartpole_curve.pdf>
+Package pdftex.def Info: ./figures/cartpole_curve.pdf  used on input line 688.
+(pdftex.def)             Requested size: 398.3386pt x 281.6044pt.
 
+LaTeX Warning: `h' float specifier changed to `ht'.
 
-LaTeX Warning: Reference `fig:retrain' on page 45 undefined on input line 686.
-
-
+[45]
 
 pdfTeX warning: pdflatex.exe (file ./figures/reinit_rm.pdf): PDF inclusion: fou
 nd PDF version <1.7>, but at most version <1.5> allowed
-<./figures/reinit_rm.pdf, id=737, 845.07718pt x 597.432pt>
+<./figures/reinit_rm.pdf, id=757, 845.07718pt x 597.432pt>
 File: ./figures/reinit_rm.pdf Graphic file (type pdf)
 <use ./figures/reinit_rm.pdf>
-Package pdftex.def Info: ./figures/reinit_rm.pdf  used on input line 690.
+Package pdftex.def Info: ./figures/reinit_rm.pdf  used on input line 699.
 (pdftex.def)             Requested size: 298.75394pt x 211.20102pt.
-
-LaTeX Warning: `h' float specifier changed to `ht'.
-
-
-Package caption Warning: \label without proper reference on input line 697.
-See the caption package documentation for explanation.
-
-
-LaTeX Warning: Reference `fig:acq_size' on page 45 undefined on input line 695.
-
-
-
-Package caption Warning: \label without proper reference on input line 688.
-See the caption package documentation for explanation.
-
-
-LaTeX Warning: Reference `fig:retrain' on page 45 undefined on input line 695.
-
-
+[46 <./figures/cartpole_curve.pdf>]
 
 pdfTeX warning: pdflatex.exe (file ./figures/acq_size.pdf): PDF inclusion: foun
 d PDF version <1.7>, but at most version <1.5> allowed
-<./figures/acq_size.pdf, id=742, 845.07718pt x 597.432pt>
+<./figures/acq_size.pdf, id=772, 845.07718pt x 597.432pt>
 File: ./figures/acq_size.pdf Graphic file (type pdf)
 <use ./figures/acq_size.pdf>
-Package pdftex.def Info: ./figures/acq_size.pdf  used on input line 699.
+Package pdftex.def Info: ./figures/acq_size.pdf  used on input line 708.
 (pdftex.def)             Requested size: 298.75394pt x 211.20102pt.
-[45]
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-
+[47 <./figures/reinit_rm.pdf>]
 
 pdfTeX warning: pdflatex.exe (file ./figures/cartpole_final.pdf): PDF inclusion
 : found PDF version <1.7>, but at most version <1.5> allowed
-<./figures/cartpole_final.pdf, id=748, 845.07718pt x 597.432pt>
+<./figures/cartpole_final.pdf, id=790, 845.07718pt x 597.432pt>
 File: ./figures/cartpole_final.pdf Graphic file (type pdf)
 <use ./figures/cartpole_final.pdf>
-Package pdftex.def Info: ./figures/cartpole_final.pdf  used on input line 708.
-(pdftex.def)             Requested size: 298.75394pt x 211.20102pt.
+Package pdftex.def Info: ./figures/cartpole_final.pdf  used on input line 719.
+(pdftex.def)             Requested size: 398.3386pt x 281.6044pt.
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[46 <./figures/reinit_rm.pdf>] [47 <./figures/acq_size.pdf> <./figures/cartpole
-_final.pdf
+[48 <./figures/acq_size.pdf>]
+Overfull \hbox (18.10268pt too wide) in paragraph at lines 739--739
+[]\OT1/cmr/bx/n/14.4 Hypothesis 5: Uni-form in-for-ma-tive-ness of pool dataset
+ 
+ []
 
-pdfTeX warning: pdflatex.exe (file ./figures/cartpole_final.pdf): PDF inclusion
-: multiple pdfs with page group included in a single page
->]
+[49 <./figures/cartpole_final.pdf>] [50]
+
+pdfTeX warning: pdflatex.exe (file ./figures/rand_bald_cartpole_final.pdf): PDF
+ inclusion: found PDF version <1.7>, but at most version <1.5> allowed
+<./figures/rand_bald_cartpole_final.pdf, id=839, 845.07718pt x 597.432pt>
+File: ./figures/rand_bald_cartpole_final.pdf Graphic file (type pdf)
+<use ./figures/rand_bald_cartpole_final.pdf>
+Package pdftex.def Info: ./figures/rand_bald_cartpole_final.pdf  used on input 
+line 754.
+(pdftex.def)             Requested size: 199.1693pt x 140.79764pt.
+
+
+pdfTeX warning: pdflatex.exe (file ./figures/cartpole_rep.pdf): PDF inclusion: 
+found PDF version <1.7>, but at most version <1.5> allowed
+<./figures/cartpole_rep.pdf, id=840, 845.07718pt x 597.432pt>
+File: ./figures/cartpole_rep.pdf Graphic file (type pdf)
+<use ./figures/cartpole_rep.pdf>
+Package pdftex.def Info: ./figures/cartpole_rep.pdf  used on input line 760.
+(pdftex.def)             Requested size: 199.1693pt x 140.79764pt.
+[51 <./figures/rand_bald_cartpole_final.pdf> <./figures/cartpole_rep.pdf
+
+pdfTeX warning: pdflatex.exe (file ./figures/cartpole_rep.pdf): PDF inclusion: 
+multiple pdfs with page group included in a single page
+>] [52]
 Chapter 7.
-(Dissertation.bbl [48
+(Dissertation.bbl [53
 
 ]
-Underfull \hbox (badness 1048) in paragraph at lines 48--51
+Underfull \hbox (badness 1048) in paragraph at lines 41--44
 []\OT1/cmr/m/n/10.95 Cohen, G., Af-shar, S., Tap-son, J., and van Schaik, A.
  []
 
-[49
+[54
 
-] [50] [51] [52]) [53] [54
+] [55] [56] [57]) [58] [59
 
 ]
 Appendix A.
-[55
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 803.
+[60
 
-]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 750.
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 750.
+] [61]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 803.
  (Dissertation.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 750.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 750.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 803.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 803.
 Package rerunfilecheck Info: File `Dissertation.out' has not changed.
-(rerunfilecheck)             Checksum: 3A530F897CBC9A76DEF235EE1B7475C9;4163.
+(rerunfilecheck)             Checksum: DD211169906C2CF0F14D64D5F953543C;4401.
 
 
 LaTeX Warning: There were undefined references.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 750.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 803.
  ) 
 Here is how much of TeX's memory you used:
- 32173 strings out of 492895
- 597374 string characters out of 3123735
- 660490 words of memory out of 3000000
- 35423 multiletter control sequences out of 15000+200000
+ 22549 strings out of 492895
+ 384402 string characters out of 3123735
+ 478354 words of memory out of 3000000
+ 25991 multiletter control sequences out of 15000+200000
  549984 words of font info for 91 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
- 55i,15n,69p,1657b,477s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 47i,15n,69p,1657b,504s stack positions out of 5000i,500n,10000p,200000b,50000s
 <C:/Users/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts
 /cm/cmbx10.pfb><C:/Users/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/pu
 blic/amsfonts/cm/cmbx12.pfb><C:/Users/samck/AppData/Local/Programs/MiKTeX 2.9/f
@@ -1773,26 +1467,27 @@ k/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi10.pfb><
 C:/Users/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm
 /cmmi6.pfb><C:/Users/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public
 /amsfonts/cm/cmmi8.pfb><C:/Users/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/
-type1/public/amsfonts/cm/cmr10.pfb><C:/Users/samck/AppData/Local/Programs/MiKTe
-X 2.9/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/samck/AppData/Local/Pr
-ograms/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr17.pfb><C:/Users/samck/AppD
-ata/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users
-/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr7.pf
-b><C:/Users/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts
-/cm/cmr8.pfb><C:/Users/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/publ
-ic/amsfonts/cm/cmr9.pfb><C:/Users/samck/AppData/Local/Programs/MiKTeX 2.9/fonts
-/type1/public/amsfonts/cm/cmsl10.pfb><C:/Users/samck/AppData/Local/Programs/MiK
-TeX 2.9/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/samck/AppData/Local
-/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/Users/samck/A
-ppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy8.pfb><C:/U
-sers/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmt
-i10.pfb><C:/Users/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/am
-sfonts/cm/cmti9.pfb><C:/Users/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/typ
-e1/public/amsfonts/cm/cmtt10.pfb><C:/Users/samck/AppData/Local/Programs/MiKTeX 
-2.9/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on Dissertation.pdf (57 pages, 665238 bytes).
+type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/samck/AppData/Local/Programs/MiKTe
+X 2.9/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/samck/AppData/Local/Pr
+ograms/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Users/samck/AppD
+ata/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr17.pfb><C:/User
+s/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr6.p
+fb><C:/Users/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfont
+s/cm/cmr7.pfb><C:/Users/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/pub
+lic/amsfonts/cm/cmr8.pfb><C:/Users/samck/AppData/Local/Programs/MiKTeX 2.9/font
+s/type1/public/amsfonts/cm/cmr9.pfb><C:/Users/samck/AppData/Local/Programs/MiKT
+eX 2.9/fonts/type1/public/amsfonts/cm/cmsl10.pfb><C:/Users/samck/AppData/Local/
+Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Users/samck/A
+ppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmsy6.pfb><C:/U
+sers/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cms
+y8.pfb><C:/Users/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/type1/public/ams
+fonts/cm/cmti10.pfb><C:/Users/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/typ
+e1/public/amsfonts/cm/cmti9.pfb><C:/Users/samck/AppData/Local/Programs/MiKTeX 2
+.9/fonts/type1/public/amsfonts/cm/cmtt10.pfb><C:/Users/samck/AppData/Local/Prog
+rams/MiKTeX 2.9/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
+Output written on Dissertation.pdf (63 pages, 842605 bytes).
 PDF statistics:
- 945 PDF objects out of 1000 (max. 8388607)
- 220 named destinations out of 1000 (max. 500000)
- 465 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 1038 PDF objects out of 1200 (max. 8388607)
+ 234 named destinations out of 1000 (max. 500000)
+ 484 words of extra memory for PDF output out of 10000 (max. 10000000)
 
