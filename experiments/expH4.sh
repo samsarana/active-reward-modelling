@@ -1,2 +1,2 @@
 #!/bin/bash
-python main.py --info=mean_std-no-batch      --env_str=gridworld --default_settings=gridworld_zac --agent_gets_dones  --n_epochs_train_rm=10000 --grid_size=4 --grid_deterministic_reset --grid_n_lavas 1 --n_rounds 40 --n_labels_per_round 10 --clip_length 1 --selection_factor 1000 --size_rm_ensemble=5 --uncert_method=ensemble --active_method=mean_std --batch_size_acq 1
+python main.py --info=mean_std-no-batch      --env_str=gridworld --default_settings=gridworld_zac --agent_gets_dones  --n_epochs_train_rm=10000 --grid_size=4 --grid_deterministic_reset --grid_n_lavas 1 --n_rounds 40 --n_labels_per_round 10 --clip_length 1 --selection_factor 1000 --size_rm_ensemble=5 --uncert_method=ensemble --active_method=mean_std --batch_size_acq 1 --seed_offset 1 --n_runs 2
