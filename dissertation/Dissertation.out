@@ -1,56 +1,55 @@
 \BOOKMARK [-1][-]{part.1}{I Background}{}% 1
 \BOOKMARK [0][-]{chapter.1}{Introduction}{part.1}% 2
-\BOOKMARK [1][-]{section.1.1}{Relation to Material Studied on the MSc Course}{chapter.1}% 3
-\BOOKMARK [0][-]{chapter.2}{Reinforcement Learning}{part.1}% 4
-\BOOKMARK [1][-]{section.2.1}{Elements of Reinforcement Learning}{chapter.2}% 5
-\BOOKMARK [1][-]{section.2.2}{Finite Markov Decision Processes}{chapter.2}% 6
-\BOOKMARK [2][-]{subsection.2.2.1}{The Agent-Environment Interface}{section.2.2}% 7
-\BOOKMARK [2][-]{subsection.2.2.2}{Goals and Rewards}{section.2.2}% 8
-\BOOKMARK [2][-]{subsection.2.2.3}{Returns and Episodes}{section.2.2}% 9
-\BOOKMARK [2][-]{subsection.2.2.4}{Policies and Value Functions}{section.2.2}% 10
-\BOOKMARK [2][-]{subsection.2.2.5}{Optimal Policies and Optimal Value Functions}{section.2.2}% 11
-\BOOKMARK [2][-]{subsection.2.2.6}{Bellman Equations}{section.2.2}% 12
-\BOOKMARK [1][-]{section.2.3}{Reinforcement Learning Solution Methods}{chapter.2}% 13
-\BOOKMARK [2][-]{subsection.2.3.1}{Deep Neural Networks}{section.2.3}% 14
-\BOOKMARK [2][-]{subsection.2.3.2}{Deep Q-network}{section.2.3}% 15
-\BOOKMARK [1][-]{section.2.4}{Reinforcement Learning from Unknown Reward Functions}{chapter.2}% 16
-\BOOKMARK [2][-]{subsection.2.4.1}{Reward Learning from Trajectory Preferences in Deep RL}{section.2.4}% 17
-\BOOKMARK [2][-]{subsection.2.4.2}{Reward Learning from Trajectory Preferences with Handcrafted Feature Transformations}{section.2.4}% 18
-\BOOKMARK [0][-]{chapter.3}{Uncertainty in Deep Learning}{part.1}% 19
-\BOOKMARK [1][-]{section.3.1}{Bayesian Neural Networks}{chapter.3}% 20
-\BOOKMARK [2][-]{subsection.3.1.1}{Bayes by Backprop}{section.3.1}% 21
-\BOOKMARK [1][-]{section.3.2}{Model Uncertainty in BNNs}{chapter.3}% 22
-\BOOKMARK [0][-]{chapter.4}{Active Learning}{part.1}% 23
-\BOOKMARK [1][-]{section.4.1}{Acquisition Functions}{chapter.4}% 24
-\BOOKMARK [2][-]{subsection.4.1.1}{Max Entropy}{section.4.1}% 25
-\BOOKMARK [2][-]{subsection.4.1.2}{BALD}{section.4.1}% 26
-\BOOKMARK [2][-]{subsection.4.1.3}{Variation Ratios}{section.4.1}% 27
-\BOOKMARK [2][-]{subsection.4.1.4}{Mean STD}{section.4.1}% 28
-\BOOKMARK [1][-]{section.4.2}{Applying Active Learning to RL without a reward function}{chapter.4}% 29
-\BOOKMARK [2][-]{subsection.4.2.1}{APRIL}{section.4.2}% 30
-\BOOKMARK [2][-]{subsection.4.2.2}{Active Preference-Based Learning of Reward Functions with handcrafted feature transformations}{section.4.2}% 31
-\BOOKMARK [2][-]{subsection.4.2.3}{Deep RL from Human Preferences}{section.4.2}% 32
-\BOOKMARK [-1][-]{part.2}{II Innovation}{}% 33
-\BOOKMARK [0][-]{chapter.5}{Method}{part.2}% 34
-\BOOKMARK [1][-]{section.5.1}{Possible failure modes of active reward modelling}{chapter.5}% 35
-\BOOKMARK [2][-]{subsection.5.1.1}{Failure modes of active learning in general}{section.5.1}% 36
-\BOOKMARK [2][-]{subsection.5.1.2}{Failure modes of active learning in the reward modelling setting}{section.5.1}% 37
-\BOOKMARK [1][-]{section.5.2}{ARMA}{chapter.5}% 38
-\BOOKMARK [1][-]{section.5.3}{Acquisition Functions and Uncertainty Estimates}{chapter.5}% 39
-\BOOKMARK [1][-]{section.5.4}{Implementation Details}{chapter.5}% 40
-\BOOKMARK [0][-]{chapter.6}{Experiments and Results}{part.2}% 41
-\BOOKMARK [1][-]{section.6.1}{Hypothesis 3: Reward model retraining}{chapter.6}% 42
-\BOOKMARK [1][-]{section.6.2}{Hypothesis 4: Acquisition size}{chapter.6}% 43
-\BOOKMARK [1][-]{section.6.3}{Hypotheses 1 and 2: Uncertainty estimates and acquisition functions}{chapter.6}% 44
-\BOOKMARK [1][-]{section.6.4}{Hypothesis 5: Uniform informativeness of pool dataset}{chapter.6}% 45
-\BOOKMARK [0][-]{chapter.7}{Conclusions}{part.2}% 46
-\BOOKMARK [1][-]{section.7.1}{Summary}{chapter.7}% 47
-\BOOKMARK [1][-]{section.7.2}{Evaluation}{chapter.7}% 48
-\BOOKMARK [2][-]{subsection.7.2.1}{Personal Development}{section.7.2}% 49
-\BOOKMARK [1][-]{section.7.3}{Future Work}{chapter.7}% 50
-\BOOKMARK [0][-]{chapter*.17}{References}{part.2}% 51
-\BOOKMARK [0][-]{appendix.A}{Appendix A}{part.2}% 52
-\BOOKMARK [1][-]{section.A.1}{CartPole Experimental Details}{appendix.A}% 53
-\BOOKMARK [2][-]{subsection.A.1.1}{Ground truth reward function}{section.A.1}% 54
-\BOOKMARK [2][-]{subsection.A.1.2}{Experiment 1 details}{section.A.1}% 55
-\BOOKMARK [2][-]{subsection.A.1.3}{Other modifications made between testing hypothesis 4 and hypothesis 1 and 2}{section.A.1}% 56
+\BOOKMARK [0][-]{chapter.2}{Reinforcement Learning}{part.1}% 3
+\BOOKMARK [1][-]{section.2.1}{Elements of Reinforcement Learning}{chapter.2}% 4
+\BOOKMARK [1][-]{section.2.2}{Finite Markov Decision Processes}{chapter.2}% 5
+\BOOKMARK [2][-]{subsection.2.2.1}{The Agent-Environment Interface}{section.2.2}% 6
+\BOOKMARK [2][-]{subsection.2.2.2}{Goals and Rewards}{section.2.2}% 7
+\BOOKMARK [2][-]{subsection.2.2.3}{Returns and Episodes}{section.2.2}% 8
+\BOOKMARK [2][-]{subsection.2.2.4}{Policies and Value Functions}{section.2.2}% 9
+\BOOKMARK [2][-]{subsection.2.2.5}{Optimal Policies and Optimal Value Functions}{section.2.2}% 10
+\BOOKMARK [2][-]{subsection.2.2.6}{Bellman Equations}{section.2.2}% 11
+\BOOKMARK [1][-]{section.2.3}{Reinforcement Learning Solution Methods}{chapter.2}% 12
+\BOOKMARK [2][-]{subsection.2.3.1}{Deep Neural Networks}{section.2.3}% 13
+\BOOKMARK [2][-]{subsection.2.3.2}{Deep Q-network}{section.2.3}% 14
+\BOOKMARK [1][-]{section.2.4}{Reinforcement Learning from Unknown Reward Functions}{chapter.2}% 15
+\BOOKMARK [2][-]{subsection.2.4.1}{Reward Learning from Trajectory Preferences in Deep RL}{section.2.4}% 16
+\BOOKMARK [2][-]{subsection.2.4.2}{Reward Learning from Trajectory Preferences with Handcrafted Feature Transformations}{section.2.4}% 17
+\BOOKMARK [0][-]{chapter.3}{Uncertainty in Deep Learning}{part.1}% 18
+\BOOKMARK [1][-]{section.3.1}{Bayesian Neural Networks}{chapter.3}% 19
+\BOOKMARK [1][-]{section.3.2}{Active Learning}{chapter.3}% 20
+\BOOKMARK [2][-]{subsection.3.2.1}{Max Entropy}{section.3.2}% 21
+\BOOKMARK [2][-]{subsection.3.2.2}{BALD}{section.3.2}% 22
+\BOOKMARK [2][-]{subsection.3.2.3}{Variation Ratios}{section.3.2}% 23
+\BOOKMARK [2][-]{subsection.3.2.4}{Mean STD}{section.3.2}% 24
+\BOOKMARK [0][-]{chapter.4}{Applying Active Learning to RL without a reward function}{part.1}% 25
+\BOOKMARK [1][-]{subsection.4.0.1}{APRIL}{chapter.4}% 26
+\BOOKMARK [2][-]{subsection.4.0.2}{Active Preference-Based Learning of Reward Functions with handcrafted feature transformations}{subsection.4.0.1}% 27
+\BOOKMARK [2][-]{subsection.4.0.3}{Deep RL from Human Preferences}{subsection.4.0.1}% 28
+\BOOKMARK [-1][-]{part.2}{II Innovation}{}% 29
+\BOOKMARK [0][-]{chapter.5}{Method}{part.2}% 30
+\BOOKMARK [1][-]{section.5.1}{Possible failure modes of active reward modelling}{chapter.5}% 31
+\BOOKMARK [2][-]{subsection.5.1.1}{Failure modes of active learning in general}{section.5.1}% 32
+\BOOKMARK [2][-]{subsection.5.1.2}{Failure modes of active learning in the reward modelling setting}{section.5.1}% 33
+\BOOKMARK [1][-]{section.5.2}{Active Reward Modelling}{chapter.5}% 34
+\BOOKMARK [1][-]{section.5.3}{Acquisition Functions and Uncertainty Estimates}{chapter.5}% 35
+\BOOKMARK [1][-]{section.5.4}{Implementation Details}{chapter.5}% 36
+\BOOKMARK [0][-]{chapter.6}{Experiments and Results}{part.2}% 37
+\BOOKMARK [1][-]{section.6.1}{Hypothesis 3: Reward model retraining}{chapter.6}% 38
+\BOOKMARK [1][-]{section.6.2}{Hypothesis 4: Acquisition size}{chapter.6}% 39
+\BOOKMARK [1][-]{section.6.3}{Hypotheses 1 and 2: Uncertainty estimates and acquisition functions}{chapter.6}% 40
+\BOOKMARK [1][-]{section.6.4}{Hypothesis 5: Pool dataset has approximately uniform informativeness}{chapter.6}% 41
+\BOOKMARK [1][-]{section.6.5}{Gridworld experiments}{chapter.6}% 42
+\BOOKMARK [1][-]{section.6.6}{Hypothesis 6: Active reward modelling exploration issues}{chapter.6}% 43
+\BOOKMARK [0][-]{chapter.7}{Conclusions}{part.2}% 44
+\BOOKMARK [1][-]{section.7.1}{Summary}{chapter.7}% 45
+\BOOKMARK [1][-]{section.7.2}{Future Work}{chapter.7}% 46
+\BOOKMARK [1][-]{section.7.3}{Relation to Material Studied on the MSc Course}{chapter.7}% 47
+\BOOKMARK [1][-]{section.7.4}{Critical Evaluation}{chapter.7}% 48
+\BOOKMARK [2][-]{subsection.7.4.1}{Personal Development}{section.7.4}% 49
+\BOOKMARK [0][-]{chapter*.19}{References}{part.2}% 50
+\BOOKMARK [0][-]{appendix.A}{Appendix A}{part.2}% 51
+\BOOKMARK [1][-]{section.A.1}{CartPole Experimental Details}{appendix.A}% 52
+\BOOKMARK [2][-]{subsection.A.1.1}{Ground truth reward function}{section.A.1}% 53
+\BOOKMARK [2][-]{subsection.A.1.2}{Experiment 1 details}{section.A.1}% 54
+\BOOKMARK [2][-]{subsection.A.1.3}{Other modifications made between testing hypothesis 4 and hypothesis 1 and 2}{section.A.1}% 55

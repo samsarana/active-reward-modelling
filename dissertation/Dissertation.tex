@@ -56,7 +56,7 @@
 \newtheorem{example}{Example}
 
 \begin{document}
-\title{ARMA: Active Reward Modelling for Agent Alignment}
+\title{Active Reward Modelling for Agent Alignment}
 \author{Sam Clarke}
 \date{September 2019}
 \renewcommand{\bibname}{References}
@@ -73,10 +73,24 @@
 \part{Background}
 
 \chapter{Introduction}
+Reinforcement Learning (RL) has made rapid progress in recent years at complex tasks such as playing Go \cite{silver2016mastering} and StarCraft II \cite{alphastarblog}. In their current form, the success of these systems relies on the objectives of the task being well-defined. Specifically, they require that the objectives can be expressed as a \textit{reward function}, which defines goals in terms of the reward associated with taking a given action when the world is in a given state. In the cases of Go and StarCraft, the game score function provides this.
 
-\section{Relation to Material Studied on the MSc Course}
+However, real-world tasks lack such obvious reward functions. Therefore, if we aspire to use RL to assist us in the real-world, we need some other method of specifying our intentions. Put another way, we need to solve the \textit{agent alignment problem} \cite[p.~1]{Leike2018}:
+\begin{quote}
+	\textit{How can we create agents that behave in accordance with the user's intentions?}
+\end{quote}
 
-\chapter{Reinforcement Learning} % Explain problem, give context
+So far, systems have been developed which allow users to communicate their intentions by giving demonstrations and providing feedback (in the form of preferences or scalar rewards) on the agent's behaviour. For example, the \textit{inverse reinforcement learning} approach \cite{Ng2000, Ziebart2008} uses demonstrations by the user to infer their reward function. One can then use a standard RL algorithm to train an agent on the inferred reward function, to follow the user's intentions as expressed in the demonstrations. Alternatively, the \textit{RL from preferences} approach \cite{Christiano2017} queries the user for preferences about current agent behaviour, which it uses to learn the user's reward function and then refine the agent's behaviour accordingly, again by standard RL techniques.
+
+These systems have been prototyped in simple domains, such as Atari games \cite{bellemare2013arcade} and simulated robotics tasks \cite{todorov2012mujoco}. However, the technology is far from mature. For example, the RL from preferences method requires on the order of thousands of user queries to learn to play simple Atari games, and so may struggle to scale to much more complex tasks. Indeed, an important property of any such system is to minimise the burden placed on the user. Clearly, there is no point in trying to automate some task if the automation procedure is even more demanding for the human than just performing the task themselves. In other words, we desire systems trained on user feedback to make sample efficient requests.
+
+For this purpose, the RL from preferences method developed in \cite{Christiano2017} attempts to request only the most informative preferences from the user, a technique known as Active Learning (AL). However, the results of applying this technique were mixed; on some tasks, it showed improvement over requesting preferences uniformly at random, whilst for other tasks it made no significant difference, or even impaired performance. Accordingly, this component of the system was omitted the subsequent work by \cite{Ibarz2018}.
+
+Our contribution is to conduct a detailed study into whether AL can be used to improve the efficiency of RL from user preferences, which we call \textit{active reward modelling}. Specifically, we test different hypotheses to explain the ambiguous results in \cite{Christiano2017}. We find that whether AL improves on the random acquisition of preferences depends on certain features of the environment and task, agreeing with the result in \cite{Christiano2017}. This environment-dependency is also consistent with state of RL in general, in which it is common for the success of algorithmic innovations on certain combinations of tasks and environments to fail to replicate when the task and environment are changed \cite{henderson2018deep}.
+
+The dissertation is organised as follows. Part I lays out the relevant background material. All this material rests on an understanding of deep neural networks, which are explained in chapter 1. Chapter 2 outlines the basics of reinforcement learning. Chapter 3 concerns techniques for equipping deep neural networks with the ability to give estimates of the uncertainty in their output, which is used in Active Learning. These chapters provide only short overviews of entire research fields, but should be both self-contained and give sufficient detail to allow the reader to assess our contribution. Part II is concerned with our contribution. Chapter 5 explains our hypotheses for lack of success of active reward modelling in the previous work \cite{Christiano2017} and outlines the basic active reward modelling training protocol with which we our hypotheses. Chapter 6 details the experiments we performed to test our hypotheses, and the conclusions we drew from them. Chapter 7 summarises our contribution and suggests future work, as well as providing a critical evaluation and discussion of personal development and the relation of this dissertation to the material studied on the MSc course.
+
+\chapter{Reinforcement Learning}
 Reinforcement learning (RL) refers simultaneously to a problem, methods for solving that problem, and the field that studies the problem and its solution methods. The problem of RL is to learn what to do---how to map situations to actions---so as to maximise some numerical reward signal \cite[pp.~1-2]{Sutton2018}.
 
 In this section we first introduce the elements of RL informally. We then formalise the RL Problem as the optimal control of incompletely-known Markov decision processes (finite? do I talk about PO?). We give a taxonomy of different RL solution methods and conclude with a description of one such method, Deep Q-Learning (DQN) that is of particular importance in this dissertation.
@@ -95,8 +109,6 @@ More formally, consider a sequence of discrete time steps, $t = 1,2,3, \dots$. A
 S_0, A_0, R_1, S_1, A_1, R_2, S_2, A_2, R_3, \dots
 \end{align*}
 % TODO insert Figure 3.1-like figure from S&B
-% TODO ask best practices for figures
-% TODO ask best practices for latex commands
 
 A \textit{finite} MDP is one where the sets of states, actions and rewards are finite. In this case, the random variables $ S_t $ and $ R_t $ have well-defined discrete probability distributions which depend only on the preceding state and action. This allows us to define the \textit{dynamics} of the MDP, a probability mass function $ p : \mathcal{S} \times \mathcal{R} \times \mathcal{S} \times \mathcal{A} \mapsto [0,1] $, as follows. For any particular values $ s' \in \mathcal{S} $ and $ r \in \mathcal{R} $ of the random variables $ S_t $ and $ R_t $, there is a probability of these values occurring at time $ t $, given any values of the previous state $ s \in \mathcal{S} $ and action $ a \in \mathcal{A} $:
 \begin{align*}
@@ -446,57 +458,32 @@ m = \mathbb{E}\left[  \frac{\w \cdot \w_\text{true}}{\vert \w \vert \vert \w_\te
 They generate queries by solving a constrained optimization problem to find the two trajectory segments that will maximise the volume removed from the hypothesis space. Using the same mapping from reward space to preference space as \cite{Christiano2017} (Equation \ref{eq:softmax}), they start with a uniform prior over the space of all $ \w $ (uniform over the unit ball), generate a query, get a preference from the annotator, and perform a Bayesian update on this labelled clip pair. Thanks to the simple function form of their reward model, this Bayesian update has a closed form solution. They repeat this procedure until the reward model is close to the true reward function, according to $ m $.
 
 \chapter{Uncertainty in Deep Learning}
-If we are to use deep NNs for practical applications, it is crucial that they output not only point estimates, but also their uncertainty in those estimates. For example, suppose a deep NN is being used to drive an autonomous vehicle. If it encounter a situation in which it is uncertain about whether to brake or not, we probably want it to hand over control to a human driver, rather than blindly taking its best guess. Equally, if a deep NN is being used for medical diagnosis and is confronted with an unfamiliar stimulus, it should request more data or alert a human doctor.
+If we are to use deep NNs for practical applications, it is crucial that they output not only point estimates, but also their uncertainty in those estimates. For example, suppose a deep NN is being used to drive an autonomous vehicle. If it encounter a situation in which it is uncertain about whether to brake or not, we probably want it to hand over control to a human driver, rather than blindly taking its best guess. Equally, if a deep NN is being used for medical diagnosis and is confronted with an unfamiliar stimulus, it should request more data or alert a human doctor. In Section \ref{sec:dnn}, we explained that NNs output probability distributions. For example, with categorical data, the final layer of the network is typically a softmax function, which gives the probability of the input being in each of the possible classes. However, such probability distributions do not in fact accurately reflect uncertainty \cite[p.~13]{Gal2017a}.
 
-In Section \ref{sec:dnn}, we explained that NNs output probability distributions. For example, with categorical data, the final layer of the network is typically a softmax function, which gives the probability of the input being in each of the possible classes. However, such probability distributions do not in fact accurately reflect uncertainty \cite[p.~13]{Gal2017a}. The field of \textit{Bayesian Deep Learning} aims to equip neural networks with the ability to accurate uncertainty alongside point estimates. To do so, we place probability distributions over each weight in the network, rather than single values as in standard NNs. Such models are called Bayesian neural networks (BNNs). We then perform Bayesian inference on the weights on the network, i.e. we compute a posterior distribution over the weights, given the training data. Then, given the posterior distribution over weights, to answer predictive queries we take expectations under this distribution:
+In this chapter we first summarise some of the techniques used equip NNs with the ability to output uncertainty estimates alongside point estimates. We then explain how such uncertainty estimates can be applied to the problem of Active Learning (AL), which is central to the topic of this dissertation.
+
+\section{Bayesian Neural Networks}
+Bayesian neural networks (BNNs) different from standard NNs in that they maintain a distribution over their weights rather than single values. As in all of machine learning, we then require an algorithm for learning from data. The mathematically correct way to do this for BNNs is to perform Bayesian inference on the weights on the network, i.e. compute a posterior distribution over the weights, given the training data. Then, given the posterior distribution over weights, to answer predictive queries we take expectations under this distribution:
 \begin{align*}
 P(\hat{y} \mid \hat{x}) = \E{ P(w|D) }{P(\hat{y} \mid \hat{x}, w) }
 \end{align*}
-However, this proper ‘dogmatic’ Bayes approach is intractable: taking an expectation under the posterior distribution on weights effectively means computing a forward pass with an infinite ensemble of neural networks, each with one possible configuration of the weights, then weighting their outputs according to the posterior distribution.
+However, this method of inference is intractable for the size of models that deep learning uses. Instead, we need to find an approximation to the true posterior.
 
-When we cannot do exact Bayesian inference, there are two common approximation methods: Markov Chain Monte Carlo and Variational Inference (VI). The paper proposes to use the latter.
+Variational Inference (VI) is one such approximation method. Historically, many of the attempts to perform VI on BNNs were not particularly practical. For example, one algorithm, Bayes by Backprop \cite{Blundell2015}, requires doubling the number of model parameters, making training more computationally expensive, and is very sensitive to hyperparameter tuning. However, recent techniques allow almost any network trained with a stochastic regularisation technique, such as dropout, to, given an input, obtain a predictive mean and variance (uncertainty), without any complicated augmentation to the network \cite[p.~15]{Gal2017a}.
 
+This method of obtaining an approximate posterior is called MC-Dropout. The idea is that we can sample from the approximate posterior of the distribution by using different subsets of randomly dropped out network weights. This is one of the two methods we will use in this dissertation.
 
-Historically, many of the attempts to do so were not very practical. For example, one algorithm, Bayes by Backprop \cite{Blundell2015}, requires doubling the number of model parameters, making training more computationally expensive, and is very sensitive to hyperparameter tuning. However, recent techniques allow almost any network trained with a stochastic regularisation technique, such as dropout, to, given an input, obtain a predictive mean and variance (uncertainty), without any complicated augmentation to the network \cite[p.~15]{Gal2017a}.
+The second method is by using a \textit{Deep Ensemble} [TODO cite]. This does not actually perform a Bayesian approximation but nonetheless has been shown to give good quality uncertainty estimates in practice.
 
-\section{Bayesian Neural Networks} \label{sec:bnns}
-From Andreas:
-2.3 Bayesian Neural Networks (BNN)
-In this paper we focus on BNNs as our Bayesian model because they scale well to high dimensional
-inputs, such as images. Compared to regular neural networks, BNNs maintain a distribution over
-their weights instead of point estimates. Performing exact inference in BNNs is intractable for any
-reasonably sized model, so we resort to using a variational approximation. Similar to Gal et al. [10],
-we use MC dropout [9], which is easy to implement, scales well to large models and datasets, and is
-straightforward to optimise.
+Equipped with a method to draw samples from an approximate posterior, or something that acts like an approximate posterior, we can use this method to get uncertainty estimates. In this dissertation, we are interested in the classification setting. The next section explains how to get uncertainty estimates in this setting. TODO make the link between acquisition functions and uncertainty estimates more clear.
 
-%Mention BBB as another method of VI, and that ensemble of models is another way to sample from approximate posterior %TODO what is the citation for this?t
-Explain what VI is by lifting words from your BBB report.
-
-\subsection{Bayes by Backprop}
-Typically, when we train a neural network, it learns single point estimates for each of its weights, to minimise some loss function, given some data. To do bayesian inference on a neural network, we calculate the posterior distribution of the weights given the training data, $ P(w|D) $. Figure \ref{fig:fig1} illustrates the difference.
-
-Then, given the posterior distribution over weights, to answer predictive queries we take expectations under this distribution:
-\begin{align*}
-P(\hat{y} \mid \hat{x}) = \E{ P(w|D) }{P(\hat{y} \mid \hat{x}, w) }
-\end{align*}
-However, this proper ‘dogmatic’ Bayes approach is intractable: taking an expectation under the posterior distribution on weights effectively means computing a forward pass with an infinite ensemble of neural networks, each with one possible configuration of the weights, then weighting their outputs according to the posterior distribution.
-
-When we cannot do exact Bayesian inference, there are two common approximation methods: Markov Chain Monte Carlo and Variational Inference (VI). The paper proposes to use the latter.
-
-
-
-\section{Model Uncertainty in BNNs}
-This section would say basically the same stuff as active learning, because the acquisition functions we consider are precisely the ways to get model uncertainty with a BNN in classification setting.
-Not sure if I need to include it, or maybe I should collapse the sections.
-
-\chapter{Active Learning}
+\section{Active Learning}
 % BALD (Houlsby: Bayesian Active Learning for Classification and Preference Learning)
 % Adapting it to the deep case (Yarin's thesis/Image Data paper)
 Supervised learning requires labelled training data. However, for many real-world problems, obtained labelled data is expensive. For example, constructing a dataset for image classification requires a human to specify the category of every image in training data. Active learning \cite{cohn1996active} is a framework for training a model using less data to achieve the same performance, by acquiring only the data that is most informative to the model. The key ingredient in active learning is called an \textit{acquisition function}. Given a model $ \mathcal{M} $ and pool data $ \mathcal{D}_{pool} \subset X $, an acquisition function $ a : X \times \mathcal{M} \mapsto \reals $ quantifies how informative the label of an element $ \x \in \mathcal{D}_{pool} $ would be to the model. This determines the next $ \x $ to query the \textit{oracle} for a label. More precisely, we acquire each new training datum $ x^* $ according to \cite{Gal2017b}:
 \[ \x^* = {\arg\max}_{\x \in \mathcal{D}_{pool}} a(\x, \mathcal{M}) \]
 Acquisition functions are often based on uncertainty estimates, corresponding with the intuition that it is good to acquire data on which the model is currently uncertain. In this section, we review some common acquisition functions for classification tasks\footnote{Different acquisition functions are used for regression tasks, typically based on predictive variance \cite[p.~47]{Gal2017a} which I do not cover here.} and then discuss how BNNs can provide the uncertainty estimates that these functions require. %TODO well in the Model Uncertainty in BNNs section I probably say stuff about this. work out what more, if anything, i need to say here.
-
-\section{Acquisition Functions} \label{sec:acq_funcs}
+%TODO cite beluch2018power
 
 \subsection{Max Entropy} \label{sec:max_ent}
 One natural idea is to acquire $ \x \in \data_{pool} $ with the highest entropy \cite{shannon1948mathematical} given the current training data $ \data_{train} $. Entropy is a key concept in information theory, which is a mathematical formalisation of uncertainty. More specifically, given a predictive distribution $ p : X \times Y \mapsto [0,1] $ (i.e. a model which predicts the probability of input $ \x $ being in class $ y $) trained on dataset $ \data_{train} $, the \textit{predictive entropy} of a new input $ \x $ formalises how uncertain $ p $ is about the label of input $ \x $ \cite[p.~52]{Gal2017a}:
@@ -553,7 +540,8 @@ Finally, an approach with less theoretical grounding that is nonetheless used in
 \end{align*}
 This acquisition function has similar properties to BALD in that it standard deviation, like disagreement, will avoid data with high aleatoric and low epistemic uncertainty. This is easy to see: if different draws of the model parameters predict the label of input $ \x $ to be always $ 0.5 $, as in the first case in example \ref{ex:max_ent}, the standard deviation of these samples is zero.
 
-\section{Applying Active Learning to RL without a reward function}
+
+\chapter{Applying Active Learning to RL without a reward function}
 Discussion of previous work.
 
 \subsection{APRIL}
@@ -585,13 +573,13 @@ Our aim is to find out whether active learning can be used to decrease the numbe
 The first section of this chapter explains our hypotheses, each of which corresponds to a different possible failure mode. Section 2 details the core active reward modelling training protocol, which we modify in various ways to test our hypotheses. Section 3 ... Section 4 outlines and motivates our choices of how to implement the method.
 
 \section{Possible failure modes of active reward modelling} \label{sec:failure}
-In this section, we list our hypotheses about different possible failure modes of active reward modelling and then explain each in more detail. Hypotheses 1-4 apply to active learning in general, whilst hypotheses 5-7 apply specifically to learning from preference in deep RL.
+In this section, we list our hypotheses about different possible failure modes of active reward modelling and then explain each in more detail. Hypotheses 1-4 apply to active learning in general, whilst hypotheses 5-7 apply specifically to learning from preference in deep RL. %TODO I've now reordered.
 \begin{enumerate} %TODO tidy up language here
-	\item Uncertainty estimate method
-	\item Quality of acquisition function
 	\item Not reinitialising reward model
     \item Acquisition size
-	\item Pool dataset too uniform
+   	\item Choice of acquisition function
+   	\item Uncertainty estimate method
+	\item Pool dataset has approximately uniform informativeness
 	\item Pool dataset is sufficiently non-uniform but we cannot search $ O(n^2) $ MI matrix, and the solution of randomly sampling $ 10x $ clip pairs does not suffice to find the rare clips
 	\item Some problem of applying acquisition functions to preference space
 \end{enumerate}
@@ -612,6 +600,7 @@ Unlike active learning in the standard supervised case, the pool dataset in acti
 % TODO this doesn't quite make the same categorisation of points I want to make. We should disentangle failure from uniformly informative pool dataset to non-uniform but "doubly hard exploration" pool dataset/O(n^2) problem
 
 A further difference between active supervised learning and active reward modelling setting is that the objects we acquire are \textit{clip pairs} rather than, for example, single images. This means that evaluating an acquisition function over the dataset is a complexity $ O(n^2) $ operation, for $ n $ the number of clips acquired. Therefore, the standard active learning procedure of evaluating the acquisition function on each point in the pool dataset and picking that which maximises it, quickly becomes unfeasible as the dataset grows in size. To circumvent this issue, in order to acquire $ k $ clip pairs, \cite{Christiano2017} propose randomly sampling $ 10k $ clip pairs and selecting the $ k $ with the highest score according to $ a_{mean\_std} $. However, it is not clear that this method suffices to find clip pairs that are more informative than random acquisition: a factor of 10 may simply be too small. If it is important to query the annotator about behaviour that occurs rarely, this behaviour may never be included in the pool of clip pairs over which the acquisition function is evaluated. This is related to exploration problems. In general, RL methods struggle to solve tasks which require difficult exploration, for example the Atari game Montezuma's Revenge. However, exploration is a doubly hard problem for RL from preferences: not only does the agent have to explore states of the environment which are difficult to reach, but also the trajectories generated in that exploration have to be sampled at random into the pool of clip pairs over which the acquisition function is evaluated.
+%TODO perhaps mention that this is a failure mode of reward modelling in general (see Enduro). But also there is the entangled issue of what synthetic oracle you use. At least summarise the problem and give it a tag
 
 A seventh possible failure mode, it is not clear that the standard acquisition functions can be applied out of the box to learning \textit{in the preference space}. Consider the following example: we are deciding whether to acquire clip pair $ c_1 = (\sigma^1, \sigma^2) $ or $ c_2 = (\sigma^3, \sigma^4) $ to acquire. Suppose further that the reward model is uncertain whether $ c_1 $ has label $ 0 $ or $ 0.5 $\footnote{TODO I may need to spell this out more, in terms of draws from the posterior giving something like 0, 0.5, 0, 0.5 ... Can I borrow Yarin's presentation in thesis of a similar case?}; and uncertain whether $ p_2 $ has label $ 0 $ or $ 1 $. Now, $ a_{mean\_std}(c_1, \rp) =  $, whereas $ a_{mean\_std}(c_2, \rp) =  $, and thus we will acquire $ c_2 $. Yet, when learning in the preference space, using disagreement between models in an ensemble as the basis for an acquisition function may not capture all that we care about. It may be important, for example, to acquire clip pairs that allow the model to make deductions based on transitivity of the preference relation. For suppose that we have already acquired some clip pair $ (\sigma^0, \sigma^1) $. Then acquiring $ (\sigma^1, \sigma^2) $ would in effect give for free the label of $ (\sigma^0, \sigma^2) $, whereas the acquisition of $ (\sigma^3, \sigma^4) $ would not. Thus, we may need a better proxy than simply disagreement for active learning in the preference space.
 %TODO I'm highly uncertain about whether this point is correct
@@ -620,11 +609,11 @@ Finally, it is worth noting that sometimes random acquisition just does perform 
 %TODO is there any literature on the question of if/when rand acq just is very good? What do Yarin, Andreas, Houlsby graphs look like at beginning, end?
 %TODO say something about it being an open question which acqisition function to use etc/active learning with deep NNs is still not super well understood?
 
-\section{ARMA} \ref{sec:arma}
+\section{Active Reward Modelling} \ref{sec:arma}
 %TODO make this section flow better. we didn't really develop this training protocol, it's basically Ibarz. Here, we are just describing precisely what the training protocol is.
 In this section we present the training protocol we developed. Specifically, we explain how to apply acquisition functions to reward modelling. %TODO do we really? what does this mean?
 \begin{algorithm}
-	\caption{ARMA: Active Reward Modelling for Agent Alignment.}
+	\caption{Active Reward Modelling.}
 	\label{alg:arma}
 	\begin{algorithmic}[1]
         \State Initialise RL agent
@@ -736,7 +725,7 @@ In the experiments that follow, unless otherwise stated we continue to do reward
 	\end{algorithmic}
 \end{algorithm}
 
-\section{Hypothesis 5: Uniform informativeness of pool dataset}
+\section{Hypothesis 5: Pool dataset has approximately uniform informativeness}
 It may be that in the CartPole environment, preferences about most clip pairs generated by the agent contain similar information about the underlying reward function. In this case, active learning would show little performance improvement over random acquisition because the difference in informativeness between the most informative and the average clip pairs is insignificant. Our fifth experiment tests this hypothesis.
 
 We set up an experiment which essentially adds many duplicate clip pairs to the pool dataset. This reduces uniformity in the informativeness of the data: once one of the duplicated clip pairs is acquired, no further information is gained by acquiring exact copies of it. Put another way, we add many redundant clip pairs, which, if queried for their label, contribute zero information about the annotator's latent reward function.
@@ -745,7 +734,7 @@ More precisely, our experimental setup is to run the training protocol with both
 
 Modifying the procedure in this way will impair the performance of random acquisition. In expectation, 2.5 of the 5 randomly sampled clip pairs will be exact duplicates, meaning that the reward model is trained on a poorer quality dataset due to the redundant acquisitions. However, the performance of BALD should be unimpaired, because after acquiring one of the duplicate clip pairs, the information gained by acquiring the same clip again is zero, so BALD should not reacquire the example, but instead pick 4 other clip pairs from the original set. This finding would be consistent with the hypothesis that informativeness across the pool dataset of clip pairs generated in CartPole is approximately uniform, which we expect would make it hard for active learning to significantly outperform random acquisition. If, on the other hand, we find that the performance of BALD is also significantly impaired in Repeated CartPole, then there is likely to be something more fundamental broken, such as Hypothesis 7, poor quality uncertainty estimates or a bug in the implementation.
 
-As shown in Figure \ref{fig:cartpole_rep}, we find that BALD's performance is not significantly harmed, whilst outperforms random acquisition at Repeated CartPole\footnote{The performance of BALD and random acquisition in the standard CartPole are both substantially better than in previous experiments. Having noticed the high variance of repeated experiments, we began testing agent performance several times on each iteration of the training protocol, rather than just at the end of agent training (testing agent performance means measuring mean episode return of the current policy in greedy forms, i.e. without taking random actions some $ \epsilon $ fraction of the time, over a fixed number of episodes, typically 100). This follows the testing regime used in \cite{Mnih2015}. Since this change is independent of the reward modelling aspect of the training protocol, it does not invalidate our previous results.}. This is consistent with the hypothesis that one failure mode of active reward modelling in the CartPole environment is the uniform informativeness of the acquired clip pairs.
+As shown in Figure \ref{fig:cartpole_rep}, we find that BALD's performance is not significantly harmed, whilst outperforms random acquisition at Repeated CartPole\footnote{The performance of BALD and random acquisition in the standard CartPole are both substantially better than in previous experiments. Having noticed the high variance of repeated experiments, we began testing agent performance several times on each iteration of the training protocol, rather than just at the end of agent training (testing agent performance means measuring mean episode return of the current policy in greedy forms, i.e. without taking random actions some $ \epsilon $ fraction of the time, over a fixed number of episodes, typically 100). This follows the testing regime used in \cite{Mnih2015}. Since this change is independent of the reward modelling aspect of the training protocol, it does not invalidate our previous results.}. This is consistent with the hypothesis that one failure mode of active reward modelling in the CartPole environment is the uniform informativeness of the acquired clip pairs. Additionally, this finding attests to the correctness of our implementation, and provides evidence against (i) hypothesis 7, that active learning algorithms cannot be applied out-of-the-box to learning a deep reward model from preferences, and (ii) that BALD's uncertainty estimates are of poor quality in this setting. %TODO mention this failure mode earlier? you kind of bring it up out of the blue here
 
 \begin{figure}[h]
 	\centering
@@ -765,11 +754,61 @@ As shown in Figure \ref{fig:cartpole_rep}, we find that BALD's performance is no
 	\label{fig:cartpole_rep}
 \end{figure}
 
-However, the fact of being consistent with this hypothesis is provides some but not strong evidence that this is precisely the failure mode of BALD. To investigate further, we dug into BALD's information gain approximations. Specifically, we found that the mean information gain of the clip pairs of a uniform random sample of clip pairs is close to that of those acquired by BALD, as shown in Table. This provides further evidence in favour of hypothesis 5.
+The fact of being consistent with this hypothesis provides some but not strong evidence that this is precisely the failure mode of BALD. To investigate further, we dug into BALD's information gain approximations. Specifically, we found that the mean information gain of the clip pairs of a uniform random sample of clip pairs is close to that of those acquired by BALD, as shown in Table. This provides further evidence in favour of hypothesis 5. %TODO get this evidence if you have time. Else just say it's what you would have done.
+
+However, these findings only provide evidence for the very narrow claim that a failure mode of active reward modelling \textit{in the CartPole environment} is the uniform informativeness of the pool dataset. To further the investigation, we require more environments.
+
+Furthermore, it seems somewhat implausible that there are not at least some disproportionately informative clip pairs, even if the majority have very similar informativeness. We explore this possibility further in the next experiments.
+
+\section{Gridworld experiments}
+A gridworld is a simple two-dimensional environment of size 4x4, containing an agent (blue), one goal cell (green) and an optional lava cell (red). On each time step, the agent receives an observation of the environment, which is an RGB pixel value for each cell, and takes one of four actions (up, down, left or right). The environment gives rewards of $ +1 $ for reaching the goal, $ -1 $ for moving onto the lava, and $ 0 $ otherwise. Episodes terminate when the goal or lava is reached, or when 50 time steps have passed. An example state of the environment is shown in Figure \ref{fig:grid}. This is similar to the environment used in \cite{kenton2019generalizing}. We define solving this environment as getting a mean episode return of greater than $ 0.95 $ across 100 episodes, equivalent to reaching the goal in 95 of 100 episodes.
+
+\begin{figure}[h]
+	\centering
+	\begin{subfigure}{.3\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{grid2}
+		\caption{Gridworld with one goal cell.}
+		\label{fig:grida}
+	\end{subfigure}\hspace{.1\textwidth}
+	\begin{subfigure}{.3\textwidth}
+		\centering
+		\includegraphics[width=\linewidth]{grid}
+		\caption{Gridworld with one goal and one lava cell.}
+		\label{fig:gridb}
+	\end{subfigure}
+	\caption{Two examples of possible gridworld environments. The blue, green and red cells are the agent, goal and lava, respectively.}
+	\label{fig:grid}
+\end{figure}
+
+The simplest configuration of this gridworld has no lava cell and a goal cell with a fixed location. In our first experiment, we fix the goal location to be in the bottom left corner, and the agent starting location to be in the top left corner, corresponding to Figure \ref{fig:grida}. Around $ 17\% $ of the clips\footnote{We use clip length 10 here, rather than 25. TODO push all such details to the appendix.} generated by an agent taking random actions in this environment have total reward $ +1 $. Therefore, a decent proportion of the clip pairs acquired by random acquisition will contain information about synthetic annotator's preferences. Therefore, whilst is not possible to know a priori, it would be unsurprising if it is difficult for active reward modelling to outperform random acquisition, for the same reason as in CartPole.
+
+(As well as reward modelling using BALD and random acquisition, we evaluate agents that (i) do standard RL on the ground truth reward, (ii) take random actions and (iii) get reward from a random reward model.)
+%TODO not sure if/how to include this; come back to it
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\textwidth]{grid_simple}
+	\caption{Number of labels required to solve the gridworld shown in Figure \ref{fig:grida} via reward modelling using BALD and random acquisition. Results shown are only one run.}
+	\label{fig:grid_simple}
+\end{figure}
+
+
+\section{Hypothesis 6: Active reward modelling exploration issues}
+To summarise the results so far, we have shown that in the CartPole environment, not reinitialising the reward model and using large acquisition sizes harms active reward modelling, and the former problem also harms non-active reward modelling. This provides evidence for hypotheses 1 and 2 being failure modes of active learning in this environment. With these changes, however, active reward modelling still cannot outperform random acquisition, so these are not the only failure modes.
+
+We then provided evidence against hypothesis 3, by comparing four common acquisition functions and showing that none improve on random. The result that uncertainty estimates provided by a Deep Ensemble and MC-Dropout give similar performance suggest that the uncertainty estimate method is not a failure mode. We gathered further evidence against hypothesis 4 by confirming that active reward modelling correctly doesn't acquire redundant clip pairs in Repeated CartPole, which would be unlikely if the uncertainty estimates were poor.
+
+The Repeated CartPole experiment also supported hypothesis 5, that the acquired clip pairs in CartPole have approximately uniform informativeness. Shifting to a simple gridworld environment for which most clip pairs are similarly informative, we replicate this finding.
+%TODO work out how to make the "close to uniform informativeness is also essentially an O(n^2) problem + in this case also one of the task being too simple" jives. what is the best way to present this?
+
+We now test the hypothesis that even if the generated clip pairs are sufficiently non-uniform for 
 
 \chapter{Conclusions}
 \section{Summary}
-\section{Evaluation}
+\section{Future Work}
+\section{Relation to Material Studied on the MSc Course}
+\section{Critical Evaluation}
 % critical assessment of the work that has been done and the process of doing it
 % perhaps include subsections for approaches that were tried and did not work; and personal development
 \subsection{Personal Development}
@@ -777,7 +816,9 @@ Not to seek to make the thing work, but to wonder, why? To notice confusion rath
 Random acquisition with ensemble underperforming random without ensemble early in training -> realised that not implementing per-component normalisation of reward models; not normalising at training time correctly. (Well, in fact this was a case of running from this confusion for ages, before finally---and begrudgingly---facing up to it. In some sense this was a key learning point; feeling that noticing confusion pays off in the long run.)
 Ignoring occasional NaNs was another example. When I finally debugged it rationally, I found that normalising observations greatly improves reward model performance.
 
-\section{Future Work}
+
+
+
 
 % acknowledgements
 

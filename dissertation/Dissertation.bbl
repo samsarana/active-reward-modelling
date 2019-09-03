@@ -90,6 +90,12 @@ Haarnoja, T., Zhou, A., Abbeel, P., and Levine, S. (2018).
   learning with a stochastic actor.
 \newblock {\em arXiv preprint arXiv:1801.01290}.
 
+\bibitem[Henderson et~al., 2018]{henderson2018deep}
+Henderson, P., Islam, R., Bachman, P., Pineau, J., Precup, D., and Meger, D.
+  (2018).
+\newblock Deep reinforcement learning that matters.
+\newblock In {\em Thirty-Second AAAI Conference on Artificial Intelligence}.
+
 \bibitem[Hester et~al., 2017]{Hester2017}
 Hester, T., Vecerik, M., Pietquin, O., Lanctot, M., Schaul, T., Piot, B.,
   Horgan, D., Quan, J., Sendonaris, A., Dulac-Arnold, G., Osband, I., Agapiou,
@@ -134,6 +140,12 @@ Kendall, A., Badrinarayanan, V., and Cipolla, R. (2015).
   encoder-decoder architectures for scene understanding.
 \newblock {\em arXiv preprint arXiv:1511.02680}.
 
+\bibitem[Kenton et~al., 2019]{kenton2019generalizing}
+Kenton, Z., Filos, A., Evans, O., and Gal, Y. (2019).
+\newblock Generalizing from a few environments in safety-critical reinforcement
+  learning.
+\newblock {\em arXiv preprint arXiv:1907.01475}.
+
 \bibitem[Kirsch et~al., 2019]{Kirsch2019a}
 Kirsch, A., van Amersfoort, J., and Gal, Y. (2019).
 \newblock {BatchBALD: Efficient and Diverse Batch Acquisition for Deep Bayesian
@@ -144,6 +156,11 @@ Knox, W.~B. and Stone, P. (2009).
 \newblock {Interactively shaping agents via human reinforcement: The Tamer
   Framework}.
 \newblock {\em Proc. fifth Int. Conf. Knowl. capture - K-CAP '09}, page~9.
+
+\bibitem[Leike et~al., 2018]{Leike2018}
+Leike, J., Krueger, D., Everitt, T., Martic, M., Maini, V., and Legg, S.
+  (2018).
+\newblock {Scalable agent alignment via reward modeling: a research direction}.
 
 \bibitem[Lillicrap et~al., 2015]{lillicrap2015continuous}
 Lillicrap, T.~P., Hunt, J.~J., Pritzel, A., Heess, N., Erez, T., Tassa, Y.,
@@ -190,6 +207,13 @@ Shannon, C.~E. (1948).
 \newblock A mathematical theory of communication.
 \newblock {\em Bell system technical journal}, 27(3):379--423.
 
+\bibitem[Silver et~al., 2016]{silver2016mastering}
+Silver, D., Huang, A., Maddison, C.~J., Guez, A., Sifre, L., Van Den~Driessche,
+  G., Schrittwieser, J., Antonoglou, I., Panneershelvam, V., Lanctot, M.,
+  et~al. (2016).
+\newblock Mastering the game of go with deep neural networks and tree search.
+\newblock {\em nature}, 529(7587):484.
+
 \bibitem[Sutton and Barto, 2018]{Sutton2018}
 Sutton, R.~S. and Barto, A.~G. (2018).
 \newblock {\em {Reinforcement Learning: An Introduction (2nd Edition, in
@@ -201,10 +225,28 @@ Tieleman, T. and Hinton, G. (2012).
   recent magnitude.
 \newblock {\em COURSERA: Neural networks for machine learning}, 4(2):26--31.
 
+\bibitem[Todorov et~al., 2012]{todorov2012mujoco}
+Todorov, E., Erez, T., and Tassa, Y. (2012).
+\newblock Mujoco: A physics engine for model-based control.
+\newblock In {\em 2012 IEEE/RSJ International Conference on Intelligent Robots
+  and Systems}, pages 5026--5033. IEEE.
+
 \bibitem[Van~Rossum and Drake~Jr, 1995]{van1995python}
 Van~Rossum, G. and Drake~Jr, F.~L. (1995).
 \newblock {\em Python tutorial}.
 \newblock Centrum voor Wiskunde en Informatica Amsterdam, The Netherlands.
+
+\bibitem[Vinyals et~al., 2019]{alphastarblog}
+Vinyals, O., Babuschkin, I., Chung, J., Mathieu, M., Jaderberg, M., Czarnecki,
+  W., Dudzik, A., Huang, A., Georgiev, P., Powell, R., Ewalds, T., Horgan, D.,
+  Kroiss, M., Danihelka, I., Agapiou, J., Oh, J., Dalibard, V., Choi, D.,
+  Sifre, L., Sulsky, Y., Vezhnevets, S., Molloy, J., Cai, T., Budden, D.,
+  Paine, T., Gulcehre, C., Wang, Z., Pfaff, T., Pohlen, T., Yogatama, D.,
+  Cohen, J., McKinney, K., Smith, O., Schaul, T., Lillicrap, T., Apps, C.,
+  Kavukcuoglu, K., Hassabis, D., and Silver, D. (2019).
+\newblock {AlphaStar: Mastering the Real-Time Strategy Game StarCraft II}.
+\newblock
+  \url{https://deepmind.com/blog/alphastar-mastering-real-time-strategy-game-starcraft-ii/}.
 
 \bibitem[Warnell et~al., 2017]{Warnell2017}
 Warnell, G., Waytowich, N., Lawhern, V., and Stone, P. (2017).
