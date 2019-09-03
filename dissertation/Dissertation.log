@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (MiKTeX 2.9.7140 64-bit) (preloaded format=pdflatex 2019.8.14)  3 SEP 2019 02:46
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (MiKTeX 2.9.7140 64-bit) (preloaded format=pdflatex 2019.8.14)  3 SEP 2019 09:32
 entering extended mode
 **./Dissertation.tex
 (Dissertation.tex
@@ -1292,13 +1292,13 @@ Chapter 3.
 [30
 
 ] [31] [32] [33] [34]
-Overfull \hbox (21.04688pt too wide) in paragraph at lines 519--521
+Overfull \hbox (21.04688pt too wide) in paragraph at lines 520--522
 \OT1/cmr/m/n/10.95 Using this ob-jec-tive as an ac-qui-si-tion func-tion was fi
 rst pro-posed in [[]].
  []
 
 [35]
-Overfull \hbox (66.61995pt too wide) in paragraph at lines 535--536
+Overfull \hbox (66.61995pt too wide) in paragraph at lines 536--537
 \OT1/cmr/m/n/10.95 where the mean is taken over the dif-fer-ent classes $\OML/c
 mm/m/it/10.95 c$ \OT1/cmr/m/n/10.95 that in-put $\OT1/cmr/bx/n/10.95 x$ \OT1/cm
 r/m/n/10.95 can take [[],
@@ -1308,10 +1308,10 @@ r/m/n/10.95 can take [[],
 Chapter 4.
 
 Package hyperref Warning: Difference (2) between bookmark levels is greater 
-(hyperref)                than one, level fixed on input line 546.
+(hyperref)                than one, level fixed on input line 547.
 
 
-Overfull \hbox (30.71172pt too wide) in paragraph at lines 556--557
+Overfull \hbox (30.71172pt too wide) in paragraph at lines 557--558
 \OT1/cmr/m/n/10.95 across the en-sem-ble. In the lan-guage of ac-qui-si-tion fu
 nc-tions, they use $\OML/cmm/m/it/10.95 a[]\OT1/cmr/m/n/10.95 ((\OML/cmm/m/it/1
 0.95 []; []\OT1/cmr/m/n/10.95 )\OML/cmm/m/it/10.95 ; []\OT1/cmr/m/n/10.95 )$,
@@ -1327,20 +1327,20 @@ Chapter 5.
 [40
 
 ]
-Overfull \hbox (58.97655pt too wide) in paragraph at lines 587--589
+Overfull \hbox (58.97655pt too wide) in paragraph at lines 588--590
 \OT1/cmr/m/n/10.95 (such as MC-Dropout [[]] or Bayes by Back-prop [[]]). 
  []
 
-[41] [42] [43]
+[41] [42] [43] [44]
 
-LaTeX Warning: Reference `sec:acq_funcs' on page 44 undefined on input line 644
+LaTeX Warning: Reference `sec:acq_funcs' on page 45 undefined on input line 648
 .
 
 
-LaTeX Warning: Reference `sec:bnns' on page 44 undefined on input line 644.
+LaTeX Warning: Reference `sec:bnns' on page 45 undefined on input line 648.
 
-[44]
-Overfull \hbox (26.33942pt too wide) in paragraph at lines 648--649
+
+Overfull \hbox (26.33942pt too wide) in paragraph at lines 652--653
 \OT1/cmr/m/n/10.95 The train-ing pro-to-col is im-ple-mented mostly in Python [
 []].
  []
@@ -1349,12 +1349,12 @@ Overfull \hbox (26.33942pt too wide) in paragraph at lines 648--649
 Chapter 6.
 
 LaTeX Warning: Citation `barto1983neuronlik' on page 46 undefined on input line
- 658.
+ 663.
 
-<./figures/cartpole-v0.jpg, id=753, 602.25pt x 401.5pt>
+<./figures/cartpole-v0.jpg, id=759, 602.25pt x 401.5pt>
 File: ./figures/cartpole-v0.jpg Graphic file (type jpg)
 <use ./figures/cartpole-v0.jpg>
-Package pdftex.def Info: ./figures/cartpole-v0.jpg  used on input line 661.
+Package pdftex.def Info: ./figures/cartpole-v0.jpg  used on input line 666.
 (pdftex.def)             Requested size: 199.1693pt x 132.77722pt.
 [46
 
@@ -1362,10 +1362,10 @@ Package pdftex.def Info: ./figures/cartpole-v0.jpg  used on input line 661.
 
 pdfTeX warning: pdflatex.exe (file ./figures/cartpole_curve.pdf): PDF inclusion
 : found PDF version <1.7>, but at most version <1.5> allowed
-<./figures/cartpole_curve.pdf, id=768, 845.07718pt x 597.432pt>
+<./figures/cartpole_curve.pdf, id=774, 845.07718pt x 597.432pt>
 File: ./figures/cartpole_curve.pdf Graphic file (type pdf)
 <use ./figures/cartpole_curve.pdf>
-Package pdftex.def Info: ./figures/cartpole_curve.pdf  used on input line 676.
+Package pdftex.def Info: ./figures/cartpole_curve.pdf  used on input line 681.
 (pdftex.def)             Requested size: 398.3386pt x 281.6044pt.
 
 LaTeX Warning: `h' float specifier changed to `ht'.
@@ -1374,19 +1374,19 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 
 pdfTeX warning: pdflatex.exe (file ./figures/reinit_rm.pdf): PDF inclusion: fou
 nd PDF version <1.7>, but at most version <1.5> allowed
-<./figures/reinit_rm.pdf, id=778, 845.07718pt x 597.432pt>
+<./figures/reinit_rm.pdf, id=784, 845.07718pt x 597.432pt>
 File: ./figures/reinit_rm.pdf Graphic file (type pdf)
 <use ./figures/reinit_rm.pdf>
-Package pdftex.def Info: ./figures/reinit_rm.pdf  used on input line 687.
+Package pdftex.def Info: ./figures/reinit_rm.pdf  used on input line 692.
 (pdftex.def)             Requested size: 298.75394pt x 211.20102pt.
 [48 <./figures/cartpole_curve.pdf>]
 
 pdfTeX warning: pdflatex.exe (file ./figures/acq_size.pdf): PDF inclusion: foun
 d PDF version <1.7>, but at most version <1.5> allowed
-<./figures/acq_size.pdf, id=793, 845.07718pt x 597.432pt>
+<./figures/acq_size.pdf, id=799, 845.07718pt x 597.432pt>
 File: ./figures/acq_size.pdf Graphic file (type pdf)
 <use ./figures/acq_size.pdf>
-Package pdftex.def Info: ./figures/acq_size.pdf  used on input line 696.
+Package pdftex.def Info: ./figures/acq_size.pdf  used on input line 701.
 (pdftex.def)             Requested size: 298.75394pt x 211.20102pt.
 
 LaTeX Warning: `h' float specifier changed to `ht'.
@@ -1395,10 +1395,10 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 
 pdfTeX warning: pdflatex.exe (file ./figures/cartpole_final.pdf): PDF inclusion
 : found PDF version <1.7>, but at most version <1.5> allowed
-<./figures/cartpole_final.pdf, id=810, 845.07718pt x 597.432pt>
+<./figures/cartpole_final.pdf, id=817, 845.07718pt x 597.432pt>
 File: ./figures/cartpole_final.pdf Graphic file (type pdf)
 <use ./figures/cartpole_final.pdf>
-Package pdftex.def Info: ./figures/cartpole_final.pdf  used on input line 707.
+Package pdftex.def Info: ./figures/cartpole_final.pdf  used on input line 715.
 (pdftex.def)             Requested size: 398.3386pt x 281.6044pt.
 
 LaTeX Warning: `h' float specifier changed to `ht'.
@@ -1407,88 +1407,118 @@ LaTeX Warning: `h' float specifier changed to `ht'.
 
 pdfTeX warning: pdflatex.exe (file ./figures/rand_bald_cartpole_final.pdf): PDF
  inclusion: found PDF version <1.7>, but at most version <1.5> allowed
-<./figures/rand_bald_cartpole_final.pdf, id=859, 845.07718pt x 597.432pt>
+<./figures/rand_bald_cartpole_final.pdf, id=867, 845.07718pt x 597.432pt>
 File: ./figures/rand_bald_cartpole_final.pdf Graphic file (type pdf)
 <use ./figures/rand_bald_cartpole_final.pdf>
 Package pdftex.def Info: ./figures/rand_bald_cartpole_final.pdf  used on input 
-line 742.
+line 750.
 (pdftex.def)             Requested size: 199.1693pt x 140.79764pt.
 
 
 pdfTeX warning: pdflatex.exe (file ./figures/cartpole_rep.pdf): PDF inclusion: 
 found PDF version <1.7>, but at most version <1.5> allowed
-<./figures/cartpole_rep.pdf, id=860, 845.07718pt x 597.432pt>
+<./figures/cartpole_rep.pdf, id=868, 845.07718pt x 597.432pt>
 File: ./figures/cartpole_rep.pdf Graphic file (type pdf)
 <use ./figures/cartpole_rep.pdf>
-Package pdftex.def Info: ./figures/cartpole_rep.pdf  used on input line 748.
+Package pdftex.def Info: ./figures/cartpole_rep.pdf  used on input line 756.
 (pdftex.def)             Requested size: 199.1693pt x 140.79764pt.
 
-LaTeX Warning: `h' float specifier changed to `ht'.
+Package caption Warning: \label without proper reference on input line 774.
+See the caption package documentation for explanation.
 
-[53] [54 <./figures/rand_bald_cartpole_final.pdf> <./figures/cartpole_rep.pdf
+
+LaTeX Warning: Reference `table:2' on page 53 undefined on input line 764.
+
+[53 <./figures/rand_bald_cartpole_final.pdf> <./figures/cartpole_rep.pdf
 
 pdfTeX warning: pdflatex.exe (file ./figures/cartpole_rep.pdf): PDF inclusion: 
 multiple pdfs with page group included in a single page
 >]
-<./figures/grid2.png, id=891, 676.5275pt x 670.505pt>
+
+LaTeX Warning: No positions in optional float specifier.
+               Default added (so using `tbp') on input line 766.
+
+[54]
+<./figures/grid2.png, id=902, 676.5275pt x 670.505pt>
 File: ./figures/grid2.png Graphic file (type png)
 <use ./figures/grid2.png>
-Package pdftex.def Info: ./figures/grid2.png  used on input line 769.
+Package pdftex.def Info: ./figures/grid2.png  used on input line 789.
 (pdftex.def)             Requested size: 119.50279pt x 118.43486pt.
-<./figures/grid.png, id=893, 507.39563pt x 502.87875pt>
+<./figures/grid.png, id=904, 507.39563pt x 502.87875pt>
 File: ./figures/grid.png Graphic file (type png)
 <use ./figures/grid.png>
-Package pdftex.def Info: ./figures/grid.png  used on input line 775.
+Package pdftex.def Info: ./figures/grid.png  used on input line 795.
 (pdftex.def)             Requested size: 119.50279pt x 118.43741pt.
-
+ [55 <./figures/grid2.png> <./figures/grid.png>]
 
 pdfTeX warning: pdflatex.exe (file ./figures/grid_simple.pdf): PDF inclusion: f
 ound PDF version <1.7>, but at most version <1.5> allowed
-<./figures/grid_simple.pdf, id=896, 845.07718pt x 597.432pt>
+<./figures/grid_simple.pdf, id=917, 845.07718pt x 597.432pt>
 File: ./figures/grid_simple.pdf Graphic file (type pdf)
 <use ./figures/grid_simple.pdf>
-Package pdftex.def Info: ./figures/grid_simple.pdf  used on input line 790.
+Package pdftex.def Info: ./figures/grid_simple.pdf  used on input line 808.
 (pdftex.def)             Requested size: 398.3386pt x 281.6044pt.
+[56 <./figures/grid_simple.pdf>]
+
+pdfTeX warning: pdflatex.exe (file ./figures/grid_medium.pdf): PDF inclusion: f
+ound PDF version <1.7>, but at most version <1.5> allowed
+<./figures/grid_medium.pdf, id=934, 845.07718pt x 597.55246pt>
+File: ./figures/grid_medium.pdf Graphic file (type pdf)
+<use ./figures/grid_medium.pdf>
+Package pdftex.def Info: ./figures/grid_medium.pdf  used on input line 819.
+(pdftex.def)             Requested size: 398.3386pt x 281.66118pt.
+
+LaTeX Warning: Reference `sec:acq_size' on page 57 undefined on input line 824.
+
+
+[57 <./figures/grid_medium.pdf>]
+
+pdfTeX warning: pdflatex.exe (file ./figures/grid_hard.pdf): PDF inclusion: fou
+nd PDF version <1.7>, but at most version <1.5> allowed
+<./figures/grid_hard.pdf, id=952, 845.07718pt x 597.55246pt>
+File: ./figures/grid_hard.pdf Graphic file (type pdf)
+<use ./figures/grid_hard.pdf>
+Package pdftex.def Info: ./figures/grid_hard.pdf  used on input line 840.
+(pdftex.def)             Requested size: 398.3386pt x 281.66118pt.
 
 LaTeX Warning: `h' float specifier changed to `ht'.
 
-[55 <./figures/grid2.png> <./figures/grid.png>] [56 <./figures/grid_simple.pdf>
-]
+[58] [59 <./figures/grid_hard.pdf>]
 Chapter 7.
-(Dissertation.bbl [57
+(Dissertation.bbl [60
 
 ]
 Underfull \hbox (badness 1048) in paragraph at lines 41--44
 []\OT1/cmr/m/n/10.95 Cohen, G., Af-shar, S., Tap-son, J., and van Schaik, A.
  []
 
-[58
+[61
 
-] [59] [60] [61] [62]) [63] [64
+] [62] [63] [64] [65]) [66] [67
 
 ]
 Appendix A.
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 838.
-[65
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 887.
+[68
 
-] [66]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 838.
+] [69]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 887.
  (Dissertation.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 838.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 838.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 887.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 887.
 Package rerunfilecheck Info: File `Dissertation.out' has not changed.
-(rerunfilecheck)             Checksum: 40DB9D025DF00821131AF335FD419BB2;4411.
+(rerunfilecheck)             Checksum: 272E84147994F4353141E66D26B6BBEB;4540.
 
 
 LaTeX Warning: There were undefined references.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 838.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 887.
  ) 
 Here is how much of TeX's memory you used:
- 22588 strings out of 492895
- 385119 string characters out of 3123735
- 479116 words of memory out of 3000000
- 26013 multiletter control sequences out of 15000+200000
+ 22612 strings out of 492895
+ 385603 string characters out of 3123735
+ 479737 words of memory out of 3000000
+ 26028 multiletter control sequences out of 15000+200000
  549984 words of font info for 91 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
  47i,15n,69p,1657b,505s stack positions out of 5000i,500n,10000p,200000b,50000s
@@ -1520,9 +1550,9 @@ fonts/cm/cmti10.pfb><C:/Users/samck/AppData/Local/Programs/MiKTeX 2.9/fonts/typ
 e1/public/amsfonts/cm/cmti9.pfb><C:/Users/samck/AppData/Local/Programs/MiKTeX 2
 .9/fonts/type1/public/amsfonts/cm/cmtt10.pfb><C:/Users/samck/AppData/Local/Prog
 rams/MiKTeX 2.9/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on Dissertation.pdf (68 pages, 913886 bytes).
+Output written on Dissertation.pdf (71 pages, 1015068 bytes).
 PDF statistics:
- 1100 PDF objects out of 1200 (max. 8388607)
- 247 named destinations out of 1000 (max. 500000)
- 491 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 1153 PDF objects out of 1200 (max. 8388607)
+ 254 named destinations out of 1000 (max. 500000)
+ 509 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -205,8 +205,11 @@
 \citation{cohen2017emnist}
 \citation{Christiano2017}
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.1.1}Failure modes of active learning in general}{41}{subsection.5.1.1}\protected@file@percent }
+\newlabel{sec:failure1}{{5.1.1}{41}{Failure modes of active learning in general}{subsection.5.1.1}{}}
 \citation{Christiano2017}
 \@writefile{toc}{\contentsline {subsection}{\numberline {5.1.2}Failure modes of active learning in the reward modelling setting}{42}{subsection.5.1.2}\protected@file@percent }
+\newlabel{sec:failure2}{{5.1.2}{42}{Failure modes of active learning in the reward modelling setting}{subsection.5.1.2}{}}
+\citation{Gal2017b}
 \@writefile{toc}{\contentsline {section}{\numberline {5.2}Active Reward Modelling}{44}{section.5.2}\protected@file@percent }
 \@writefile{loa}{\contentsline {algorithm}{\numberline {3}{\ignorespaces Active Reward Modelling.\relax }}{44}{algorithm.3}\protected@file@percent }
 \newlabel{alg:arma}{{3}{44}{Active Reward Modelling.\relax }{algorithm.3}{}}
@@ -235,11 +238,12 @@
 \citation{rlblogpost}
 \@writefile{lof}{\contentsline {figure}{\numberline {6.2}{\ignorespaces Mean episode return of agent trained via reward modelling using random acquisition and BALD. The performance of standard RL, a random policy, and an agent trained on a randomly initialised reward model are also shown. Results are averaged over 40 runs except for the random reward model condition which is averaged over 20. Error bars show standard error. Note that the performance of the agents trained via reward modelling is worse than those in the following sections due to less extensive hyperparameter tuning.\relax }}{48}{figure.caption.12}\protected@file@percent }
 \newlabel{fig:cartpole_curve}{{6.2}{48}{Mean episode return of agent trained via reward modelling using random acquisition and BALD. The performance of standard RL, a random policy, and an agent trained on a randomly initialised reward model are also shown. Results are averaged over 40 runs except for the random reward model condition which is averaged over 20. Error bars show standard error. Note that the performance of the agents trained via reward modelling is worse than those in the following sections due to less extensive hyperparameter tuning.\relax }{figure.caption.12}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.1}Hypothesis 3: Reward model retraining}{48}{section.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.1}Hypothesis 1: Reward model retraining}{48}{section.6.1}\protected@file@percent }
 \@writefile{lof}{\contentsline {figure}{\numberline {6.3}{\ignorespaces Number of labels required to solve CartPole by reward modelling with random acquisition and BALD, with and without retraining reward model after each acquisition. Results are averaged over 20 runs; error bars show standard error.\relax }}{49}{figure.caption.13}\protected@file@percent }
 \newlabel{fig:retrain}{{6.3}{49}{Number of labels required to solve CartPole by reward modelling with random acquisition and BALD, with and without retraining reward model after each acquisition. Results are averaged over 20 runs; error bars show standard error.\relax }{figure.caption.13}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.2}Hypothesis 4: Acquisition size}{49}{section.6.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {6.3}Hypotheses 1 and 2: Uncertainty estimates and acquisition functions}{49}{section.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.2}Hypothesis 2: Acquisition size}{49}{section.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.3}Hypotheses 3 and 4: Uncertainty estimate method and acquisition functions}{49}{section.6.3}\protected@file@percent }
+\citation{Christiano2017}
 \citation{Kirsch2019a}
 \@writefile{lof}{\contentsline {figure}{\numberline {6.4}{\ignorespaces Number of labels required to solve CartPole by reward modelling with BALD, using acquisition sizes 1 and 10. Results are averaged over 20 repeats for acquisition size 10 and 6 repeats for acquisition size 1; error bars show standard error.\relax }}{50}{figure.caption.14}\protected@file@percent }
 \newlabel{fig:acq_size}{{6.4}{50}{Number of labels required to solve CartPole by reward modelling with BALD, using acquisition sizes 1 and 10. Results are averaged over 20 repeats for acquisition size 10 and 6 repeats for acquisition size 1; error bars show standard error.\relax }{figure.caption.14}{}}
@@ -250,35 +254,44 @@
 \newlabel{alg:acq1}{{4}{52}{Acquiring a batch of clip pairs with acquisition size 1.\relax }{algorithm.4}{}}
 \newlabel{line:sample_exp2}{{1}{52}{Acquiring a batch of clip pairs with acquisition size 1.\relax }{algorithm.4}{}}
 \newlabel{line:acq2}{{3}{52}{Acquiring a batch of clip pairs with acquisition size 1.\relax }{algorithm.4}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.4}Hypothesis 5: Pool dataset has approximately uniform informativeness}{52}{section.6.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.4}Hypotheses 5 and 6: Quality of uncertainty estimates and ease of learning reward model}{52}{section.6.4}\protected@file@percent }
 \citation{Mnih2015}
+\newlabel{fig:sub1}{{6.6a}{53}{Standard CartPole\relax }{figure.caption.16}{}}
+\newlabel{sub@fig:sub1}{{a}{53}{Standard CartPole\relax }{figure.caption.16}{}}
+\newlabel{fig:sub2}{{6.6b}{53}{Repeated CartPole\relax }{figure.caption.16}{}}
+\newlabel{sub@fig:sub2}{{b}{53}{Repeated CartPole\relax }{figure.caption.16}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6.6}{\ignorespaces Number of labels required to solve two variants of CartPole, using BALD and random acquisition functions for sampling clip pairs. Results are averaged over 20 repeats; error bars show standard error.\relax }}{53}{figure.caption.16}\protected@file@percent }
+\newlabel{fig:cartpole_rep}{{6.6}{53}{Number of labels required to solve two variants of CartPole, using BALD and random acquisition functions for sampling clip pairs. Results are averaged over 20 repeats; error bars show standard error.\relax }{figure.caption.16}{}}
+\citation{Gal2017b}
 \citation{kenton2019generalizing}
-\newlabel{fig:sub1}{{6.6a}{54}{Standard CartPole\relax }{figure.caption.16}{}}
-\newlabel{sub@fig:sub1}{{a}{54}{Standard CartPole\relax }{figure.caption.16}{}}
-\newlabel{fig:sub2}{{6.6b}{54}{Repeated CartPole\relax }{figure.caption.16}{}}
-\newlabel{sub@fig:sub2}{{b}{54}{Repeated CartPole\relax }{figure.caption.16}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.6}{\ignorespaces Number of labels required to solve two variants of CartPole, using BALD and random acquisition functions for sampling clip pairs. Results are averaged over 20 repeats; error bars show standard error.\relax }}{54}{figure.caption.16}\protected@file@percent }
-\newlabel{fig:cartpole_rep}{{6.6}{54}{Number of labels required to solve two variants of CartPole, using BALD and random acquisition functions for sampling clip pairs. Results are averaged over 20 repeats; error bars show standard error.\relax }{figure.caption.16}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.5}Gridworld experiments}{54}{section.6.5}\protected@file@percent }
-\newlabel{fig:grida}{{6.7a}{55}{Gridworld with one goal cell.\relax }{figure.caption.17}{}}
-\newlabel{sub@fig:grida}{{a}{55}{Gridworld with one goal cell.\relax }{figure.caption.17}{}}
-\newlabel{fig:gridb}{{6.7b}{55}{Gridworld with one goal and one lava cell.\relax }{figure.caption.17}{}}
-\newlabel{sub@fig:gridb}{{b}{55}{Gridworld with one goal and one lava cell.\relax }{figure.caption.17}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.7}{\ignorespaces Two examples of possible gridworld environments. The blue, green and red cells are the agent, goal and lava, respectively.\relax }}{55}{figure.caption.17}\protected@file@percent }
-\newlabel{fig:grid}{{6.7}{55}{Two examples of possible gridworld environments. The blue, green and red cells are the agent, goal and lava, respectively.\relax }{figure.caption.17}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.8}{\ignorespaces Number of labels required to solve the gridworld shown in Figure \ref  {fig:grida} via reward modelling using BALD and random acquisition. Results shown are only one run.\relax }}{56}{figure.caption.18}\protected@file@percent }
-\newlabel{fig:grid_simple}{{6.8}{56}{Number of labels required to solve the gridworld shown in Figure \ref {fig:grida} via reward modelling using BALD and random acquisition. Results shown are only one run.\relax }{figure.caption.18}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {6.6}Hypothesis 6: Active reward modelling exploration issues}{56}{section.6.6}\protected@file@percent }
+\newlabel{table:2}{{\caption@xref {table:2}{ on input line 774}}{54}{Hypotheses 5 and 6: Quality of uncertainty estimates and ease of learning reward model}{table.caption.17}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {6.1}{\ignorespaces Mean mutual information over the pool dataset in CartPole and Repeated CartPole experiments, averaged over all acquisitions, with standard error from four repeat trials.\relax }}{54}{table.caption.17}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.5}Gridworld experiments}{55}{section.6.5}\protected@file@percent }
+\newlabel{fig:grida}{{6.7a}{55}{Gridworld with one goal cell.\relax }{figure.caption.18}{}}
+\newlabel{sub@fig:grida}{{a}{55}{Gridworld with one goal cell.\relax }{figure.caption.18}{}}
+\newlabel{fig:gridb}{{6.7b}{55}{Gridworld with one goal and one lava cell.\relax }{figure.caption.18}{}}
+\newlabel{sub@fig:gridb}{{b}{55}{Gridworld with one goal and one lava cell.\relax }{figure.caption.18}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6.7}{\ignorespaces Two examples of possible gridworld environments. The blue, green and red cells are the agent, goal and lava, respectively.\relax }}{55}{figure.caption.18}\protected@file@percent }
+\newlabel{fig:grid}{{6.7}{55}{Two examples of possible gridworld environments. The blue, green and red cells are the agent, goal and lava, respectively.\relax }{figure.caption.18}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6.8}{\ignorespaces Number of labels required to solve the gridworld shown in Figure \ref  {fig:grida} via reward modelling using BALD and random acquisition. Results shown are only one run.\relax }}{56}{figure.caption.19}\protected@file@percent }
+\newlabel{fig:grid_simple}{{6.8}{56}{Number of labels required to solve the gridworld shown in Figure \ref {fig:grida} via reward modelling using BALD and random acquisition. Results shown are only one run.\relax }{figure.caption.19}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.6}Uncertainty estimate quality in the gridworld environment}{56}{section.6.6}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.9}{\ignorespaces Number of labels required to solve the gridworld shown in Figure \ref  {fig:gridb} via reward modelling using random acquisition, and BALD with acquisition sizes 1 and 10. Only one random seed is shown.\relax }}{57}{figure.caption.20}\protected@file@percent }
+\newlabel{fig:grid_medium}{{6.9}{57}{Number of labels required to solve the gridworld shown in Figure \ref {fig:gridb} via reward modelling using random acquisition, and BALD with acquisition sizes 1 and 10. Only one random seed is shown.\relax }{figure.caption.20}{}}
+\citation{Christiano2017}
+\@writefile{toc}{\contentsline {section}{\numberline {6.7}Hypothesis 7: Active reward modelling exploration issues}{58}{section.6.7}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.10}{\ignorespaces  Only one random seed is shown.\relax }}{59}{figure.caption.21}\protected@file@percent }
+\newlabel{fig:grid_hard}{{6.10}{59}{Only one random seed is shown.\relax }{figure.caption.21}{}}
 \bibstyle{apalike}
 \bibdata{library,additional}
-\@writefile{toc}{\contentsline {chapter}{\numberline {7}Conclusions}{57}{chapter.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {7}Conclusions}{60}{chapter.7}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\@writefile{toc}{\contentsline {section}{\numberline {7.1}Summary}{57}{section.7.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {7.2}Future Work}{57}{section.7.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {7.3}Relation to Material Studied on the MSc Course}{57}{section.7.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {7.4}Critical Evaluation}{57}{section.7.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {7.4.1}Personal Development}{57}{subsection.7.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.1}Summary}{60}{section.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.2}Future Work}{60}{section.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.3}Relation to Material Studied on the MSc Course}{60}{section.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.4}Critical Evaluation}{60}{section.7.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.4.1}Personal Development}{60}{subsection.7.4.1}\protected@file@percent }
 \bibcite{Amodei2016}{Amodei et\nobreakspace  {}al., 2016}
 \bibcite{bellemare2013arcade}{Bellemare et\nobreakspace  {}al., 2013}
 \bibcite{Blundell2015}{Blundell et\nobreakspace  {}al., 2015}
@@ -288,7 +301,7 @@
 \bibcite{Christiano2017}{Christiano et\nobreakspace  {}al., 2017}
 \bibcite{cohen2017emnist}{Cohen et\nobreakspace  {}al., 2017}
 \bibcite{cohn1996active}{Cohn et\nobreakspace  {}al., 1996}
-\@writefile{toc}{\contentsline {chapter}{References}{58}{chapter*.19}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{References}{61}{chapter*.22}\protected@file@percent }
 \bibcite{elo1978rating}{Elo, 1978}
 \bibcite{freeman1965elementary}{Freeman, 1965}
 \bibcite{fujimoto2018addressing}{Fujimoto et\nobreakspace  {}al., 2018}
@@ -329,13 +342,13 @@
 \bibcite{Ziebart2008}{Ziebart et\nobreakspace  {}al., 2008}
 \citation{Christiano2017}
 \citation{Sutton2018}
-\@writefile{toc}{\contentsline {chapter}{Appendices}{}{section*.20}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {A}Appendix A}{65}{appendix.A}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{Appendices}{}{section*.23}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {A}Appendix A}{68}{appendix.A}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{appendix:a}{{A}{65}{Appendix A}{appendix.A}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {A.1}CartPole Experimental Details}{65}{section.A.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {A.1.1}Ground truth reward function}{65}{subsection.A.1.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {A.1.2}Experiment 1 details}{65}{subsection.A.1.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {A.1.3}Other modifications made between testing hypothesis 4 and hypothesis 1 and 2}{66}{subsection.A.1.3}\protected@file@percent }
-\newlabel{sec:other_changes}{{A.1.3}{66}{Other modifications made between testing hypothesis 4 and hypothesis 1 and 2}{subsection.A.1.3}{}}
+\newlabel{appendix:a}{{A}{68}{Appendix A}{appendix.A}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {A.1}CartPole Experimental Details}{68}{section.A.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.1.1}Ground truth reward function}{68}{subsection.A.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.1.2}Experiment 1 details}{68}{subsection.A.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.1.3}Other modifications made between testing hypothesis 4 and hypothesis 1 and 2}{69}{subsection.A.1.3}\protected@file@percent }
+\newlabel{sec:other_changes}{{A.1.3}{69}{Other modifications made between testing hypothesis 4 and hypothesis 1 and 2}{subsection.A.1.3}{}}

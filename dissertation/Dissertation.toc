@@ -44,22 +44,23 @@
 \contentsline {section}{\numberline {5.3}Acquisition Functions and Uncertainty Estimates}{45}{section.5.3}% 
 \contentsline {section}{\numberline {5.4}Implementation Details}{45}{section.5.4}% 
 \contentsline {chapter}{\numberline {6}Experiments and Results}{46}{chapter.6}% 
-\contentsline {section}{\numberline {6.1}Hypothesis 3: Reward model retraining}{48}{section.6.1}% 
-\contentsline {section}{\numberline {6.2}Hypothesis 4: Acquisition size}{49}{section.6.2}% 
-\contentsline {section}{\numberline {6.3}Hypotheses 1 and 2: Uncertainty estimates and acquisition functions}{49}{section.6.3}% 
-\contentsline {section}{\numberline {6.4}Hypothesis 5: Pool dataset has approximately uniform informativeness}{52}{section.6.4}% 
-\contentsline {section}{\numberline {6.5}Gridworld experiments}{54}{section.6.5}% 
-\contentsline {section}{\numberline {6.6}Hypothesis 6: Active reward modelling exploration issues}{56}{section.6.6}% 
-\contentsline {chapter}{\numberline {7}Conclusions}{57}{chapter.7}% 
-\contentsline {section}{\numberline {7.1}Summary}{57}{section.7.1}% 
-\contentsline {section}{\numberline {7.2}Future Work}{57}{section.7.2}% 
-\contentsline {section}{\numberline {7.3}Relation to Material Studied on the MSc Course}{57}{section.7.3}% 
-\contentsline {section}{\numberline {7.4}Critical Evaluation}{57}{section.7.4}% 
-\contentsline {subsection}{\numberline {7.4.1}Personal Development}{57}{subsection.7.4.1}% 
-\contentsline {chapter}{References}{58}{chapter*.19}% 
-\contentsline {chapter}{Appendices}{}{section*.20}
-\contentsline {chapter}{\numberline {A}Appendix A}{65}{appendix.A}% 
-\contentsline {section}{\numberline {A.1}CartPole Experimental Details}{65}{section.A.1}% 
-\contentsline {subsection}{\numberline {A.1.1}Ground truth reward function}{65}{subsection.A.1.1}% 
-\contentsline {subsection}{\numberline {A.1.2}Experiment 1 details}{65}{subsection.A.1.2}% 
-\contentsline {subsection}{\numberline {A.1.3}Other modifications made between testing hypothesis 4 and hypothesis 1 and 2}{66}{subsection.A.1.3}% 
+\contentsline {section}{\numberline {6.1}Hypothesis 1: Reward model retraining}{48}{section.6.1}% 
+\contentsline {section}{\numberline {6.2}Hypothesis 2: Acquisition size}{49}{section.6.2}% 
+\contentsline {section}{\numberline {6.3}Hypotheses 3 and 4: Uncertainty estimate method and acquisition functions}{49}{section.6.3}% 
+\contentsline {section}{\numberline {6.4}Hypotheses 5 and 6: Quality of uncertainty estimates and ease of learning reward model}{52}{section.6.4}% 
+\contentsline {section}{\numberline {6.5}Gridworld experiments}{55}{section.6.5}% 
+\contentsline {section}{\numberline {6.6}Uncertainty estimate quality in the gridworld environment}{56}{section.6.6}% 
+\contentsline {section}{\numberline {6.7}Hypothesis 7: Active reward modelling exploration issues}{58}{section.6.7}% 
+\contentsline {chapter}{\numberline {7}Conclusions}{60}{chapter.7}% 
+\contentsline {section}{\numberline {7.1}Summary}{60}{section.7.1}% 
+\contentsline {section}{\numberline {7.2}Future Work}{60}{section.7.2}% 
+\contentsline {section}{\numberline {7.3}Relation to Material Studied on the MSc Course}{60}{section.7.3}% 
+\contentsline {section}{\numberline {7.4}Critical Evaluation}{60}{section.7.4}% 
+\contentsline {subsection}{\numberline {7.4.1}Personal Development}{60}{subsection.7.4.1}% 
+\contentsline {chapter}{References}{61}{chapter*.22}% 
+\contentsline {chapter}{Appendices}{}{section*.23}
+\contentsline {chapter}{\numberline {A}Appendix A}{68}{appendix.A}% 
+\contentsline {section}{\numberline {A.1}CartPole Experimental Details}{68}{section.A.1}% 
+\contentsline {subsection}{\numberline {A.1.1}Ground truth reward function}{68}{subsection.A.1.1}% 
+\contentsline {subsection}{\numberline {A.1.2}Experiment 1 details}{68}{subsection.A.1.2}% 
+\contentsline {subsection}{\numberline {A.1.3}Other modifications made between testing hypothesis 4 and hypothesis 1 and 2}{69}{subsection.A.1.3}% 

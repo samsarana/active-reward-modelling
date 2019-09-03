@@ -584,7 +584,7 @@ In this section, we list our hypotheses about different possible failure modes o
 	\item Some problem of applying acquisition functions to preference space
 \end{enumerate}
 
-\subsection{Failure modes of active learning in general}
+\subsection{Failure modes of active learning in general} \label{sec:failure1}
 The quality of uncertainty estimates and acquisition function are two possible failure modes. Indeed, \cite[p.~6]{Christiano2017} explain the failure of their implementation as due to $ a_{mean\_std}((\sigma^1, \sigma^2), \rp) $ across an ensemble of three networks as a ``crude approximation'' to reward predictor uncertainty. Possible solutions to this failure mode are to use a different acquisition function (such as BALD \cite{Houlsby2011}), or to derive uncertainty estimates using a different method (such as MC-Dropout \cite{Gal2015} or Bayes by Backprop \cite{Blundell2015}).
 %TODO insert citation Gal finds mean-std + MC-dropout cannot beat random (Figure 1 of AL Image paper)
 
@@ -593,7 +593,7 @@ Thirdly, the implementation in \cite{Christiano2017} initialises the reward mode
 
 Fourthly, when performing \textit{batch acquisition}, that is, acquiring the top $ b $ points that maximise an acquisition function \cite{Gal2017b}, may lead to the acquisition of points that are informative individually, but jointly are much less informative than the sum of their parts. In particular, the acquisitions may not be very diverse. Indeed, \cite[p.~8]{Kirsch2019a} show that with acquisition size 5, BALD underperforms random acquisition on the EMNIST image dataset \cite{cohen2017emnist} when acquiring new images with acquisition size 5. Specifically, they observe that BALD several classes are under-represented in the acquisitions made by BALD. \cite{Christiano2017} use acquisition sizes of up to 500\footnote{The first batch of acquisitions is of size 500. For subsequent acquisitions, it is unclear what acquisition size they use.}.
 
-\subsection{Failure modes of active learning in the reward modelling setting}
+\subsection{Failure modes of active learning in the reward modelling setting} \label{sec:failure2}
 Unlike active learning in the standard supervised case, the pool dataset in active reward modelling is not known in advance, but is gathered as the RL agent encounters new states. If the trajectories of the RL agent at a certain stage of training are all similar, then the informativeness of the clip pairs in the pool dataset may be close to uniform. In this case, we would not expect active learning to improve on random acquisition. This is a fifth possible failure mode of active reward modelling.
 %This seems to present an exploration problem: naively, the agent's exploration is guided by the current reward function estimate, $ \rp $. Thus, the agent may not explore novel states and collect diverse clip pairs for the pool dataset. If the pool dataset is not diverse, it may be hard to beat the random acquisition baseline with active learning, since the data may all be more or less equally informative.
 %TODO do I need to define diverse more rigorously
@@ -604,6 +604,9 @@ A further difference between active supervised learning and active reward modell
 
 A seventh possible failure mode, it is not clear that the standard acquisition functions can be applied out of the box to learning \textit{in the preference space}. Consider the following example: we are deciding whether to acquire clip pair $ c_1 = (\sigma^1, \sigma^2) $ or $ c_2 = (\sigma^3, \sigma^4) $ to acquire. Suppose further that the reward model is uncertain whether $ c_1 $ has label $ 0 $ or $ 0.5 $\footnote{TODO I may need to spell this out more, in terms of draws from the posterior giving something like 0, 0.5, 0, 0.5 ... Can I borrow Yarin's presentation in thesis of a similar case?}; and uncertain whether $ p_2 $ has label $ 0 $ or $ 1 $. Now, $ a_{mean\_std}(c_1, \rp) =  $, whereas $ a_{mean\_std}(c_2, \rp) =  $, and thus we will acquire $ c_2 $. Yet, when learning in the preference space, using disagreement between models in an ensemble as the basis for an acquisition function may not capture all that we care about. It may be important, for example, to acquire clip pairs that allow the model to make deductions based on transitivity of the preference relation. For suppose that we have already acquired some clip pair $ (\sigma^0, \sigma^1) $. Then acquiring $ (\sigma^1, \sigma^2) $ would in effect give for free the label of $ (\sigma^0, \sigma^2) $, whereas the acquisition of $ (\sigma^3, \sigma^4) $ would not. Thus, we may need a better proxy than simply disagreement for active learning in the preference space.
 %TODO I'm highly uncertain about whether this point is correct
+
+%TODO add start of this paragraph
+In Figure 1 of \cite{Gal2017b}, there is no significant difference between the performance of BALD and random acquisition prior to acquiring the $ 50^\text{th} $ example.
 
 Finally, it is worth noting that sometimes random acquisition just does perform strongly. At the beginning of training, the uncertainty estimates used by the acquisition function may have biased noise, while random acquisition has no such bias. At the end of training, if most of the pool data have been acquired, active learning will show little improvement over random acquisition. Thus, depending on the setting, there is a potentially small window in which active learning may help. The usefulness of active learning depends on how large this window is. In active reward modelling, is it an open question how large this window is for different tasks.
 %TODO is there any literature on the question of if/when rand acq just is very good? What do Yarin, Andreas, Houlsby graphs look like at beginning, end?
@@ -656,6 +659,7 @@ The training protocol is implemented mostly in Python \cite{van1995python}. We u
 % Cartpole/the envs I use
 % Hyperparameter settings (and all the other args e.g. number of labels acquired per round, number of repetitions etc.) (maybe put these in appendix)
 % Links to code
+%TODO the next paragraph says false things. rewrite this into and include a secion CartPole experiments.
 Our first set of experiments test hypotheses 1-4: failure modes of active learning in general. We use the \textit{CartPole} environment, a classic RL task formulated in \cite{barto1983neuronlik}. As shown in Figure \ref{fig:cartpole}, the environment features a pole attached to a cart, which moves on a one-dimensional line. The pole starts upright; the objective is to keep the pole from falling by applying a force of $ +1 $ or $ -1 $ to the cart. The episode ends when the cart is more than $ 2.4 $ units from the centre or the pole falls to more than $ 15 $ degrees from vertical. We used the implementation of this environment provided by \textit{OpenAI Gym} \cite{brockman2016gym} to run our experiments.
 \begin{figure}[h]
 \centering
@@ -679,7 +683,7 @@ We found that even in a task as simple as CartPole, the performance of agents tr
 	\label{fig:cartpole_curve}
 \end{figure}
 
-\section{Hypothesis 3: Reward model retraining}
+\section{Hypothesis 1: Reward model retraining}
 Our first experiment tests the hypothesis that not retraining the reward model from scratch after every acquisition gives low quality uncertainty estimates. We run the training protocol given in Algorithm \ref{alg:arma} twice in the CartPole environment, changing whether the reward model is reinitialised in this manner. On each round, 5 preferences are acquired.
 
 As shown in Figure \ref{fig:retrain}, we find that under both conditions, random acquisition and BALD show similar performance, but reward model retraining improves the performance of both. Therefore, whilst it is possible that the uncertainty estimates are harmed by not retraining, it is unclear how much of BALD's performance improvement is due to reward model retraining being better practice in general, because it gives equal weight to all the acquired data (the reason for which we see improvement in random acquisition, too).
@@ -690,7 +694,7 @@ As shown in Figure \ref{fig:retrain}, we find that under both conditions, random
 	\label{fig:retrain}
 \end{figure}
 
-\section{Hypothesis 4: Acquisition size}
+\section{Hypothesis 2: Acquisition size}
 Next, we test the hypothesis that making acquisitions of size greater than 1 harms the performance of BALD-driven reward modelling. We run the training protocol in CartPole with acquisition size 10 and 1, retraining the reward model from scratch after each acquisition, and find that performance improves when acquisition size is reduced from 10 to 1, as per Figure \ref{fig:acq_size}. This indicates that when the acquisition size is too large, BALD acquires clip pairs that are individually informative, but are jointly less informative than the sum of their parts.
 \begin{figure}[h]
 	\centering
@@ -699,10 +703,13 @@ Next, we test the hypothesis that making acquisitions of size greater than 1 har
 	\label{fig:acq_size}
 \end{figure}
 
-\section{Hypotheses 1 and 2: Uncertainty estimates and acquisition functions}
+\section{Hypotheses 3 and 4: Uncertainty estimate method and acquisition functions}
 Having established that---in the CartPole environment---not retraining the reward model from scratch after every acquisition, and using large acquisition sizes harms the performance of active reward modelling, we retest all four acquisition functions with reward model retraining and acquisition size 1 compared to the random acquisition baseline. We also evaluate random acquisition using an ensemble of reward models, to ensure that any performance gains from active learning are not simply due ensembling. We also compare using MC-Dropout for estimating uncertainty with the ensemble approach taken so far.
 
-Our results, summarised in Figure \ref{fig:cartpole_final}, show improved performance in general, but still no significant difference between random acquisition and active learning\footnote{Note that BALD and random outperform their best results in the first two experiments because in between these experiments we performed extensive DQN hyperparameter tuning. Additionally, we found that not retraining the \textit{agent} from scratch on each round also impairs performance, as mentioned in Section \ref{sec:arma}. Being independent of the reward modelling aspect of the training protocol, such modifications affect all conditions equally and thus do not invalidate the results; they merely help to speed up experiments because agent performance performance is not harmed by having been trained (without subsequent reinitialisation) on a lower quality reward model.}.
+Our results, summarised in Figure \ref{fig:cartpole_final}, show improved performance in general, but still no significant difference between random acquisition and active learning
+\footnote{Note that BALD and random outperform their best results in the first two experiments because in between these experiments we performed extensive DQN hyperparameter tuning. Additionally, we found that not retraining the \textit{agent} from scratch on each round also impairs performance, as mentioned in Section \ref{sec:arma}. Being independent of the reward modelling aspect of the training protocol, such modifications affect all conditions equally and thus do not invalidate the results; they merely help to speed up experiments because agent performance performance is not harmed by having been trained (without subsequent reinitialisation) on a lower quality reward model.}.
+This provides evidence against the hypothesis that the choice of acquisition function or uncertainty estimate method has a significant effect on the performance of active reward modelling. Contrary to the suggestion in \cite[p.~6]{Christiano2017}, merely changing these methods does not make active reward modelling improve on random acquisition, at least in the CartPole environment.
+
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=\textwidth]{cartpole_final}
@@ -725,16 +732,16 @@ In the experiments that follow, unless otherwise stated we continue to do reward
 	\end{algorithmic}
 \end{algorithm}
 
-\section{Hypothesis 5: Pool dataset has approximately uniform informativeness}
-It may be that in the CartPole environment, preferences about most clip pairs generated by the agent contain similar information about the underlying reward function. In this case, active learning would show little performance improvement over random acquisition because the difference in informativeness between the most informative and the average clip pairs is insignificant. Our fifth experiment tests this hypothesis.
+\section{Hypotheses 5 and 6: Quality of uncertainty estimates and ease of learning reward model}
+Active reward modelling may be unable to outperform random acquisition due to poor quality uncertainty estimates, perhaps due to the reasons discussed in Section \ref{sec:failure2}, or an implementation bug. Furthermore, it may be that the CartPole task is simply too easy for active reward modelling to show improvement over random acquisition.
 
-We set up an experiment which essentially adds many duplicate clip pairs to the pool dataset. This reduces uniformity in the informativeness of the data: once one of the duplicated clip pairs is acquired, no further information is gained by acquiring exact copies of it. Put another way, we add many redundant clip pairs, which, if queried for their label, contribute zero information about the annotator's latent reward function.
+To test these hypotheses, we set up an experiment in which many duplicate clip pairs are added to the pool dataset. Essentially, this adds redundancy to the pool: once one of the duplicated clip pairs is acquired, no further information is gained about the annotator's latent reward function by acquiring exact copies of it.
 
 More precisely, our experimental setup is to run the training protocol with both random acquisition and BALD, acquiring 5 labels per round (using acquisition size 1), with the following modification: after sampling $ 10\times 5 = 50 $ clip pairs from the experience buffer $ \expbuff $ (line \ref{line:sample_exp2} in Algorithm \ref{alg:acq1}), we make $ 10 $ identical copies of one of the clip pairs. Now, this set of $ 100 $ clip pairs is used as the pool dataset over which the acquisition function is evaluated on line \ref{line:acq2}. We call this setup \textit{Repeated CartPole}\footnote{This experiment was inspired by the \textit{Repeated MNIST} setup in \cite{Kirsch2019a}, which makes a somewhat similar modification to test a different hypothesis.}.
 
-Modifying the procedure in this way will impair the performance of random acquisition. In expectation, 2.5 of the 5 randomly sampled clip pairs will be exact duplicates, meaning that the reward model is trained on a poorer quality dataset due to the redundant acquisitions. However, the performance of BALD should be unimpaired, because after acquiring one of the duplicate clip pairs, the information gained by acquiring the same clip again is zero, so BALD should not reacquire the example, but instead pick 4 other clip pairs from the original set. This finding would be consistent with the hypothesis that informativeness across the pool dataset of clip pairs generated in CartPole is approximately uniform, which we expect would make it hard for active learning to significantly outperform random acquisition. If, on the other hand, we find that the performance of BALD is also significantly impaired in Repeated CartPole, then there is likely to be something more fundamental broken, such as Hypothesis 7, poor quality uncertainty estimates or a bug in the implementation.
+Modifying the procedure in this way will impair the performance of random acquisition. In expectation, 2.5 of the 5 randomly sampled clip pairs will be exact duplicates, meaning that the reward model is trained on a poorer quality dataset due to the redundant acquisitions. However, the performance of BALD should be unimpaired, because after acquiring one of the duplicate clip pairs, the information gained by acquiring the same clip again is zero, so BALD should not reacquire the example, but instead pick 4 other clip pairs from the original set. If, on the other hand, BALD is giving poor quality uncertainty estimates, then it will erroneously acquire duplicate examples and so the performance of BALD will also be significantly impaired in Repeated CartPole.
 
-As shown in Figure \ref{fig:cartpole_rep}, we find that BALD's performance is not significantly harmed, whilst outperforms random acquisition at Repeated CartPole\footnote{The performance of BALD and random acquisition in the standard CartPole are both substantially better than in previous experiments. Having noticed the high variance of repeated experiments, we began testing agent performance several times on each iteration of the training protocol, rather than just at the end of agent training (testing agent performance means measuring mean episode return of the current policy in greedy forms, i.e. without taking random actions some $ \epsilon $ fraction of the time, over a fixed number of episodes, typically 100). This follows the testing regime used in \cite{Mnih2015}. Since this change is independent of the reward modelling aspect of the training protocol, it does not invalidate our previous results.}. This is consistent with the hypothesis that one failure mode of active reward modelling in the CartPole environment is the uniform informativeness of the acquired clip pairs. Additionally, this finding attests to the correctness of our implementation, and provides evidence against (i) hypothesis 7, that active learning algorithms cannot be applied out-of-the-box to learning a deep reward model from preferences, and (ii) that BALD's uncertainty estimates are of poor quality in this setting. %TODO mention this failure mode earlier? you kind of bring it up out of the blue here
+As shown in Figure \ref{fig:cartpole_rep}, we find that BALD's performance is not significantly harmed, whilst random acquisition performs poorly\footnote{The performance of BALD and random acquisition in the standard CartPole are both substantially better than in previous experiments. Having noticed the high variance of repeated experiments, we began testing agent performance several times on each iteration of the training protocol, rather than just at the end of agent training (testing agent performance means measuring mean episode return of the current policy in greedy forms, i.e. without taking random actions some $ \epsilon $ fraction of the time, over a fixed number of episodes, typically 100). This follows the testing regime used in \cite{Mnih2015}. Since this change is independent of the reward modelling aspect of the training protocol, it does not invalidate our previous results.}. This provides evidence that poor quality uncertainty estimates are not a failure mode of BALD in this environment.
 
 \begin{figure}[h]
 	\centering
@@ -754,11 +761,23 @@ As shown in Figure \ref{fig:cartpole_rep}, we find that BALD's performance is no
 	\label{fig:cartpole_rep}
 \end{figure}
 
-The fact of being consistent with this hypothesis provides some but not strong evidence that this is precisely the failure mode of BALD. To investigate further, we dug into BALD's information gain approximations. Specifically, we found that the mean information gain of the clip pairs of a uniform random sample of clip pairs is close to that of those acquired by BALD, as shown in Table. This provides further evidence in favour of hypothesis 5. %TODO get this evidence if you have time. Else just say it's what you would have done.
+We gathered further evidence on the quality of BALD's uncertainty estimates by comparing the mutual information scores in Repeated CartPole with those in standard CartPole. Since there are many redundant examples in the pool dataset of Repeated CartPole, we expect BALD the average mutual information over this dataset to be higher than that in standard CartPole. However, as shown in Table \ref{table:2}, we find the opposite result. Whilst we would have liked to explore this further, it suggests that whilst BALD's uncertainty estimates are sufficient to outperform random acquisition in the Repeated CartPole setting, they are nonetheless far from perfect.
 
-However, these findings only provide evidence for the very narrow claim that a failure mode of active reward modelling \textit{in the CartPole environment} is the uniform informativeness of the pool dataset. To further the investigation, we require more environments.
+\begin{table}[]
+\begin{tabular}{lllll}
+	\cline{1-3}
+	\multicolumn{1}{l|}{}                                     & CartPole     & Repeated CartPole &  &  \\ \cline{1-3}
+	\multicolumn{1}{l|}{Average MI of BALD over pool dataset} & $ 0.06 \pm 0.01 $ & $  0.16 \pm 0.02 $      &  &  \\ \cline{1-3}
+	&              &                   &  &  \\
+	&              &                   &  & 
+\end{tabular}
+\label{table:2}
+\caption{Mean mutual information over the pool dataset in CartPole and Repeated CartPole experiments, averaged over all acquisitions, with standard error from four repeat trials.}
+\end{table}
 
-Furthermore, it seems somewhat implausible that there are not at least some disproportionately informative clip pairs, even if the majority have very similar informativeness. We explore this possibility further in the next experiments.
+One explanation of this result is that, as mentioned in Section \ref{sec:failure1}, BALD (and other acquisition functions) are known to give poor quality uncertainty estimates in the early stages of training. For instance, Figure 1 of \cite{Gal2017b} shows no significant difference between the performance of BALD and random acquisition prior to acquiring the $ 50^\text{th} $ example. Given that reward modelling can solve CartPole with around 30 labels, BALD's inability to outperform random acquisition in this setting would be consistent with this result.
+
+To summarise the results so far, we have shown that in the CartPole environment, not reinitialising the reward model and using large acquisition sizes harms active reward modelling, and the former problem also harms non-active reward modelling. This provides evidence for hypotheses 1 and 2 being failure modes of active learning in this environment. With these changes, however, active reward modelling still cannot outperform random acquisition, so these are not the only failure modes. We then provided evidence against hypotheses 3 and 4 by comparing four common acquisition functions and two uncertainty estimates methods and finding that no combination improves on random acquisition. Finally, the Repeated CartPole experiment suggests that the uncertainty estimates are of questionable quality in CartPole, yet they are not so poor as to render BALD unable to distinguish duplicate clip pairs.
 
 \section{Gridworld experiments}
 A gridworld is a simple two-dimensional environment of size 4x4, containing an agent (blue), one goal cell (green) and an optional lava cell (red). On each time step, the agent receives an observation of the environment, which is an RGB pixel value for each cell, and takes one of four actions (up, down, left or right). The environment gives rewards of $ +1 $ for reaching the goal, $ -1 $ for moving onto the lava, and $ 0 $ otherwise. Episodes terminate when the goal or lava is reached, or when 50 time steps have passed. An example state of the environment is shown in Figure \ref{fig:grid}. This is similar to the environment used in \cite{kenton2019generalizing}. We define solving this environment as getting a mean episode return of greater than $ 0.95 $ across 100 episodes, equivalent to reaching the goal in 95 of 100 episodes.
@@ -781,10 +800,8 @@ A gridworld is a simple two-dimensional environment of size 4x4, containing an a
 	\label{fig:grid}
 \end{figure}
 
-The simplest configuration of this gridworld has no lava cell and a goal cell with a fixed location. In our first experiment, we fix the goal location to be in the bottom left corner, and the agent starting location to be in the top left corner, corresponding to Figure \ref{fig:grida}. Around $ 17\% $ of the clips\footnote{We use clip length 10 here, rather than 25. TODO push all such details to the appendix.} generated by an agent taking random actions in this environment have total reward $ +1 $. Therefore, a decent proportion of the clip pairs acquired by random acquisition will contain information about synthetic annotator's preferences. Therefore, whilst is not possible to know a priori, it would be unsurprising if it is difficult for active reward modelling to outperform random acquisition, for the same reason as in CartPole.
-
-(As well as reward modelling using BALD and random acquisition, we evaluate agents that (i) do standard RL on the ground truth reward, (ii) take random actions and (iii) get reward from a random reward model.)
-%TODO not sure if/how to include this; come back to it
+The simplest configuration of this gridworld has no lava cell and a goal cell with a fixed location. As a sanity check, we use this simplest configuration to try to replicate the finding that in simple tasks and environments, active reward modelling is unable to outperform random acquisition. Specifically, we fix the goal location to be in the bottom left corner, and the agent starting location to be in the top left corner, corresponding to Figure \ref{fig:grida}. By a quick simulation, we found that $ 17\% $ of the clips\footnote{We use clip length 10 here, rather than 25. TODO push all such details to the appendix.} generated by an agent taking random actions in this environment have total reward $ +1 $. This should mean that a decent proportion of the clip pairs acquired at random will contain information about synthetic annotator's preferences and so non-active reward modelling should be able to solve the environment with very few acquisitions, whilst BALD should suffer from poor quality uncertainty estimates, having only been trained on a small number of examples. Indeed, as seen in Figure \ref{fig:grid_simple} the results affirmed this.
+%(As well as reward modelling using BALD and random acquisition, we evaluate agents that (i) do standard RL on the ground truth reward, (ii) take random actions and (iii) get reward from a random reward model.)
 
 \begin{figure}[h]
 	\centering
@@ -793,16 +810,42 @@ The simplest configuration of this gridworld has no lava cell and a goal cell wi
 	\label{fig:grid_simple}
 \end{figure}
 
+\section{Uncertainty estimate quality in the gridworld environment}
+Our results about the quality of uncertainty estimates in active reward modelling were inconclusive, in the sense that we were unable to tell whether the estimates were of questionable quality because the number of training examples was so small, or for some more fundamental reason. Our next gridworld is more complex, meaning that more labels are required in order to learn the annotator's reward function. Specifically, we introduce a lava cell, also with a fixed position, placing it close to the goal cell, as shown in Figure \ref{fig:gridb}. By a simulation, we found that around $ 95\% $ of clips sampled from the trajectories of a random policy have zero return, around $ 1\% $ have return greater than or equal to $ +1 $, and around $ 4\% $ have return less than or equal to $ -1 $. Because of the infrequency of clips with positive return, random sampling will collect few such clips, and therefore non-active reward modelling will struggle to learn the annotator's reward function. However, since such clips contain vital information, active reward modelling should acquire these clips. If it does not, then we should be sceptical about the quality of the uncertainty estimates.
+%TODO mention clip length 1. Appendix?
 
-\section{Hypothesis 6: Active reward modelling exploration issues}
-To summarise the results so far, we have shown that in the CartPole environment, not reinitialising the reward model and using large acquisition sizes harms active reward modelling, and the former problem also harms non-active reward modelling. This provides evidence for hypotheses 1 and 2 being failure modes of active learning in this environment. With these changes, however, active reward modelling still cannot outperform random acquisition, so these are not the only failure modes.
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\textwidth]{grid_medium}
+	\caption{Number of labels required to solve the gridworld shown in Figure \ref{fig:gridb} via reward modelling using random acquisition, and BALD with acquisition sizes 1 and 10. Only one random seed is shown.}
+	\label{fig:grid_medium}
+\end{figure}
 
-We then provided evidence against hypothesis 3, by comparing four common acquisition functions and showing that none improve on random. The result that uncertainty estimates provided by a Deep Ensemble and MC-Dropout give similar performance suggest that the uncertainty estimate method is not a failure mode. We gathered further evidence against hypothesis 4 by confirming that active reward modelling correctly doesn't acquire redundant clip pairs in Repeated CartPole, which would be unlikely if the uncertainty estimates were poor.
+As shown in Figure \ref{fig:grid_medium}, the results provides good evidence that the uncertainty estimates in active reward modelling are of good enough quality to outperform random acquisition in this more complicated environment. We also evaluate BALD using acquisition size 10, and replicate the finding of Section \ref{sec:acq_size} this hurts the performance of BALD.
+%TODO if time, add information about the acquisition profiles of BALD v random. BALD is seen to pick the rarer clips.
 
-The Repeated CartPole experiment also supported hypothesis 5, that the acquired clip pairs in CartPole have approximately uniform informativeness. Shifting to a simple gridworld environment for which most clip pairs are similarly informative, we replicate this finding.
-%TODO work out how to make the "close to uniform informativeness is also essentially an O(n^2) problem + in this case also one of the task being too simple" jives. what is the best way to present this?
+\section{Hypothesis 7: Active reward modelling exploration issues}
+Finally, we shift our attention to the hypothesis that in even more difficult tasks, too few trajectories generated by the agent are informative, meaning that the pool dataset rarely contains informative clip pairs, and active learning is unable to acquire them. This failure mode applies to random acquisition as much as it does to active reward modelling, so we expect to see both methods failing in such environments.
 
-We now test the hypothesis that even if the generated clip pairs are sufficiently non-uniform for 
+The setup is to make a small modification to the previous setting: using a clip length of 10, instead of 1. As noted in \cite[p.~10]{Christiano2017}, using shorter clips is more helpful \textit{per frame}, but less helpful \textit{per clip}. This is because longer clips introduce some kind of ``credit assignment'' problem. A reward model trained a particular pair of long clips has no way to infer which actions in the clip were preferred by the annotator; only after receiving multiple similar clips can it infer, on the level of granularity of actions, what the annotator's preferences are. However, if the annotator desires to align an agent to take particular long sequences of actions, using long clips is imperative.
+
+In our small gridworld, this is not the case. We set up the annotator's hidden reward function to give sparse rewards of $ +1 $ for reaching a goal cell and $-1$ for moving onto a lava cell, meaning that clips of length 1 are relatively more helpful than clips of length 10. Therefore, using longer clips should make the reward modelling task more difficult.
+
+We evaluate the performance of using BALD and Mean STD to drive active reward modelling, against random acquisition, both using and not using an ensemble of reward models. We find that...
+%TODO say a thing about doubly hard exploration
+% also that the reward model test loss is converged so we are stuck with this behaviour.
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=\textwidth]{grid_hard}
+	\caption{ Only one random seed is shown.}
+	\label{fig:grid_hard}
+\end{figure}
+
+
+
+%The effect varying clip length is studied by \cite{Christiano2017}, who find that in simulated robotics tasks, using shorter clip length significantly impairs performance. 
+%However, in this environment, the synthetic annotator prefers 
 
 \chapter{Conclusions}
 \section{Summary}
