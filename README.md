@@ -1,4 +1,4 @@
-# Active Reward Modeling.
+# Active Reward Modeling
 
 Make a fresh conda env with Python 3.7, then: 
 ```
