@@ -1,5 +1,5 @@
 numpy
-scipy==1.2.0
+scipy==1.10.0
 matplotlib
 pandas
 gym
@@ -8,4 +8,4 @@ tqdm
 tb-nightly
 image
 ffmpeg
-scipy==1.2.0
+scipy==1.10.0
